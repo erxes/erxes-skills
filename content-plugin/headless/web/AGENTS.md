@@ -100,13 +100,13 @@ Read `deploy_target` from `site.config.json`.
 ```bash
 tsx scripts/deploy.ts "<site-name>"
 ```
-Pushes `output/<slug>/` to a private GitHub repo (`GITHUB_USERNAME/site-slug`), then deploys to Vercel. Prints the live URL.
+Pushes `output/<slug>/` as a new git repo to **`pages-web/<slug>`** (the `pages-web` GitHub org), then deploys to Vercel. Prints the live URL.
 
 **If `deploy_target` is `github`:**
 ```bash
 tsx scripts/github-push.ts "<site-name>"
 ```
-Pushes `output/<slug>/` to a private GitHub repo only. Prints the repo URL. Does not deploy to Vercel.
+Pushes `output/<slug>/` as a new git repo to **`GITHUB_USERNAME/<slug>`** (the user's personal account). Prints the repo URL. Does not deploy to Vercel.
 
 ---
 

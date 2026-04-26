@@ -7,7 +7,8 @@ interface GithubPushResult {
 
 export async function githubPusher(
   outputDir: string,
-  siteName: string
+  siteName: string,
+  org?: string
 ): Promise<GithubPushResult> {
   const token = process.env.GITHUB_TOKEN;
   const username = process.env.GITHUB_USERNAME;
@@ -19,11 +20,16 @@ export async function githubPusher(
     .replace(/\s+/g, "-")
     .replace(/[^a-z0-9-]/g, "");
 
-  const repoUrl = `https://github.com/${username}/${repoName}`;
+  const owner = org ?? username;
+  const repoUrl = `https://github.com/${owner}/${repoName}`;
 
   // 1. Create private repo via GitHub API (ignore 422 if it already exists)
-  console.log(`→ [github-pusher] Creating private repo "${repoName}"...`);
-  const createRes = await fetch("https://api.github.com/user/repos", {
+  console.log(`→ [github-pusher] Creating private repo "${owner}/${repoName}"...`);
+  const apiUrl = org
+    ? `https://api.github.com/orgs/${org}/repos`
+    : "https://api.github.com/user/repos";
+
+  const createRes = await fetch(apiUrl, {
     method: "POST",
     headers: {
       Authorization: `token ${token}`,
@@ -46,7 +52,7 @@ export async function githubPusher(
   }
 
   // 2. Init git and push (token embedded in remote URL, stripped after push)
-  const remoteWithToken = `https://${username}:${token}@github.com/${username}/${repoName}.git`;
+  const remoteWithToken = `https://${username}:${token}@github.com/${owner}/${repoName}.git`;
 
   const run = (cmd: string) =>
     execSync(cmd, { cwd: outputDir, stdio: "pipe", encoding: "utf-8" });
@@ -59,26 +65,25 @@ export async function githubPusher(
     try { run("git checkout -b main"); } catch { /* already on main */ }
   }
 
-  run("git add .");
-  try {
-    run(`git commit -m "chore: initial site build"`);
-  } catch {
-    // Nothing to commit (repo already up to date)
-    console.log("  ↩ nothing to commit — skipping push");
-    return { repoUrl, repoName };
-  }
-
-  // Set or update remote
+  // Always update remote first so the push target is correct
   try {
     run(`git remote add origin ${remoteWithToken}`);
   } catch {
     run(`git remote set-url origin ${remoteWithToken}`);
   }
 
+  run("git add .");
+  try {
+    run(`git commit -m "chore: initial site build"`);
+  } catch {
+    // Nothing new to commit — still push in case remote changed (e.g. org migration)
+    console.log("  ↩ nothing new to commit — pushing existing commits");
+  }
+
   console.log(`→ [github-pusher] Pushing to ${repoUrl}...`);
   run("git push -u origin main --force");
 
-  // 3. Strip token from remote URL
+  // Strip token from remote URL
   run(`git remote set-url origin ${repoUrl}.git`);
 
   console.log(`  ✓ pushed to ${repoUrl}`);

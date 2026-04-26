@@ -17,8 +17,8 @@ const slug = siteName.toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, 
 const outputDir = `${process.cwd()}/output/${slug}`;
 
 async function main() {
-  // Step 1 — push to user's private GitHub repo
-  const { repoUrl } = await githubPusher(outputDir, siteName);
+  // Step 1 — push to pages-web org (required for Vercel deploy)
+  const { repoUrl } = await githubPusher(outputDir, siteName, "pages-web");
   console.log(`→ GitHub: ${repoUrl}`);
 
   // Step 2 — deploy to Vercel
