@@ -20,7 +20,7 @@
  */
 import "dotenv/config";
 import { readFileSync } from "fs";
-import { postSeeder } from "../skills/post-seeder.js";
+import { postSeeder } from "../lib/post-seeder.js";
 import type { SeedPost, ErxesContext } from "../types.js";
 
 const file = process.argv[2];

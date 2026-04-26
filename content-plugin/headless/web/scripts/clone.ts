@@ -4,7 +4,7 @@
  * Output: prints the output directory path
  */
 import "dotenv/config";
-import { repoCloner } from "../skills/repo-cloner.js";
+import { repoCloner } from "../lib/repo-cloner.js";
 
 const siteName = process.argv[2];
 if (!siteName) {

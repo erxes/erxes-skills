@@ -831,7 +831,7 @@ scripts/
   erxes-posts.ts    tsx scripts/erxes-posts.ts output/posts.json
   erxes-menu.ts     tsx scripts/erxes-menu.ts output/menu.json
   deploy.ts         tsx scripts/deploy.ts "<site-name>"
-skills/             mechanical tools (clone, read, write, mutate, deploy)
+lib/                utility functions (clone, read, write, mutate, deploy)
 output/             generated sites appear here
 site.config.json    developer fills this in
 .env                secrets

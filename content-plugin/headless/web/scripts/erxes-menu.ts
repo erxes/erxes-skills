@@ -14,7 +14,7 @@
  */
 import "dotenv/config";
 import { readFileSync } from "fs";
-import { menuBuilder } from "../skills/menu-builder.js";
+import { menuBuilder } from "../lib/menu-builder.js";
 import type { SeedMenuItem, ErxesContext } from "../types.js";
 
 const file = process.argv[2];

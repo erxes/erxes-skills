@@ -4,7 +4,7 @@
  * Output: prints the live Vercel URL
  */
 import "dotenv/config";
-import { vercelDeploy } from "../skills/vercel-deploy.js";
+import { vercelDeploy } from "../lib/vercel-deploy.js";
 
 const siteName = process.argv[2];
 if (!siteName) {

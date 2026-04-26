@@ -18,7 +18,7 @@
  */
 import "dotenv/config";
 import { readFileSync } from "fs";
-import { pageCreator } from "../skills/page-creator.js";
+import { pageCreator } from "../lib/page-creator.js";
 import type { SeedPage, ErxesContext } from "../types.js";
 
 const file = process.argv[2];
