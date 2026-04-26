@@ -29,13 +29,12 @@ export async function menuBuilder(
       body: JSON.stringify({
         query: MUTATION,
         variables: {
-            input: {
-              clientPortalId: intent.erxes_cp_id,
-              label: item.label,
-              url: item.url,
-              order: item.order,
-              kind: "link",
-            },
+          input: {
+            label: item.label,
+            url: item.url,
+            order: item.order,
+            kind: item.kind ?? "link",
+          },
         },
       }),
     });

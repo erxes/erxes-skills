@@ -49,7 +49,6 @@ export async function postSeeder(
         query: CATEGORY_MUTATION,
         variables: {
           input: {
-            clientPortalId: intent.erxes_cp_id,
             name: category.name,
             slug: category.slug,
             status: "published",
@@ -79,7 +78,6 @@ export async function postSeeder(
         query: POST_MUTATION,
         variables: {
           input: {
-            clientPortalId: intent.erxes_cp_id,
             title: post.title,
             slug: post.slug,
             content: post.content,

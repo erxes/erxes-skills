@@ -63,9 +63,10 @@ VERCEL_TOKEN=your_vercel_token
 VERCEL_ORG_ID=your_vercel_org_id
 
 ERXES_ENDPOINT=https://your-tenant.next.erxes.io/gateway/graphql
+GITHUB_USERNAME=your_github_username
 ERXES_APP_TOKEN=your_erxes_app_token
-ERXES_CP_ID=your_erxes_client_portal_id
-ERXES_CMS_ID=your_erxes_cms_id
+ERXES_CLIENT_PORTAL_ID=your_client_portal_id
+ERXES_CMS_ID=created_automatically_by_cpContentCreateCMS
 ```
 
 **4. Open OpenCode and point it at this folder**
@@ -97,7 +98,7 @@ OpenCode reads `AGENTS.md` and walks you through the full setup — it will ask 
 5. Industry — e.g. "coffee shop", "law firm", "tech startup"
 6. Sections — hero, about, services, blog, contact, gallery, pricing, team, faq...
 7. Primary color hint — e.g. "brown", "blue" (optional)
-8. erxes credentials (if not already in `.env`)
+8. erxes SaaS URL, app token, and client portal ID (if not already in `.env`)
 
 ### Updating an existing site
 
@@ -153,14 +154,15 @@ content-plugin/headless/web/
 
 | Variable | Required | Description |
 |---|---|---|
-| `GITHUB_TOKEN` | Yes | GitHub PAT with `repo` read scope — for cloning starter |
+| `GITHUB_TOKEN` | Yes | GitHub PAT with `repo` scope — clones starter, pushes generated sites |
+| `GITHUB_USERNAME` | Yes | Your GitHub username — generated sites pushed as private repos here |
 | `STARTER_REPO_URL` | Yes | GitHub URL of your `erxes-web-starter` repo |
 | `VERCEL_TOKEN` | Yes | Vercel API token |
 | `VERCEL_ORG_ID` | Yes | Vercel team/org ID |
-| `ERXES_ENDPOINT` | Yes | erxes GraphQL endpoint URL |
-| `ERXES_APP_TOKEN` | Yes | erxes app token (`x-app-token` header) |
-| `ERXES_CP_ID` | Yes | erxes client portal ID |
-| `ERXES_CMS_ID` | Yes | erxes CMS ID |
+| `ERXES_ENDPOINT` | Yes | erxes GraphQL endpoint URL, usually derived from your SaaS URL by appending `/gateway/graphql` |
+| `ERXES_APP_TOKEN` | Yes | erxes app token. Find it in `Settings` → `Client portal` → `Create client portal` |
+| `ERXES_CLIENT_PORTAL_ID` | Yes | client portal ID used when creating the CMS |
+| `ERXES_CMS_ID` | Generated | created automatically by `cpContentCreateCMS` |
 | `ERXES_LANGUAGE` | No | Default language code — `en`, `mn`, etc. (default: `en`) |
 
 ---

@@ -4,6 +4,7 @@
   "description": "AI-powered website generator for erxes CMS",
   "scripts": {
     "clone":       "tsx scripts/clone.ts",
+    "erxes:cms":   "tsx scripts/erxes-cms.ts",
     "erxes:pages": "tsx scripts/erxes-pages.ts",
     "erxes:posts": "tsx scripts/erxes-posts.ts",
     "erxes:menu":  "tsx scripts/erxes-menu.ts",

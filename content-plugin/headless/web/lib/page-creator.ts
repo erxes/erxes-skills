@@ -29,7 +29,6 @@ export async function pageCreator(
         query: MUTATION,
         variables: {
           input: {
-            clientPortalId: intent.erxes_cp_id,
             language: intent.language,
             name: page.name,
             slug: page.slug,
