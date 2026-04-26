@@ -10,8 +10,11 @@ export async function getServerApolloClient() {
       headers: {
         "x-app-token": process.env.ERXES_APP_TOKEN ?? "",
       },
-      fetchOptions: { cache: "no-store" },
     }),
     cache: new InMemoryCache(),
+    defaultOptions: {
+      watchQuery: { fetchPolicy: "no-cache" },
+      query: { fetchPolicy: "no-cache" },
+    },
   });
 }

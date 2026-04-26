@@ -11,7 +11,7 @@ export const GET_PAGES = gql`
 
 export const GET_PAGE_BY_SLUG = gql`
   query CpPageBySlug($slug: String!, $language: String) {
-    cpPageDetail(slug: $slug, language: $language) {
+    cpPages(language: $language, slug: $slug) {
       _id name slug status content
       pageItems { _id name type content order config }
     }
