@@ -43,13 +43,29 @@ Question flow rules:
    - Valid sections: `about`, `services`, `blog`, `contact`, `gallery`, `pricing`, `team`, `testimonials`, `faq`, `menu`, `portfolio`
    - If the user includes `hero`, keep it, but do not require it
 
-6. **Color hint**
+6. **UI source**
+   > "How do you want the UI designed? Choose: `words` / `pencil` / `figma` / `screenshot` / `website`"
+   - `words` — user describes what they want in text; agent generates using Pencil AI guided by that description
+   - `pencil` — user has an existing `.pen` file to use as the starting design
+   - `figma` — user provides a Figma file link or exported assets
+   - `screenshot` — user uploads one or more screenshots as visual reference
+   - `website` — agent scrapes an existing website URL as design reference
+   - Save as `ui_source` in `site.config.json`
+   - Follow up immediately with the source-specific prompt below:
+     - `words` → "Describe the look and feel you want."
+     - `pencil` → "Path to your `.pen` file?"
+     - `figma` → "Figma file URL or paste exported image paths?"
+     - `screenshot` → "Drop your screenshot file(s) here."
+     - `website` → "What is the URL of the existing website?"
+   - Save the follow-up answer as `ui_source_ref` in `site.config.json`
+
+7. **Color hint**
    > "Primary color? (e.g. `brown`, `blue`, `forest-green`) — or Enter to skip"
 
-7. **Extra notes**
+8. **Extra notes**
    > "Any extra requirements or notes? — or Enter to skip"
 
-8. **Deployment target**
+9. **Deployment target**
    > "Deploy to Vercel after building, or just push to GitHub? Choose: `vercel` / `github`"
    - `vercel` — push to GitHub and deploy to Vercel (live URL returned)
    - `github` — push to GitHub only (no Vercel deploy)
@@ -63,11 +79,11 @@ Question flow rules:
    - Example:
      `https://producttest.next.erxes.io` → `https://producttest.next.erxes.io/gateway/graphql`
 
-9. **erxes app token**
+10. **erxes app token**
    > "What is the erxes app token?"
    - Instruction: `Settings` → `Client portal` → `Create client portal` → copy the token
 
-10. **Client portal ID**
+11. **Client portal ID**
     > "What is the client portal ID?"
     - Ask for the client portal ID, not the CMS ID
     - Use this when calling `cpContentCreateCMS`
@@ -103,7 +119,9 @@ Write `site.config.json`:
   "erxes_cms_id": "<created by cpContentCreateCMS>",
   "color_hint": "<answer or null>",
   "extra_notes": "<answer or null>",
-  "deploy_target": "<vercel|github>"
+  "deploy_target": "<vercel|github>",
+  "ui_source": "<words|pencil|figma|screenshot|website>",
+  "ui_source_ref": "<description, .pen path, figma url, screenshot paths, or website url>"
 }
 ```
 

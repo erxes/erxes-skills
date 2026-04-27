@@ -22,7 +22,111 @@ All mock content must be real text in the site's language — no lorem ipsum.
 
 ---
 
-## 4b. Apollo Client files
+## 4b. Internationalisation (i18n)
+
+The starter uses **next-intl** with `app/[locale]/` routing. All pages live under `app/[locale]/`, not `app/`. Do this before writing any pages.
+
+### Update `src/i18n/routing.ts`
+
+Replace the hardcoded locales with the values from `site.config.json`:
+
+```typescript
+import { defineRouting } from "next-intl/routing";
+
+export const routing = defineRouting({
+  locales: [/* languages array from site.config.json, e.g. ["mn", "en"] */],
+  defaultLocale: /* language field from site.config.json, e.g. "mn" */,
+});
+```
+
+### Update `src/app/[locale]/layout.tsx`
+
+Update `generateStaticParams` to match the configured locales:
+
+```typescript
+export function generateStaticParams() {
+  return routing.locales.map((locale) => ({ locale }));
+}
+```
+
+### Generate `messages/<locale>.json` for each language
+
+Create one file per language in `messages/`. These hold UI strings (labels, buttons, nav text) — **not** CMS content. Generate real translated text for the site's language and tone.
+
+Example structure for a business site with `sections: ["hero", "about", "services", "contact"]`:
+```json
+{
+  "nav": { "home": "Home", "about": "About", "services": "Services", "contact": "Contact" },
+  "hero": { "cta": "Get Started", "learnMore": "Learn More" },
+  "contact": { "submit": "Send Message", "namePlaceholder": "Your name", "emailPlaceholder": "Your email" },
+  "footer": { "rights": "All rights reserved" }
+}
+```
+Translate all values into the correct language for each file (e.g. `messages/mn.json` in Mongolian).
+
+### Pass `locale` to all GraphQL queries
+
+Every server component that calls `getClient().query()` must pass the locale as the `language` variable. Get it from route params:
+
+```typescript
+// In any page or server component under app/[locale]/
+export default async function Page({ params }: { params: { locale: string } }) {
+  const { locale } = await params;
+  const { data } = await getClient().query({
+    query: GET_PAGES,
+    variables: { language: locale },
+    context: { fetchOptions: { next: { revalidate: 60 } } },
+  });
+}
+```
+
+In `generateStaticParams` for dynamic routes, generate params for **every locale × every slug**:
+
+```typescript
+export async function generateStaticParams() {
+  const results = await Promise.all(
+    routing.locales.map(async (locale) => {
+      const { data } = await getClient().query({
+        query: GET_PAGES,
+        variables: { language: locale },
+      });
+      return (data.cpPages ?? []).map((p: { slug: string }) => ({ locale, slug: p.slug }));
+    })
+  );
+  return results.flat();
+}
+```
+
+### Language switcher (only if `languages.length > 1`)
+
+Add a `LanguageSwitcher` component to the Header. Use next-intl's `Link` and `usePathname` to build locale-prefixed links:
+
+```typescript
+"use client";
+import { useLocale } from "next-intl";
+import { Link, usePathname } from "@/i18n/routing";
+
+const LABELS: Record<string, string> = { en: "EN", mn: "МН", zh: "中", ru: "РУ", ko: "한", ja: "日" };
+
+export function LanguageSwitcher({ locales }: { locales: string[] }) {
+  const locale = useLocale();
+  const pathname = usePathname();
+  return (
+    <div className="flex gap-2 text-sm">
+      {locales.map((l) => (
+        <Link key={l} href={pathname} locale={l}
+          className={l === locale ? "font-bold" : "opacity-60 hover:opacity-100"}>
+          {LABELS[l] ?? l.toUpperCase()}
+        </Link>
+      ))}
+    </div>
+  );
+}
+```
+
+---
+
+## 4c. Apollo Client files
 
 **`lib/apollo-client.ts`** — Server-side:
 ```typescript
@@ -74,29 +178,41 @@ export function ApolloWrapper({ children }: React.PropsWithChildren) {
 ## 4c. Layout — Header, Footer, Root
 
 **`components/Header.tsx`**
-- Server Component — use `getClient().query(GET_HEADER_MENU)` directly
+- Server Component — fetch menu with `getClient().query(GET_HEADER_MENU, { variables: { language: locale } })`
 - Logo/site name left, nav links right, hamburger on mobile (`"use client"` sub-component)
+- Include `<LanguageSwitcher>` if `languages.length > 1`
 - Tailwind classes matching `tone` and `color_hint`
 
 **`components/Footer.tsx`**
-- Server Component — use `getClient().query(GET_FOOTER_MENU)`
+- Server Component — fetch menu with `getClient().query(GET_FOOTER_MENU, { variables: { language: locale } })`
 - Site name, nav links, copyright line
 
-**`app/layout.tsx`**:
+**`app/[locale]/layout.tsx`** — update the existing file, do not create `app/layout.tsx`:
 ```tsx
-import { ApolloWrapper } from "@/lib/apollo-wrapper";
+import { NextIntlClientProvider } from "next-intl";
+import { getMessages } from "next-intl/server";
+import ApolloClientProvider from "@/lib/apollo/provider";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
+import { routing } from "@/i18n/routing";
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export function generateStaticParams() {
+  return routing.locales.map((locale) => ({ locale }));
+}
+
+export default async function LocaleLayout({ children, params }: LayoutProps<"/[locale]">) {
+  const { locale } = await params;
+  const messages = await getMessages();
   return (
-    <html lang="...">
+    <html lang={locale}>
       <body>
-        <ApolloWrapper>
-          <Header />
-          <main>{children}</main>
-          <Footer />
-        </ApolloWrapper>
+        <NextIntlClientProvider messages={messages}>
+          <ApolloClientProvider>
+            <Header locale={locale} />
+            <main>{children}</main>
+            <Footer locale={locale} />
+          </ApolloClientProvider>
+        </NextIntlClientProvider>
       </body>
     </html>
   );
@@ -107,32 +223,40 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
 
 ## 4d. Pages — one per menu item
 
-Generate a Next.js page for **each menu item** based on its `url`:
-- `url: "/"` → `app/page.tsx`
-- `url: "/about"` → `app/about/page.tsx`
-- `url: "/contact"` → `app/contact/page.tsx`
+All pages live under `app/[locale]/` — never under `app/` directly.
 
-Each page imports and renders its matching section component.
+- `url: "/"` → `app/[locale]/page.tsx`
+- `url: "/about"` → `app/[locale]/about/page.tsx`
+- `url: "/contact"` → `app/[locale]/contact/page.tsx`
 
-**Dynamic CMS page** `app/[slug]/page.tsx`:
+Each page receives `params: { locale: string }` and passes it as `language` to every query.
+
+**Dynamic CMS page** `app/[locale]/[slug]/page.tsx`:
 ```typescript
 import { getClient } from "@/lib/apollo-client";
 import { GET_PAGE_BY_SLUG, GET_PAGES } from "@/lib/graphql/queries/cms";
+import { routing } from "@/i18n/routing";
 import { notFound } from "next/navigation";
 
 export async function generateStaticParams() {
-  const { data } = await getClient().query({
-    query: GET_PAGES,
-    variables: { language: "en" },
-    context: { fetchOptions: { next: { revalidate: 60 } } },
-  });
-  return (data.cpPages ?? []).map((p: { slug: string }) => ({ slug: p.slug }));
+  const results = await Promise.all(
+    routing.locales.map(async (locale) => {
+      const { data } = await getClient().query({
+        query: GET_PAGES,
+        variables: { language: locale },
+        context: { fetchOptions: { next: { revalidate: 60 } } },
+      });
+      return (data.cpPages ?? []).map((p: { slug: string }) => ({ locale, slug: p.slug }));
+    })
+  );
+  return results.flat();
 }
 
-export default async function CmsPage({ params }: { params: { slug: string } }) {
+export default async function CmsPage({ params }: { params: { locale: string; slug: string } }) {
+  const { locale, slug } = await params;
   const { data } = await getClient().query({
     query: GET_PAGE_BY_SLUG,
-    variables: { slug: params.slug, language: "en" },
+    variables: { slug, language: locale },
     context: { fetchOptions: { next: { revalidate: 60 } } },
   });
   if (!data.cpPageDetail) notFound();
@@ -144,25 +268,32 @@ export default async function CmsPage({ params }: { params: { slug: string } }) 
 }
 ```
 
-**Dynamic blog post** `app/blog/[slug]/page.tsx`:
+**Dynamic blog post** `app/[locale]/blog/[slug]/page.tsx`:
 ```typescript
 import { getClient } from "@/lib/apollo-client";
 import { GET_POST_BY_SLUG, GET_POSTS } from "@/lib/graphql/queries/cms";
+import { routing } from "@/i18n/routing";
 import { notFound } from "next/navigation";
 
 export async function generateStaticParams() {
-  const { data } = await getClient().query({
-    query: GET_POSTS,
-    variables: { language: "en" },
-    context: { fetchOptions: { next: { revalidate: 60 } } },
-  });
-  return (data.cpPosts ?? []).map((p: { slug: string }) => ({ slug: p.slug }));
+  const results = await Promise.all(
+    routing.locales.map(async (locale) => {
+      const { data } = await getClient().query({
+        query: GET_POSTS,
+        variables: { language: locale },
+        context: { fetchOptions: { next: { revalidate: 60 } } },
+      });
+      return (data.cpPosts ?? []).map((p: { slug: string }) => ({ locale, slug: p.slug }));
+    })
+  );
+  return results.flat();
 }
 
-export default async function PostPage({ params }: { params: { slug: string } }) {
+export default async function PostPage({ params }: { params: { locale: string; slug: string } }) {
+  const { locale, slug } = await params;
   const { data } = await getClient().query({
     query: GET_POST_BY_SLUG,
-    variables: { slug: params.slug, language: "en" },
+    variables: { slug, language: locale },
     context: { fetchOptions: { next: { revalidate: 60 } } },
   });
   if (!data.cpPostDetail) notFound();

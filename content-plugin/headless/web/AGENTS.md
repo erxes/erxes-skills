@@ -34,10 +34,30 @@ Clones `erxes-web-starter` into `output/<slug>/`. Skips if already exists.
 ### Step 3 — Read starter files
 Read `output/<slug>/` — understand `app/`, `components/`, `lib/apollo/`, `tailwind.config.*` before writing anything.
 
-### Step 3.5 — Design direction (optional)
-Skip if the user wants to build immediately. Otherwise ask motion level (0–4) and present 3 visual directions from this table.
+### Step 3.5 — UI design source + direction
 
-If the user wants to preview what a direction will look like before committing, read [`agents/pencil-design.md`](agents/pencil-design.md) and use Pencil to generate a mockup. Save outputs to `output/<slug>/designs/`. Show the exported image to the user and ask if they want to proceed with that direction or try another.
+Read `ui_source` and `ui_source_ref` from `site.config.json`, then follow the matching path below.
+
+---
+
+**`words`** — user described the look in text
+Read [`agents/pencil-design.md`](agents/pencil-design.md). Use `ui_source_ref` as the Pencil prompt to generate a mockup. Save to `output/<slug>/designs/design.pen` and export as `design.png`. Show the image to the user and ask for approval or changes before continuing.
+
+**`pencil`** — user has an existing `.pen` file
+Open the file at the path in `ui_source_ref` using the Pencil MCP tools. Read its layout and components as the design reference for Step 4.
+
+**`figma`** — user provided a Figma link or exported assets
+Use the Figma URL or image paths in `ui_source_ref` as visual reference. Read the images and extract layout structure, colors, and component hierarchy to guide Step 4.
+
+**`screenshot`** — user uploaded screenshots
+Read the image files listed in `ui_source_ref`. Extract layout, sections, colors, and component patterns from the screenshots to guide Step 4.
+
+**`website`** — user provided an existing site URL
+Fetch the URL in `ui_source_ref`. Read the HTML structure and styles to extract sections, layout, and visual patterns as design reference for Step 4.
+
+---
+
+After handling the UI source, ask motion level (0–4) and present 3 visual directions from this table (skip if user wants to build immediately).
 
 | Direction | Concept | Extra libraries |
 |---|---|---|
@@ -67,21 +87,40 @@ pnpm dlx shadcn@latest add button card badge separator input
 Read [`agents/generate.md`](agents/generate.md). Write all files into `output/<slug>/`.
 
 ### Step 5 — Seed erxes content
-Generate content in the correct **language** and **tone** for the site type.
+
+Seed content for **every language** in `languages` from `site.config.json`. Generate real translated content — not placeholders — for each locale.
 
 Mutation order (always follow this):
 ```
 cpContentCreateCMS → cpCmsCategoriesAdd → cpCmsTagsAdd → cpCmsPagesAdd → cpCmsPostsAdd → cpCmsAddMenu
 ```
 
+For each language in `languages`, generate a translated content file and run the scripts with `ERXES_LANGUAGE` set to that locale:
+
 ```bash
-tsx scripts/erxes-cms.ts                    # create CMS, save returned _id as ERXES_CMS_ID
-tsx scripts/erxes-pages.ts output/pages.json   # one entry per section
-tsx scripts/erxes-posts.ts output/posts.json   # if has_blog — generate 3 posts
-tsx scripts/erxes-menu.ts  output/menu.json    # hero → "/", others → "/<section>"
+# Repeat for each language, e.g. mn and en:
+
+ERXES_LANGUAGE=mn tsx scripts/erxes-pages.ts output/pages-mn.json
+ERXES_LANGUAGE=mn tsx scripts/erxes-posts.ts output/posts-mn.json   # if has_blog
+ERXES_LANGUAGE=mn tsx scripts/erxes-menu.ts  output/menu-mn.json
+
+ERXES_LANGUAGE=en tsx scripts/erxes-pages.ts output/pages-en.json
+ERXES_LANGUAGE=en tsx scripts/erxes-posts.ts output/posts-en.json   # if has_blog
+ERXES_LANGUAGE=en tsx scripts/erxes-menu.ts  output/menu-en.json
 ```
 
+**Content file naming:** `output/pages-<locale>.json`, `output/posts-<locale>.json`, `output/menu-<locale>.json`
+
+**Content rules:**
+- Pages and posts: write all text in the target language (e.g. Mongolian for `mn`, English for `en`)
+- Menu labels: translate each label into the target language
+- Slugs: keep slugs **identical across all languages** (e.g. `about` stays `about` in both `mn` and `en`) so locale-prefixed URLs like `/mn/about` and `/en/about` map to the same page structure
+- `cms.ts` runs once only — the CMS itself is shared across all languages
+
 ### Step 6 — Verify CMS data
+
+Run the verify query once per language. All must pass before deploying.
+
 ```graphql
 query Verify($language: String) {
   cpPages(language: $language)                         { _id name slug status }
@@ -90,7 +129,7 @@ query Verify($language: String) {
   footer: cpMenus(language: $language, kind: "footer") { _id label url order }
 }
 ```
-Pass: pages exist, posts exist (if `has_blog`), header has ≥ 2 items, footer has ≥ 1 item.
+Pass per language: pages exist, posts exist (if `has_blog`), header has ≥ 2 items, footer has ≥ 1 item.
 
 ### Step 7 — Deploy
 

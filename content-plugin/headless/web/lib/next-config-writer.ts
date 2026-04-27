@@ -19,6 +19,7 @@ const nextConfig = {
     NEXT_PUBLIC_ERXES_ENDPOINT: "${erxesEndpoint}",
     NEXT_PUBLIC_ERXES_APP_TOKEN: "${erxesAppToken}",
     NEXT_PUBLIC_ERXES_CMS_ID: "${erxesCmsId}",
+    ERXES_APP_TOKEN: "${erxesAppToken}",
   },
 };
 

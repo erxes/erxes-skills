@@ -11,5 +11,7 @@
   "erxes_cms_id": "",
   "color_hint": null,
   "extra_notes": null,
-  "deploy_target": "vercel"
+  "deploy_target": "vercel",
+  "ui_source": "words",
+  "ui_source_ref": "A clean modern business site with a bold hero and minimal layout"
 }
