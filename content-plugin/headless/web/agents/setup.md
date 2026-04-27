@@ -2,14 +2,15 @@
 
 Run this before anything else. Ask every field — do not assume or skip.
 
-Question flow rules:
-- Ask exactly **one question at a time**
-- Wait for the user's answer before asking the next question
-- Do **not** show the full checklist or all questions in a single message
-- Do **not** render the setup as one large list of answer options
-- Prefer short plain-text prompts over long selectable cards
-- For free-text fields, use a normal text input prompt, not a radio/select UI
-- Keep each prompt compact so OpenCode Desktop always shows the input and submit button
+## CRITICAL — Conversation style
+
+**Use plain chat only. Do NOT use forms, wizards, structured question lists, or numbered steps.**
+
+- Send one short chat message per question. Wait for the user's reply. Then ask the next.
+- Never batch questions. Never show a checklist. Never render a multi-step form UI.
+- Do not use bullet points, bold labels, or option cards when asking questions — just type the question naturally as you would in a chat.
+- Wrong: rendering "6 of 16 questions" or a wizard UI
+- Right: "What's the site name?" → user replies → "What type of site — business, ecommerce, tour, or hotel?" → user replies → …
 
 ## site.config.json — ask in this order
 

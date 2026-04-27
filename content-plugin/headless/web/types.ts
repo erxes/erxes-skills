@@ -56,12 +56,23 @@ export interface AgentResult<T = unknown> {
   error?: string;
 }
 
+export interface ContentTranslation {
+  language: string;
+  title?: string | null;
+  content?: string | null;
+  excerpt?: string | null;
+  objectId?: string | null;
+  type?: string | null;
+  customFieldsData?: unknown | null;
+}
+
 export interface SeedPage {
   section: string;
   name: string;
   slug: string;
   description: string;
   content: string;
+  translations?: ContentTranslation[];
 }
 
 export interface SeedPost {
@@ -69,6 +80,7 @@ export interface SeedPost {
   slug: string;
   excerpt: string;
   content: string;
+  translations?: ContentTranslation[];
 }
 
 export interface SeedMenuItem {
@@ -76,6 +88,7 @@ export interface SeedMenuItem {
   url: string;
   order: number;
   kind?: string;
+  translations?: ContentTranslation[];
 }
 
 export interface SeedContent {

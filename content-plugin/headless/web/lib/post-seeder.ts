@@ -1,4 +1,4 @@
-import type { SeedPost, ErxesContext } from "../types.js";
+import type { SeedPost, ContentTranslation, ErxesContext } from "../types.js";
 
 const CATEGORY_MUTATION = `
   mutation CpCmsCategoriesAdd($input: PostCategoryInput!) {
@@ -26,7 +26,7 @@ interface PostSeederResult {
 }
 
 export async function postSeeder(
-  category: { name: string; slug: string } | null,
+  category: { name: string; slug: string; translations?: ContentTranslation[] } | null,
   posts: SeedPost[],
   intent: ErxesContext
 ): Promise<PostSeederResult> {
@@ -53,6 +53,7 @@ export async function postSeeder(
             slug: category.slug,
             language: intent.language,
             status: "published",
+            ...(category.translations?.length ? { translations: category.translations } : {}),
           },
         },
       }),
@@ -86,6 +87,7 @@ export async function postSeeder(
             language: intent.language,
             status: "published",
             categoryIds: result.category_id ? [result.category_id] : [],
+            ...(post.translations?.length ? { translations: post.translations } : {}),
           },
         },
       }),

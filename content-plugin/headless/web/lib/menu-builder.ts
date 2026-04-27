@@ -35,6 +35,7 @@ export async function menuBuilder(
             order: item.order,
             language: intent.language,
             kind: item.kind,
+            ...(item.translations?.length ? { translations: item.translations } : {}),
           },
         },
       }),

@@ -35,6 +35,7 @@ export async function pageCreator(
             description: page.description,
             content: page.content,
             status: "published",
+            ...(page.translations?.length ? { translations: page.translations } : {}),
           },
         },
       }),

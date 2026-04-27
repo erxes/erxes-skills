@@ -101,32 +101,65 @@ Mutation order (always follow this):
 cpContentCreateCMS → cpCmsCategoriesAdd → cpCmsTagsAdd → cpCmsPagesAdd → cpCmsPostsAdd → cpCmsAddMenu
 ```
 
-For each language in `languages`, generate a translated content file and run the scripts with `ERXES_LANGUAGE` set to that locale:
+Generate a single content file per type with all languages included using the `translations` field. Run each script **once** — the mutation creates all language versions in a single call.
 
 ```bash
-# Repeat for each language, e.g. mn and en:
-
-ERXES_LANGUAGE=mn tsx scripts/erxes-pages.ts output/pages-mn.json
-ERXES_LANGUAGE=mn tsx scripts/erxes-posts.ts output/posts-mn.json   # if has_blog
-ERXES_LANGUAGE=mn tsx scripts/erxes-menu.ts  output/menu-mn.json
-
-ERXES_LANGUAGE=en tsx scripts/erxes-pages.ts output/pages-en.json
-ERXES_LANGUAGE=en tsx scripts/erxes-posts.ts output/posts-en.json   # if has_blog
-ERXES_LANGUAGE=en tsx scripts/erxes-menu.ts  output/menu-en.json
+tsx scripts/erxes-pages.ts output/pages.json
+tsx scripts/erxes-posts.ts output/posts.json   # if has_blog
+tsx scripts/erxes-menu.ts  output/menu.json
 ```
 
-**Content file naming:** `output/pages-<locale>.json`, `output/posts-<locale>.json`, `output/menu-<locale>.json`
+**Content file format** — primary language is the first in `languages`, all others go in `translations`:
+
+```json
+// pages.json
+[
+  {
+    "section": "about",
+    "name": "Бидний тухай",
+    "slug": "about",
+    "description": "...",
+    "content": "...",
+    "translations": [
+      { "language": "en", "title": "About Us", "content": "..." }
+    ]
+  }
+]
+
+// posts.json
+[
+  {
+    "title": "Монгол гарчиг",
+    "slug": "post-slug",
+    "excerpt": "...",
+    "content": "...",
+    "translations": [
+      { "language": "en", "title": "English Title", "excerpt": "...", "content": "..." }
+    ]
+  }
+]
+
+// menu.json — `kind` is required on every item
+[
+  { "label": "Нүүр", "url": "/", "order": 1, "kind": "header",
+    "translations": [{ "language": "en", "title": "Home" }] },
+  { "label": "Бидний тухай", "url": "/about", "order": 2, "kind": "header",
+    "translations": [{ "language": "en", "title": "About" }] },
+  { "label": "Нүүр", "url": "/", "order": 1, "kind": "footer",
+    "translations": [{ "language": "en", "title": "Home" }] }
+]
+```
 
 **Content rules:**
-- Pages and posts: write all text in the target language (e.g. Mongolian for `mn`, English for `en`)
-- Menu labels: translate each label into the target language
-- Menu items **must include `"kind"`** — use `"header"` or `"footer"`. Items without `kind` won't appear in navigation queries. Include both header and footer items in the same file.
-- Slugs: keep slugs **identical across all languages** (e.g. `about` stays `about` in both `mn` and `en`) so locale-prefixed URLs like `/mn/about` and `/en/about` map to the same page structure
+- Primary content (`name`/`title`/`content`) — write in the default language (first in `languages`)
+- `translations` array — one entry per additional language with translated text
+- Slugs: **identical across all languages** — `about` stays `about` so `/mn/about` and `/en/about` map to the same page
+- Menu items **must include `"kind"`** — `"header"` or `"footer"`. Items without `kind` won't appear in navigation queries.
 - `erxes-cms.ts` runs once only — the CMS itself is shared across all languages
 
 ### Step 6 — Verify CMS data
 
-Run the verify query once per language. All must pass before deploying.
+Run the verify query for each language in `languages`. All must pass before deploying.
 
 ```graphql
 query Verify($language: String) {
