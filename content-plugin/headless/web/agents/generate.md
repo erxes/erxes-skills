@@ -104,13 +104,17 @@ Add a `LanguageSwitcher` component to the Header. Use next-intl's `Link` and `us
 ```typescript
 "use client";
 import { useLocale } from "next-intl";
+// IMPORTANT: import Link and usePathname from @/i18n/routing — NOT from next/link or next/navigation
+// next-intl's usePathname returns the path without the locale prefix
+// next-intl's Link accepts a `locale` prop and handles the switch correctly
 import { Link, usePathname } from "@/i18n/routing";
 
 const LABELS: Record<string, string> = { en: "EN", mn: "МН", zh: "中", ru: "РУ", ko: "한", ja: "日" };
 
 export function LanguageSwitcher({ locales }: { locales: string[] }) {
   const locale = useLocale();
-  const pathname = usePathname();
+  const pathname = usePathname(); // e.g. "/about" — no locale prefix
+
   return (
     <div className="flex gap-2 text-sm">
       {locales.map((l) => (
@@ -309,7 +313,112 @@ export default async function PostPage({ params }: { params: { locale: string; s
 
 ---
 
-## 4e. Section components
+## 4e. SEO & Open Graph metadata
+
+Every page must export `generateMetadata`. Use Next.js `Metadata` type — never add raw `<meta>` tags.
+
+### Root layout — `metadataBase`
+
+Add to `app/[locale]/layout.tsx`:
+
+```typescript
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? "https://example.com"),
+};
+```
+
+### Static pages (home, about, services, contact, etc.)
+
+Each `app/[locale]/<section>/page.tsx` exports a static `metadata` object. Write real copy — not placeholders.
+
+```typescript
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "About Us | <Site Name>",
+  description: "One sentence about what this page covers.",
+  openGraph: {
+    title: "About Us | <Site Name>",
+    description: "One sentence about what this page covers.",
+    type: "website",
+  },
+  twitter: { card: "summary" },
+};
+```
+
+### Dynamic CMS page — `app/[locale]/[slug]/page.tsx`
+
+Add `generateMetadata` above the default export. It fetches the same page the component renders, so Next.js deduplicates the request:
+
+```typescript
+import type { Metadata } from "next";
+
+export async function generateMetadata(
+  { params }: { params: { locale: string; slug: string } }
+): Promise<Metadata> {
+  const { locale, slug } = await params;
+  const { data } = await getClient().query({
+    query: GET_PAGE_BY_SLUG,
+    variables: { slug, language: locale },
+    context: { fetchOptions: { next: { revalidate: 60 } } },
+  });
+  const page = data.cpPageDetail;
+  if (!page) return {};
+  return {
+    title: page.name,
+    description: page.description ?? undefined,
+    openGraph: {
+      title: page.name,
+      description: page.description ?? undefined,
+      type: "website",
+    },
+    twitter: { card: "summary" },
+  };
+}
+```
+
+### Dynamic blog post — `app/[locale]/blog/[slug]/page.tsx`
+
+```typescript
+import type { Metadata } from "next";
+
+export async function generateMetadata(
+  { params }: { params: { locale: string; slug: string } }
+): Promise<Metadata> {
+  const { locale, slug } = await params;
+  const { data } = await getClient().query({
+    query: GET_POST_BY_SLUG,
+    variables: { slug, language: locale },
+    context: { fetchOptions: { next: { revalidate: 60 } } },
+  });
+  const post = data.cpPostDetail;
+  if (!post) return {};
+  const ogImages = post.featuredImage?.url ? [{ url: post.featuredImage.url }] : [];
+  return {
+    title: post.title,
+    description: post.excerpt ?? undefined,
+    openGraph: {
+      title: post.title,
+      description: post.excerpt ?? undefined,
+      type: "article",
+      publishedTime: post.publishedDate ?? undefined,
+      images: ogImages,
+    },
+    twitter: {
+      card: ogImages.length ? "summary_large_image" : "summary",
+      title: post.title,
+      description: post.excerpt ?? undefined,
+      images: post.featuredImage?.url ? [post.featuredImage.url] : [],
+    },
+  };
+}
+```
+
+---
+
+## 4f. Section components
 
 One component per section in `sections`:
 - Path: `components/<SectionName>.tsx`
@@ -359,6 +468,7 @@ export interface Post {
   readonly tagIds?: readonly string[];
   readonly featuredImage?: Media;
   readonly featured?: boolean;
+  readonly featuredImage?: Media;
 }
 
 export interface NavItem {
@@ -373,6 +483,7 @@ export interface CmsPage {
   readonly _id: string;
   readonly name: string;
   readonly slug: string;
+  readonly description?: string;
   readonly content?: string;
   readonly pageItems?: ReadonlyArray<{
     readonly _id: string;
@@ -459,7 +570,7 @@ import { gql } from "@apollo/client";
 export const GET_PAGES = gql`
   query CpPages($language: String) {
     cpPages(language: $language) {
-      _id name slug status content
+      _id name slug status description content
       pageItems { _id name type content order config }
     }
   }
@@ -468,7 +579,7 @@ export const GET_PAGES = gql`
 export const GET_PAGE_BY_SLUG = gql`
   query CpPageBySlug($slug: String!, $language: String) {
     cpPageDetail(slug: $slug, language: $language) {
-      _id name slug status content
+      _id name slug status description content
       pageItems { _id name type content order config }
     }
   }
@@ -478,6 +589,7 @@ export const GET_POSTS = gql`
   query CpPosts($language: String, $categoryId: String, $page: Int, $perPage: Int) {
     cpPosts(language: $language, status: published, categoryId: $categoryId, page: $page, perPage: $perPage) {
       _id title slug excerpt content featured publishedDate categoryIds tagIds
+      featuredImage { url altText }
     }
   }
 `;
@@ -486,6 +598,7 @@ export const GET_POST_BY_SLUG = gql`
   query CpPostBySlug($slug: String!, $language: String) {
     cpPostDetail(slug: $slug, language: $language) {
       _id title slug content excerpt featured publishedDate categoryIds tagIds
+      featuredImage { url altText }
     }
   }
 `;

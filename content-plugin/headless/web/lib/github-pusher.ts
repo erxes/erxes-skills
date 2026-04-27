@@ -65,6 +65,11 @@ export async function githubPusher(
     try { run("git checkout -b main"); } catch { /* already on main */ }
   }
 
+  // Ensure git identity is set (required for commit; local to this repo only)
+  run(`git config user.email "dev@erxes.io"`);
+  run(`git config user.name "erxes"`);
+
+
   // Always update remote first so the push target is correct
   try {
     run(`git remote add origin ${remoteWithToken}`);

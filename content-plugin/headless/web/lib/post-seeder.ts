@@ -51,6 +51,7 @@ export async function postSeeder(
           input: {
             name: category.name,
             slug: category.slug,
+            language: intent.language,
             status: "published",
           },
         },
@@ -82,6 +83,7 @@ export async function postSeeder(
             slug: post.slug,
             content: post.content,
             excerpt: post.excerpt,
+            language: intent.language,
             status: "published",
             categoryIds: result.category_id ? [result.category_id] : [],
           },

@@ -57,6 +57,12 @@ Fetch the URL in `ui_source_ref`. Read the HTML structure and styles to extract 
 
 ---
 
+**If `required_sections` is empty or `"design"` in `site.config.json`:**
+After analyzing the UI source above, identify which sections are present in the design layout. Map them to valid section names (`about`, `services`, `blog`, `contact`, `gallery`, `pricing`, `team`, `testimonials`, `faq`, `menu`, `portfolio`). Write the detected sections back into `site.config.json` as `required_sections` before continuing to Step 4. Show the detected list to the user and ask for confirmation.
+
+**If `ui_source` is `pencil`, `figma`, `screenshot`, or `website`:**
+Extract the dominant primary color from the design and write it back into `site.config.json` as `color_hint` (e.g. `"forest-green"`, `"navy"`, `"warm-orange"`). Do not ask the user for it.
+
 After handling the UI source, ask motion level (0–4) and present 3 visual directions from this table (skip if user wants to build immediately).
 
 | Direction | Concept | Extra libraries |
@@ -114,8 +120,9 @@ ERXES_LANGUAGE=en tsx scripts/erxes-menu.ts  output/menu-en.json
 **Content rules:**
 - Pages and posts: write all text in the target language (e.g. Mongolian for `mn`, English for `en`)
 - Menu labels: translate each label into the target language
+- Menu items **must include `"kind"`** — use `"header"` or `"footer"`. Items without `kind` won't appear in navigation queries. Include both header and footer items in the same file.
 - Slugs: keep slugs **identical across all languages** (e.g. `about` stays `about` in both `mn` and `en`) so locale-prefixed URLs like `/mn/about` and `/en/about` map to the same page structure
-- `cms.ts` runs once only — the CMS itself is shared across all languages
+- `erxes-cms.ts` runs once only — the CMS itself is shared across all languages
 
 ### Step 6 — Verify CMS data
 

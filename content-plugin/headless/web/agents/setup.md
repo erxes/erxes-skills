@@ -37,11 +37,10 @@ Question flow rules:
    > "What tone? Choose: `formal` / `casual` / `modern` / `traditional` / `playful`"
 
 5. **Sections**
-   > "Which sections should be included? Type a comma-separated list. Hero is always included, so you do not need to type it. Example: `about, services, contact`"
-   - Ask for a **typed answer**, not a long multi-select UI
-   - Keep the prompt short so OpenCode Desktop can show the input and submit button
+   > "Which sections should be included? Type a comma-separated list, or type `design` to detect sections from your UI design. Hero is always included. Example: `about, services, contact`"
    - Valid sections: `about`, `services`, `blog`, `contact`, `gallery`, `pricing`, `team`, `testimonials`, `faq`, `menu`, `portfolio`
    - If the user includes `hero`, keep it, but do not require it
+   - If the user types `design`: skip saving sections now — defer to Step 3.5 where the UI source is analyzed. After analyzing the design, extract the sections present in the layout and save them to `site.config.json` before continuing to Step 4.
 
 6. **UI source**
    > "How do you want the UI designed? Choose: `words` / `pencil` / `figma` / `screenshot` / `website`"
@@ -59,8 +58,9 @@ Question flow rules:
      - `website` → "What is the URL of the existing website?"
    - Save the follow-up answer as `ui_source_ref` in `site.config.json`
 
-7. **Color hint**
+7. **Color hint** — skip this question if `ui_source` is anything other than `words`
    > "Primary color? (e.g. `brown`, `blue`, `forest-green`) — or Enter to skip"
+   - If the user provided a design (`pencil`, `figma`, `screenshot`, or `website`), do **not** ask this — the color will be extracted from the design in Step 3.5. Set `color_hint` to `null`.
 
 8. **Extra notes**
    > "Any extra requirements or notes? — or Enter to skip"

@@ -8,7 +8,11 @@ export function nextConfigWriter(outputDir: string): void {
 
   if (!erxesEndpoint) throw new Error("ERXES_ENDPOINT is not set in .env");
 
-  const content = `/** @type {import('next').NextConfig} */
+  const content = `import createNextIntlPlugin from "next-intl/plugin";
+
+const withNextIntl = createNextIntlPlugin("./src/i18n/request.ts");
+
+/** @type {import('next').NextConfig} */
 const nextConfig = {
   output: "export",
   distDir: "dist",
@@ -23,7 +27,7 @@ const nextConfig = {
   },
 };
 
-export default nextConfig;
+export default withNextIntl(nextConfig);
 `;
 
   const configPath = join(outputDir, "next.config.mjs");

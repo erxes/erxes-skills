@@ -2,12 +2,13 @@
  * Create navigation menu items in erxes from a JSON file.
  * Usage: tsx scripts/erxes-menu.ts <menu.json>
  *
- * Input JSON format:
+ * Input JSON format — `kind` is required ("header" or "footer"):
  * [
- *   { "label": "Home",    "url": "/",       "order": 1 },
- *   { "label": "Menu",    "url": "/menu",   "order": 2 },
- *   { "label": "Blog",    "url": "/blog",   "order": 3 },
- *   { "label": "Contact", "url": "/contact","order": 4 }
+ *   { "label": "Home",    "url": "/",       "order": 1, "kind": "header" },
+ *   { "label": "About",   "url": "/about",  "order": 2, "kind": "header" },
+ *   { "label": "Contact", "url": "/contact","order": 3, "kind": "header" },
+ *   { "label": "Home",    "url": "/",       "order": 1, "kind": "footer" },
+ *   { "label": "Contact", "url": "/contact","order": 2, "kind": "footer" }
  * ]
  *
  * Output: prints array of created menu item _ids as JSON
