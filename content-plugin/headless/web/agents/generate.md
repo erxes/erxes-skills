@@ -2,6 +2,14 @@
 
 Write all files directly into `output/<slug>/`.
 
+**Images — always use the shared `Image` component:**
+```tsx
+import Image from "@/components/common/Image";
+// <Image src={url} alt={alt} width={800} height={600} />
+```
+- Never use `<img>` tags or `next/image` directly in generated pages or section components.
+- `Image` handles erxes file URLs (`/read-file?key=…`), fallback to `/images/placeholder.png`, and load errors automatically.
+
 ---
 
 ## 4a. Mock data layer (`lib/mock/`)
@@ -577,6 +585,7 @@ One component per section in `sections`:
 - Server Components — use `getClient().query()` to fetch content
 - Tailwind CSS matching `tone` and `color_hint`
 - All UI text in the config language
+- All images via `import Image from "@/components/common/Image"` — never `<img>` or `next/image` directly
 
 ---
 
