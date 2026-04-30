@@ -231,6 +231,7 @@ export async function configLoader(): Promise<SiteIntent> {
   const has_blog = config.required_sections.includes("blog");
   const has_contact = config.required_sections.includes("contact");
   const has_ecommerce = config.site_type === "ecommerce";
+  const has_auth = ["ecommerce", "tour", "hotel"].includes(config.site_type);
 
   console.log("→ [config-loader] Done");
 
@@ -255,6 +256,7 @@ export async function configLoader(): Promise<SiteIntent> {
     has_blog,
     has_contact,
     has_ecommerce,
+    has_auth,
     color_hint: config.color_hint ?? null,
     extra_notes: config.extra_notes ?? null,
   };

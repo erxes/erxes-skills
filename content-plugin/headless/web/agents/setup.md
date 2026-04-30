@@ -146,34 +146,41 @@ Run this before anything else. Ask every field — do not assume or skip.
      - "Vercel API token?" — get from vercel.com → Settings → Tokens
      - "Vercel team/org ID?" — get from vercel.com → Team Settings → General → Team ID
    - `github` — push to GitHub only, no Vercel deploy
+10. **Deployment target**
+   > Render as `single-select + Other input`
+   > Recommended options: `vercel`, `github`
+   - `vercel` — push to GitHub and deploy to Vercel (live URL returned)
+   - `github` — push to GitHub only (no Vercel deploy)
    - Save as `deploy_target` in `site.config.json`
 
 11. **erxes SaaS URL**
    > Render as `text input`
    > Placeholder: `https://producttest.next.erxes.io`
+   - Explain to the user: "erxes is the admin dashboard where you manage your website's content — pages, blog posts, navigation, and more. Your erxes SaaS URL is the address of that dashboard. It looks like `https://yourname.next.erxes.io`. Learn more at [erxes.io](https://erxes.io)."
    - After the user answers, generate `ERXES_ENDPOINT` by appending `/gateway/graphql`
-   - Example:
-     `https://producttest.next.erxes.io` → `https://producttest.next.erxes.io/gateway/graphql`
+   - Example: `https://producttest.next.erxes.io` → `https://producttest.next.erxes.io/gateway/graphql`
 
-12. **erxes app token**
+12. **Client Portal Token**
    > Render as `password input`
-   - Instruction: `Settings` → `Client portal` → `Create client portal` → copy the token
+   - Explain to the user: "The Client Portal Token is a secret key that lets your website talk to erxes. Think of it as a password your site uses to fetch content. To get it: open your erxes dashboard → go to **Settings** → **Create client portal** → copy the **Client portal token** shown there."
+   - Save as `erxes_app_token` in `site.config.json` and `ERXES_APP_TOKEN` in `.env`
 
-13. **Client portal ID**
+13. **Client Portal ID**
    > Render as `text input`
-   - Ask for the client portal ID, not the CMS ID
+   - Explain to the user: "The Client Portal ID is a unique code that identifies your website inside erxes — like a membership number. You can find it in the URL when you open your client portal settings. Go to your erxes dashboard → **Settings** → **Client portals** → click your portal — the ID is the last part of the URL. For example: `/settings/client-portals/lWmweu_sStCu8_7dHfkuy` → your ID is `lWmweu_sStCu8_7dHfkuy`. Copy that and paste it here."
    - Use this when calling `cpContentCreateCMS`
-   - Do not ask the user for `erxes CMS ID`
+   - Do not ask the user for `erxes CMS ID` — it is created automatically after setup
    - After setup, create the CMS automatically and save the returned `_id` as `ERXES_CMS_ID`
 
 ## .env — ask for any that are missing
 
-14. **GitHub token**
-    - Render as `password input`
-    - Instruction: GitHub → `Settings` → `Developer settings` → `Personal access tokens` → create a token with repo access, then copy it
-15. **GitHub username**
+14. **GitHub username**
     - Render as `text input`
-    - Instruction: open GitHub and copy the username shown in your profile menu or profile URL
+    - Explain to the user: "Your GitHub username is the name shown in the top-right corner when you're logged in to GitHub, or the last part of your profile URL — e.g. `github.com/johndoe` → username is `johndoe`."
+
+15. **GitHub token**
+    - Render as `password input`
+    - Explain to the user: "A GitHub token lets the tool create a private repo for your site and push the code there. To generate one: go to GitHub → click your profile photo → **Settings** → **Developer settings** → **Personal access tokens** → **Tokens (classic)** → **Generate new token** → **Generate new token (classic)**. In the form: set **Note** to your site name (e.g. `my-coffee-shop`), choose an **Expiration** (how long the token stays valid — 90 days is a safe default), check all **repo** scopes (`repo`, `repo:status`, `repo_deployment`, `public_repo`, `repo:invite`, `security_events`), then click **Generate token**. Copy the token immediately — GitHub only shows it once."
 16. **Starter repo URL** — do **not** ask the user. Always use the value already set in `.env` (`STARTER_REPO_URL=https://github.com/pages-web/erxes-web-starter`). Never overwrite it.
 17. **Vercel token** — render as `password input` — **only ask if `deploy_target` is `vercel`**
 18. **Vercel org ID** — render as `text input` — **only ask if `deploy_target` is `vercel`**

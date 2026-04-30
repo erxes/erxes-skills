@@ -426,7 +426,151 @@ export async function generateMetadata(
 
 ---
 
-## 4f. Section components
+## 4f. Auth (`has_auth` — ecommerce / tour / hotel only)
+
+Skip this section entirely if `site_type` is `business`.
+
+The starter already has all GraphQL operations in `src/graphql/auth/`. Import from there — do not rewrite the queries.
+
+### Auth context — `lib/auth/AuthContext.tsx`
+
+```tsx
+"use client";
+import { createContext, useContext, useEffect, useState } from "react";
+import { useQuery, useMutation } from "@apollo/client";
+import { CLIENT_PORTAL_CURRENT_USER } from "@/graphql/auth/queries";
+import { CLIENT_PORTAL_LOGOUT } from "@/graphql/auth/mutations";
+import type { CPUser } from "@/graphql/auth/queries";
+
+interface AuthContextValue {
+  user: CPUser | null;
+  loading: boolean;
+  logout: () => Promise<void>;
+  refetch: () => void;
+}
+
+const AuthContext = createContext<AuthContextValue>({
+  user: null, loading: true, logout: async () => {}, refetch: () => {},
+});
+
+export function AuthProvider({ children }: { children: React.ReactNode }) {
+  const { data, loading, refetch } = useQuery(CLIENT_PORTAL_CURRENT_USER);
+  const [logoutMutation] = useMutation(CLIENT_PORTAL_LOGOUT);
+
+  const logout = async () => {
+    await logoutMutation();
+    refetch();
+  };
+
+  return (
+    <AuthContext.Provider value={{ user: data?.clientPortalCurrentUser ?? null, loading, logout, refetch }}>
+      {children}
+    </AuthContext.Provider>
+  );
+}
+
+export const useAuth = () => useContext(AuthContext);
+```
+
+Add `<AuthProvider>` inside `ApolloClientProvider` in `app/[locale]/layout.tsx`.
+
+### Pages to generate
+
+| Route | File | Purpose |
+|---|---|---|
+| `/login` | `app/[locale]/login/page.tsx` | Email/phone + password login |
+| `/register` | `app/[locale]/register/page.tsx` | New account registration |
+| `/forgot-password` | `app/[locale]/forgot-password/page.tsx` | Request reset link/OTP |
+| `/reset-password` | `app/[locale]/reset-password/page.tsx` | Set new password |
+| `/verify` | `app/[locale]/verify/page.tsx` | OTP/email verification after register |
+| `/account` | `app/[locale]/account/page.tsx` | Protected — user profile |
+
+### Login page pattern
+
+```tsx
+"use client";
+import { useMutation } from "@apollo/client";
+import { CLIENT_PORTAL_USER_LOGIN_WITH_CREDENTIALS } from "@/graphql/auth/mutations";
+import { useAuth } from "@/lib/auth/AuthContext";
+import { useRouter } from "next/navigation";
+
+export default function LoginPage() {
+  const router = useRouter();
+  const { refetch } = useAuth();
+  const [login, { loading, error }] = useMutation(CLIENT_PORTAL_USER_LOGIN_WITH_CREDENTIALS);
+
+  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    const form = new FormData(e.currentTarget);
+    await login({ variables: { email: form.get("email"), password: form.get("password") } });
+    refetch();
+    router.push("/account");
+  }
+
+  return (
+    <form onSubmit={handleSubmit}>
+      <input name="email" type="email" required />
+      <input name="password" type="password" required />
+      {error && <p>{error.message}</p>}
+      <button type="submit" disabled={loading}>Log in</button>
+    </form>
+  );
+}
+```
+
+Follow the same pattern for register (`CLIENT_PORTAL_USER_REGISTER`), forgot password (`CLIENT_PORTAL_USER_FORGOT_PASSWORD`), reset password (`CLIENT_PORTAL_USER_RESET_PASSWORD`), and verify (`CLIENT_PORTAL_USER_VERIFY`).
+
+### Protected route wrapper — `components/auth/RequireAuth.tsx`
+
+```tsx
+"use client";
+import { useAuth } from "@/lib/auth/AuthContext";
+import { useRouter } from "next/navigation";
+import { useEffect } from "react";
+
+export function RequireAuth({ children }: { children: React.ReactNode }) {
+  const { user, loading } = useAuth();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (!loading && !user) router.replace("/login");
+  }, [user, loading, router]);
+
+  if (loading) return <div>Loading...</div>;
+  if (!user) return null;
+  return <>{children}</>;
+}
+```
+
+Wrap the `/account` page with `<RequireAuth>`.
+
+### Header auth button
+
+In `components/Header.tsx`, add a client sub-component that shows login/logout based on auth state:
+
+```tsx
+"use client";
+import { useAuth } from "@/lib/auth/AuthContext";
+import Link from "next/link";
+
+export function AuthButton() {
+  const { user, logout, loading } = useAuth();
+  if (loading) return null;
+  if (user) return <button onClick={logout}>Log out</button>;
+  return <Link href="/login">Log in</Link>;
+}
+```
+
+### Rules
+- All auth forms are `"use client"` — they use mutations and state
+- The `/account` page is always protected with `<RequireAuth>`
+- Use `CLIENT_PORTAL_USER_LOGIN_WITH_OTP` as an alternative login flow if the site config requests OTP
+- Never store tokens in `localStorage` — erxes sets an HTTP-only cookie on login
+- All UI text must be in the site's language — use `messages/<locale>.json` for auth labels
+
+---
+
+## 4g. Section components
 
 One component per section in `sections`:
 - Path: `components/<SectionName>.tsx`

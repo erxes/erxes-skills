@@ -48,6 +48,7 @@ export interface SiteIntent {
   has_blog: boolean;
   has_contact: boolean;
   has_ecommerce: boolean;
+  has_auth: boolean;
   color_hint: string | null;
   extra_notes: string | null;
 }
