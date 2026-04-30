@@ -51,8 +51,6 @@ export async function postSeeder(
           input: {
             name: category.name,
             slug: category.slug,
-            language: intent.language,
-            status: "published",
             ...(category.translations?.length ? { translations: category.translations } : {}),
           },
         },

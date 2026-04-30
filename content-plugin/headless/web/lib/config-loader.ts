@@ -6,9 +6,19 @@ import type { SiteConfig, SiteIntent } from "../types.js";
 const VALID_SITE_TYPES = ["business", "ecommerce", "tour", "hotel"];
 const VALID_TONES = ["formal", "casual", "modern", "traditional", "playful"];
 const VALID_LANGUAGES = ["mn", "en", "zh", "ru", "ko", "ja"];
+const VALID_UI_SOURCES = ["words", "pencil", "figma", "screenshot", "website"];
+const VALID_DESIGN_STRATEGIES = [
+  "from-scratch",
+  "copy-site",
+  "improve-site",
+  "brand-first",
+  "beat-competitors",
+];
+const VALID_DEPLOY_TARGETS = ["vercel", "github"];
 const VALID_SECTIONS = [
   "hero", "about", "services", "blog", "contact", "gallery",
   "pricing", "team", "testimonials", "faq", "menu", "portfolio",
+  "design", "career", "product", "location",
 ];
 
 function ask(rl: ReturnType<typeof createInterface>, question: string): Promise<string> {
@@ -24,6 +34,27 @@ function normalizeErxesEndpoint(input: string): string {
   if (!trimmed) return "";
   if (trimmed.endsWith("/gateway/graphql")) return trimmed;
   return `${trimmed}/gateway/graphql`;
+}
+
+function parseCsv(input: string): string[] {
+  return input.split(",").map((value) => value.trim()).filter(Boolean);
+}
+
+function getUiSourcePrompt(uiSource: string): string {
+  switch (uiSource) {
+    case "words":
+      return "Describe the look and feel you want: ";
+    case "pencil":
+      return "Path to your .pen file: ";
+    case "figma":
+      return "Figma file URL or exported image paths: ";
+    case "screenshot":
+      return "Screenshot file path(s): ";
+    case "website":
+      return "URL of the existing website: ";
+    default:
+      return "UI source reference: ";
+  }
 }
 
 async function collectMissing(raw: Partial<SiteConfig>): Promise<SiteConfig> {
@@ -49,7 +80,53 @@ async function collectMissing(raw: Partial<SiteConfig>): Promise<SiteConfig> {
     }
     if (!Array.isArray(raw.required_sections) || raw.required_sections.length === 0) {
       const input = await ask(rl, "Sections (comma-separated): ");
-      raw.required_sections = input.split(",").map((s) => s.trim()).filter(Boolean);
+      raw.required_sections = parseCsv(input);
+    }
+    if (!raw.ui_source || !VALID_UI_SOURCES.includes(raw.ui_source)) {
+      raw.ui_source = (await ask(
+        rl,
+        `UI source (${VALID_UI_SOURCES.join(" | ")}): `
+      )) as SiteConfig["ui_source"];
+    }
+    if (!raw.ui_source_ref?.trim()) {
+      raw.ui_source_ref = await ask(rl, getUiSourcePrompt(raw.ui_source ?? ""));
+    }
+    if (!raw.design_strategy || !VALID_DESIGN_STRATEGIES.includes(raw.design_strategy)) {
+      raw.design_strategy = (await ask(
+        rl,
+        `Design strategy (${VALID_DESIGN_STRATEGIES.join(" | ")}): `
+      )) as SiteConfig["design_strategy"];
+    }
+    if (
+      raw.design_strategy === "copy-site" ||
+      raw.design_strategy === "improve-site"
+    ) {
+      if (raw.ui_source === "website" && raw.ui_source_ref?.trim() && !raw.reference_url?.trim()) {
+        raw.reference_url = raw.ui_source_ref.trim();
+      }
+      if (!raw.reference_url?.trim()) {
+        raw.reference_url = await ask(rl, "Source website URL to copy or improve: ");
+      }
+      raw.competitor_urls = [];
+    } else if (raw.design_strategy === "beat-competitors") {
+      if (!Array.isArray(raw.competitor_urls) || raw.competitor_urls.length < 2) {
+        const input = await ask(rl, "Competitor website URLs, comma-separated (2 to 5): ");
+        raw.competitor_urls = parseCsv(input).slice(0, 5);
+      }
+      raw.reference_url = null;
+    } else {
+      raw.reference_url = null;
+      raw.competitor_urls = [];
+    }
+    if (raw.ui_source === "words" && raw.color_hint === undefined) {
+      const input = await ask(rl, "Primary color (optional, press Enter to skip): ");
+      raw.color_hint = input || null;
+    }
+    if (!raw.deploy_target || !VALID_DEPLOY_TARGETS.includes(raw.deploy_target)) {
+      raw.deploy_target = (await ask(
+        rl,
+        `Deploy target (${VALID_DEPLOY_TARGETS.join(" | ")}): `
+      )) as SiteConfig["deploy_target"];
     }
   } finally {
     rl.close();
@@ -68,6 +145,12 @@ export async function configLoader(): Promise<SiteIntent> {
     tone?: string;
     sections?: string[];
     required_sections?: string[];
+    ui_source?: string;
+    ui_source_ref?: string;
+    design_strategy?: string;
+    reference_url?: string | null;
+    competitor_urls?: string[];
+    deploy_target?: string;
     color_hint?: string;
     extra_notes?: string;
     client_portal_id?: string;
@@ -88,6 +171,12 @@ export async function configLoader(): Promise<SiteIntent> {
     raw.languages = (parsed.languages ?? (parsed.language ? [parsed.language] : [])) as SiteConfig["language"][];
     raw.tone = parsed.tone as SiteConfig["tone"];
     raw.required_sections = parsed.required_sections ?? parsed.sections;
+    raw.ui_source = parsed.ui_source as SiteConfig["ui_source"];
+    raw.ui_source_ref = parsed.ui_source_ref ?? null;
+    raw.design_strategy = parsed.design_strategy as SiteConfig["design_strategy"];
+    raw.reference_url = parsed.reference_url ?? null;
+    raw.competitor_urls = parsed.competitor_urls ?? [];
+    raw.deploy_target = parsed.deploy_target as SiteConfig["deploy_target"];
     raw.color_hint = parsed.color_hint;
     raw.extra_notes = parsed.extra_notes || null;
     configErxes.endpoint = parsed.erxes_endpoint ?? "";
@@ -128,6 +217,12 @@ export async function configLoader(): Promise<SiteIntent> {
   const invalid = config.required_sections.filter((s) => !VALID_SECTIONS.includes(s));
   if (invalid.length) throw new Error(`Unknown sections: ${invalid.join(", ")}`);
   config.required_sections = [...new Set(config.required_sections)];
+  if (config.design_strategy === "beat-competitors") {
+    const competitorCount = config.competitor_urls?.length ?? 0;
+    if (competitorCount < 2) {
+      throw new Error("beat-competitors requires at least 2 competitor URLs");
+    }
+  }
 
   // Derive slug from name
   const slug = toSlug(config.name);
@@ -147,6 +242,12 @@ export async function configLoader(): Promise<SiteIntent> {
     languages: config.languages ?? [config.language],
     tone: config.tone,
     required_sections: config.required_sections,
+    ui_source: config.ui_source ?? null,
+    ui_source_ref: config.ui_source_ref ?? null,
+    design_strategy: config.design_strategy ?? null,
+    reference_url: config.reference_url ?? null,
+    competitor_urls: config.competitor_urls ?? [],
+    deploy_target: config.deploy_target ?? null,
     erxes_endpoint,
     erxes_app_token,
     client_portal_id,
