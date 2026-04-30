@@ -68,8 +68,10 @@ Run this before anything else. Ask every field — do not assume or skip.
 
 9. **Deployment target**
    > "Deploy to Vercel after building, or just push to GitHub? Choose: `vercel` / `github`"
-   - `vercel` — push to GitHub and deploy to Vercel (live URL returned)
-   - `github` — push to GitHub only (no Vercel deploy)
+   - `vercel` — push to GitHub and deploy to Vercel (live URL returned). Requires `VERCEL_TOKEN` and `VERCEL_ORG_ID` in `.env`. If either is missing, ask:
+     - "Vercel API token?" — get from vercel.com → Settings → Tokens
+     - "Vercel team/org ID?" — get from vercel.com → Team Settings → General → Team ID
+   - `github` — push to GitHub only, no Vercel deploy
    - Save as `deploy_target` in `site.config.json`
 
 9. **erxes SaaS URL**
