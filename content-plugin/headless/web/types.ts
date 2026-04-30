@@ -1,6 +1,14 @@
 export type SiteType = "business" | "ecommerce" | "tour" | "hotel";
 export type Tone = "formal" | "casual" | "modern" | "traditional" | "playful";
 export type Language = "mn" | "en" | "zh" | "ru" | "ko" | "ja";
+export type UiSource = "words" | "pencil" | "figma" | "screenshot" | "website";
+export type DesignStrategy =
+  | "from-scratch"
+  | "copy-site"
+  | "improve-site"
+  | "brand-first"
+  | "beat-competitors";
+export type DeployTarget = "vercel" | "github";
 
 export interface SiteConfig {
   name: string;
@@ -9,6 +17,12 @@ export interface SiteConfig {
   languages: Language[];
   tone: Tone;
   required_sections: string[];
+  ui_source?: UiSource | null;
+  ui_source_ref?: string | null;
+  design_strategy?: DesignStrategy | null;
+  reference_url?: string | null;
+  competitor_urls?: string[];
+  deploy_target?: DeployTarget | null;
   color_hint?: string | null;
   extra_notes?: string | null;
 }
@@ -21,6 +35,12 @@ export interface SiteIntent {
   languages: Language[];
   tone: Tone;
   required_sections: string[];
+  ui_source: UiSource | null;
+  ui_source_ref: string | null;
+  design_strategy: DesignStrategy | null;
+  reference_url: string | null;
+  competitor_urls: string[];
+  deploy_target: DeployTarget | null;
   erxes_endpoint: string;
   erxes_app_token: string;
   client_portal_id: string;
@@ -118,4 +138,40 @@ export interface ContentMap {
   category_id: string | null;
   post_ids: string[];
   menu_ids: string[];
+}
+
+export interface SiteAuditLink {
+  url: string;
+  label: string;
+  source: "nav" | "footer" | "content" | "locale" | "sitemap";
+}
+
+export interface SiteAuditContact {
+  emails: string[];
+  phones: string[];
+}
+
+export interface SiteAuditPage {
+  url: string;
+  pathname: string;
+  title: string | null;
+  description: string | null;
+  locale: string | null;
+  html_lang: string | null;
+  headings: string[];
+  cta_labels: string[];
+  text_blocks: string[];
+  links: SiteAuditLink[];
+  contact: SiteAuditContact;
+  source: SiteAuditLink["source"] | "seed";
+}
+
+export interface SiteAuditResult {
+  site: string;
+  start_url: string;
+  audited_at: string;
+  locales: string[];
+  audited_pages: SiteAuditPage[];
+  discovered_pages: string[];
+  skipped_pages: string[];
 }

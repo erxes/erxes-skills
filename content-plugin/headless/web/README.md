@@ -1,8 +1,8 @@
 # erxes CMS — Headless Web
 
-AI-powered scaffolding tool that builds and deploys Next.js websites connected to [erxes](https://erxes.io) headless CMS.
+AI-powered scaffolding tool that designs, builds, seeds, and deploys Next.js websites connected to [erxes](https://erxes.io) headless CMS.
 
-You describe a site. The AI collects config, clones a starter repo, generates a full Next.js frontend, seeds your erxes CMS with pages, posts, and navigation in every language, and deploys to Vercel — all from a single conversation in OpenCode.
+You describe a site. The AI collects config, creates the design system in Pencil, generates a full Next.js frontend from that handoff, seeds your erxes CMS with pages, posts, and navigation in every language, and deploys to Vercel — all from a single conversation in OpenCode.
 
 ---
 
@@ -13,12 +13,17 @@ This repo provides the mechanical tools (CLI scripts + utility functions). The A
 ```
 You (in OpenCode chat)
   └── OpenCode reads AGENTS.md — knows the full pipeline
+        ├── creates design artifacts
+        │     ├── design.pen / design.png        → approved Pencil design
+        │     ├── design-tokens.json             → visual and motion tokens
+        │     ├── ui-libraries.json              → install and animation plan
+        │     └── HANDOFF.md                     → frontend + CMS mapping
         └── calls scripts via CLI
-              ├── tsx scripts/clone.ts          → clones starter repo
+              ├── tsx scripts/clone.ts           → clones starter repo
               ├── tsx scripts/erxes-cms.ts       → creates CMS, saves CMS ID
-              ├── tsx scripts/erxes-pages.ts     → seeds CMS pages (per language)
-              ├── tsx scripts/erxes-posts.ts     → seeds blog posts (per language)
-              ├── tsx scripts/erxes-menu.ts      → builds navigation (per language)
+              ├── tsx scripts/erxes-pages.ts     → seeds CMS pages
+              ├── tsx scripts/erxes-posts.ts     → seeds blog posts
+              ├── tsx scripts/erxes-menu.ts      → builds navigation
               └── tsx scripts/deploy.ts          → pushes to GitHub + deploys to Vercel
 ```
 
@@ -88,7 +93,7 @@ Once inside OpenCode, type:
 Build a new site
 ```
 
-OpenCode reads `AGENTS.md` and walks you through setup one question at a time — then builds and deploys everything automatically.
+OpenCode reads `AGENTS.md` and walks you through setup one question at a time, creates homepage direction previews in Pencil, waits for your selection, then builds and deploys everything automatically.
 
 ### What OpenCode will ask you
 
@@ -98,12 +103,29 @@ OpenCode reads `AGENTS.md` and walks you through setup one question at a time �
 4. **Tone** — `formal` / `casual` / `modern` / `traditional` / `playful`
 5. **Sections** — comma-separated list, or type `design` to detect from your UI
 6. **UI source** — `words` / `pencil` / `figma` / `screenshot` / `website`
-7. **Primary color** — only asked if no design is provided (e.g. `forest-green`)
-8. **Extra notes** — any additional requirements (optional)
-9. **Deploy target** — `vercel` (GitHub + Vercel) or `github` (GitHub only)
-10. **erxes SaaS URL** — base URL, e.g. `https://yourname.next.erxes.io`
-11. **erxes app token** — from `Settings → Client portal → Create client portal`
-12. **Client portal ID** — same place as the app token
+7. **Design strategy** — `from-scratch` / `copy-site` / `improve-site` / `brand-first` / `beat-competitors`
+8. **Primary color** — only asked if no design is provided (e.g. `forest-green`)
+9. **Extra notes** — any additional requirements (optional)
+10. **Deploy target** — `vercel` (GitHub + Vercel) or `github` (GitHub only)
+11. **erxes SaaS URL** — base URL, e.g. `https://yourname.next.erxes.io`
+12. **erxes app token** — from `Settings → Client portal → Create client portal`
+13. **Client portal ID** — same place as the app token
+
+After setup, the design stage is:
+
+1. Present 3 visual directions
+2. Build 2 to 3 full-homepage options in Pencil
+3. Export preview images and ask you to choose one homepage
+4. Expand the chosen homepage into the full design package
+5. Only then start frontend implementation
+
+For `website` + `copy-site` / `improve-site`, OpenCode should first run:
+
+```bash
+pnpm site:audit "<source-url>" "output/<slug>/source-audit.json"
+```
+
+That audit inventory is then used to preserve page structure, locale variants, navigation, and source static text.
 
 ### Updating an existing site
 
@@ -127,9 +149,11 @@ content-plugin/headless/web/
 ├── agents/
 │   ├── setup.md            ← setup questions and site.config.json schema
 │   ├── conventions.md      ← code rules the AI must follow
+│   ├── frontend.md         ← design-token-driven frontend implementation guide
 │   ├── generate.md         ← code generation guide (i18n, Apollo, SEO, components)
 │   ├── reference.md        ← mutations, env vars, file ownership, checklist
-│   └── pencil-design.md    ← UI mockup generation with Pencil
+│   ├── animations.md       ← animation library implementation reference
+│   └── pencil-design.md    ← design system + Pencil handoff generation
 ├── scripts/                ← CLI tools called by OpenCode
 │   ├── clone.ts            → clone starter repo into output/<slug>/
 │   ├── erxes-cms.ts        → create CMS record, save returned ID

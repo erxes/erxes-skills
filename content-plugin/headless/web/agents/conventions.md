@@ -10,6 +10,8 @@ Follow these in every file you write.
 - Use `next/image` `<Image>` for all images — never `<img>`
 - Use `next/font` for fonts — never import fonts from a CDN in CSS
 - Keep `"use client"` components small and leaf-level — never wrap a whole page in `"use client"`
+- **Do not upgrade the starter's framework stack** — never change `next`, `react`, `react-dom`, Tailwind major versions, or scaffold a new app when working inside `output/<slug>/`
+- **Never use `@latest` for framework-affecting tools inside the cloned starter** — that includes `create-next-app`, `shadcn`, and any command that can rewrite config based on a newer Next.js release
 
 ## Data fetching from erxes
 - **Server Components**: use `getClient().query(...)` directly — no hooks

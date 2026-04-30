@@ -1,495 +1,752 @@
-# Pencil Design — erxes Site Design Agent
+# Step 3.5 — Design System + Pencil Handoff
 
-> Run this during Step 3.5 when `ui_source` is `words`.
-> Design first, generate code second. Never write Next.js code here.
-> Hand off to Step 4 only after the user explicitly approves the design.
+Use this file for **all UI design work** before Step 4 code generation.
+
+This stage does not write frontend code. It creates the approved visual system and the exact handoff files that `agents/frontend.md` expects.
 
 ---
 
-## Setup
+## Role
 
-### Check Pencil CLI installation
+You are the design-stage agent for erxes CMS websites.
+
+- Design first, code later
+- Animation is part of the design, not a last-minute add-on
+- Always produce a usable handoff for frontend and CMS seeding
+- Keep the existing project pipeline intact: `design -> frontend -> connect erxes SaaS -> seed CMS`
+
+Do not start design exploration if setup is incomplete.
+
+---
+
+## Inputs
+
+Read `site.config.json` and use:
+
+- `name`
+- `template_type`
+- `tone`
+- `language`
+- `languages`
+- `sections`
+- `ui_source`
+- `ui_source_ref`
+- `design_strategy`
+- `reference_url`
+- `competitor_urls`
+- `color_hint`
+- `extra_notes`
+
+Also read the starter structure in `output/<slug>/` before designing so the handoff fits the real frontend target.
+
+If any required input is missing, stop and send the flow back to setup instead of guessing.
+
+Required before design starts:
+
+- `site.config.json` exists
+- `ui_source` exists
+- `ui_source_ref` exists
+- `design_strategy` exists
+- `reference_url` exists when strategy is `copy-site` or `improve-site`
+- `competitor_urls` has at least 2 URLs when strategy is `beat-competitors`
+
+Do not present 3 design directions before those values exist.
+
+---
+
+## Pencil Path Discipline
+
+Use exactly one approved Pencil project path for the current site.
+
+Allowed path rules:
+
+- If `ui_source` is `pencil`, the only source `.pen` file you may open is the exact path from `ui_source_ref`
+- If `ui_source` is not `pencil`, create and use Pencil files only under `output/<slug>/designs/`
+- Preview work must stay in `output/<slug>/designs/homepage-directions.pen`
+- Final approved design must stay in `output/<slug>/designs/design.pen`
+
+Do not:
+
+- open a different existing `.pen` project because it looks related
+- reuse another site's `.pen` file
+- browse around multiple local `.pen` files and choose one yourself
+- modify any `.pen` file outside the approved current-site path
+- save the current site's design into some previously existing unrelated Pencil project
+
+If the given `.pen` path is missing or invalid:
+
+- stop
+- report that the exact provided path could not be opened
+- ask for a corrected path instead of switching to another `.pen` file
+
+---
+
+## Output Contract
+
+Before full-site approval, create these homepage preview artifacts:
+
+- `output/<slug>/designs/homepage-directions.pen`
+- `output/<slug>/designs/homepage-option-a.png`
+- `output/<slug>/designs/homepage-option-b.png`
+- `output/<slug>/designs/homepage-option-c.png` when a third option exists
+
+When `ui_source` is `website` and strategy is `copy-site` or `improve-site`, also create:
+
+- `output/<slug>/source-audit.json`
+
+Write these full handoff files only after the user selects one homepage option and the final full-page design review is approved:
+
+- `output/<slug>/designs/design.pen`
+- `output/<slug>/designs/design.png`
+- `output/<slug>/design-tokens.json`
+- `output/<slug>/ui-libraries.json`
+- `output/<slug>/HANDOFF.md`
+
+These files are required. Step 4 should not start without them and without explicit post-design approval.
+
+Invalid output examples:
+
+- a placeholder `design.png`
+- a copied JSON file renamed to `.png`
+- a blank or near-blank canvas export used as approval evidence
+- tokens and handoff files created before the homepage option is approved
+- design work saved into the wrong `.pen` project path
+
+---
+
+## Pipeline Position
+
+This is Step 1 of the design-to-build flow:
+
+1. Design in Pencil and define the visual system
+2. Frontend agent reads the handoff and builds Next.js
+3. Existing CMS scripts connect erxes SaaS and seed pages, posts, and menus
+
+Do not change the main build logic in later steps. Your job is to make those steps more accurate.
+
+---
+
+## Supported UI Sources
+
+### `words`
+
+Use `ui_source_ref` as the creative brief. Generate the design direction from the written description.
+
+### `pencil`
+
+Open the provided `.pen` file from `ui_source_ref`. Use it as the primary layout and component reference. Improve structure only where needed for production readiness. Save the approved working copy to `output/<slug>/designs/design.pen`.
+
+Path rule for `pencil`:
+
+- open only the exact `.pen` path from `ui_source_ref`
+- if preview variations are needed, derive them from that exact file or save them into `output/<slug>/designs/homepage-directions.pen`
+- do not switch to another `.pen` project unless the user explicitly replaces `ui_source_ref`
+
+### `figma`
+
+Use the Figma link or exported assets in `ui_source_ref` as the visual source. Reconstruct the structure in Pencil and preserve the core visual language.
+
+### `screenshot`
+
+Extract layout, sections, spacing, color energy, typography feel, and UI patterns from the screenshots. Rebuild the design in Pencil.
+
+### `website`
+
+Audit the referenced site in `ui_source_ref`. Extract layout patterns, hierarchy, component types, and motion direction. Do not blindly clone weak UX patterns.
+
+If `design_strategy` is `copy-site` or `improve-site`, do not stop at the single URL. Discover and fetch the relevant internal pages and locale variants first, then use them as both design and content reference.
+
+Preferred command:
 
 ```bash
-which pencil || npx pencil version
+pnpm site:audit "<reference-url-or-ui_source_ref>" "output/<slug>/source-audit.json"
 ```
 
-If not found:
-
-```bash
-npm install -g @pencil.dev/cli
-```
-
-### Authentication
-
-Check current user:
-```bash
-pencil status
-```
-
-If not logged in:
-```bash
-pencil signup --email you@example.com --username johndoe --name "John Doe"
-# or
-pencil login --email you@example.com
-```
-
-`PENCIL_CLI_KEY` env var can also be used if set.
-
-### Stay up to date
-
-```bash
-npm view @pencil.dev/cli version   # latest on registry
-pencil version                     # installed version
-npm install -g @pencil.dev/cli     # upgrade
-```
+Read the resulting `source-audit.json` before deciding homepage sections, copy strategy, CMS structure, or seed content.
 
 ---
 
-## Before Designing — Collect Context
+## Working Method
 
-Read `site.config.json`. Use `ui_source_ref` as the starting brief. Then ask:
+### Phase 0 — Intake
 
-- What scenario applies? (see below)
-- Do they have a reference URL, Figma file, or brand guidelines?
-- 3–5 words that describe the brand?
-- Who is the target audience?
-- Any colors or fonts they love or hate?
+If the user already gave enough direction, do not slow the flow with unnecessary questions.
+
+Capture:
+
+- site type
+- audience
+- tone
+- content density
+- visual ambition
+- motion ambition
+- constraints like mobile performance, accessibility, dark mode, or JS fallback
+
+If `ui_source` is not `words`, infer as much as possible from the source and avoid asking for color or style basics that can be extracted.
+
+### Phase 0.5 — Design Strategy Mode
+
+Before presenting directions, choose the design strategy.
+
+Available strategies:
+
+- `from-scratch` — New site, no existing design to preserve
+- `copy-site` — Replicate an existing site as faithfully as possible
+- `improve-site` — Use an existing site or design as the foundation, then elevate it
+- `brand-first` — Build from a brand guide, Figma system, or existing visual identity
+- `beat-competitors` — Audit competitor references and intentionally differentiate
+
+How to apply this:
+
+- Ask the strategy explicitly for every `ui_source` before presenting directions
+- If `design_strategy` is `copy-site` or `improve-site`, prefer `reference_url` from `site.config.json` instead of asking again
+- If `design_strategy` is `beat-competitors`, use `competitor_urls` from `site.config.json` and only ask again if the list is missing or too short
+
+Strategy rules:
+
+#### `from-scratch`
+
+- Create an original design system from the brief
+- Do not imitate a specific reference too closely
+- Use the source only for content or structural hints if needed
+
+#### `copy-site`
+
+- Prioritize visual fidelity over reinterpretation
+- Preserve hierarchy, spacing logic, component style, and motion character
+- Only fix obvious production or accessibility problems
+- Preserve static marketing copy, navigation labels, page titles, and information architecture from the source unless the user explicitly asks to rewrite them
+
+#### `improve-site`
+
+- Keep the recognizable structure and brand signals
+- Upgrade typography, spacing, hierarchy, responsiveness, and motion quality
+- Evolution, not a total rewrite, unless the user asks for that
+- Preserve the source site's core content, page purpose, and factual static text unless the user explicitly asks for new copy
+
+#### `brand-first`
+
+- Treat brand colors, typography, logo behavior, and visual language as locked inputs
+- Fill only the missing pieces needed to make the web experience complete
+- Do not drift into unrelated styles
+
+#### `beat-competitors`
+
+- Compare at least 2 reference sites if available
+- Identify where competitors look generic, weak, or repetitive
+- Make deliberate differentiation choices in typography, composition, motion, and interaction
+
+If useful, record the chosen strategy in the handoff summary as `design_strategy`.
+
+### Phase 1 — Present Direction
+
+Present **3 design directions** before any full design work. Do not skip this just because the user wants the site built quickly.
+
+Only reduce this to 1 direction when the user explicitly says the exact direction is already chosen and no comparison is needed.
+
+Each direction must include:
+
+- name
+- concept
+- mood
+- typography approach
+- color energy
+- layout feel
+- animation signature
+- complexity
+- why it fits this project
+
+Good direction families include:
+
+- Glass Future
+- Neon Brutalist
+- Editorial Luxury
+- Morphic Soft
+- Data Precision
+- Organic Texture
+- Mongolian Modern
+- Midnight Cinema
+- Swiss Grid
+- Aurora Gradient
+
+If the source is an existing design, make the three options:
+
+- faithful
+- improved
+- bold reinterpretation
+
+Map those options to strategy when relevant:
+
+- `copy-site` → bias toward `faithful`
+- `improve-site` → bias toward `improved`
+- `beat-competitors` → bias toward `bold reinterpretation`
+
+### Phase 1.5 — Homepage Direction Preview Gate
+
+Before designing the full site, create only **homepage direction previews** in Pencil.
+
+Rules:
+
+- Build 2 to 3 homepage design options in Pencil first
+- Each option must include:
+  - hero
+  - all selected or detected homepage sections in the real homepage order
+  - header
+  - footer direction
+  - core typography, color, and motion language
+- Each option should read as a real homepage from top to bottom, not a hero concept plus a few fragments
+- If the homepage is long, the preview export can be a tall canvas or multiple slices, but it must cover the full homepage structure
+- Do **not** design all standalone pages yet
+- Export preview images for those homepage options and show them to the user
+- Save the multi-option Pencil working file to `output/<slug>/designs/homepage-directions.pen`
+- Save preview exports to `output/<slug>/designs/homepage-option-a.png`, `homepage-option-b.png`, and `homepage-option-c.png` when present
+- The user must choose one option before full page design continues
+
+User choice gate:
+
+- Ask the user to choose the preferred option after the homepage previews are shown
+- Do not continue to full page design until the user selects one option
+- After selection, treat the chosen homepage direction as the locked visual system for the rest of the site
+- Record the chosen option label in `HANDOFF.md`
+
+### Phase 1.75 — Full-Page Design Edit Gate
+
+After the chosen homepage direction is expanded into the full set of page designs, stop before frontend build and run a free-form review step.
+
+Rules:
+
+- Keep the full designed pages available in the approved Pencil file for user review, not just the homepage
+- Ask exactly: `do you wanna edit design before build frontend?`
+- Do not present canned edit choices, checkboxes, or another option matrix
+- Ask for the page name and the requested change in the user's own words
+- Accept edits like color changes, section placement changes, component swaps, spacing changes, hierarchy changes, or page-specific layout changes
+- Apply the edits inside the same approved Pencil file path
+- Re-export the updated design artifacts when edits were made
+- Do not require separate re-presentation if the user can inspect the current state directly in Pencil
+- Ask the same free-form design edit question again after each edit round
+- Repeat this review loop until the user explicitly approves the design for build or gives a direct instruction to start frontend build
+- Treat phrases like `it's okay`, `looks good`, `approved`, or `build frontend` as approval to exit the loop
+
+### Phase 2 — Motion Level
+
+Lock a motion level from `0` to `5`.
+
+- `0` Static
+- `1` Polished
+- `2` Alive
+- `3` Expressive
+- `4` Cinematic
+- `5` Theatrical
+
+Bias toward richer motion unless performance or accessibility constraints clearly limit it.
+
+### Phase 3 — Build the Pencil Design
+
+Create or refine the design in Pencil and export:
+
+- homepage
+- standalone page layouts for each selected section after the homepage direction is approved
+- section variants
+- key reusable components
+- mobile-aware layouts
+
+The design must cover the actual sections that the site will build, not just a hero mockup.
+
+Before leaving this phase:
+
+- make sure the full page design set is available in the approved Pencil file for user review
+- ask `do you wanna edit design before build frontend?`
+- wait for free-form page-specific feedback or explicit approval
+- if feedback is given, apply it in Pencil and ask again
+- do not hand off to Step 4 until that review loop is closed
+
+Page model:
+
+- The homepage must include the selected sections as landing-page sections
+- The homepage is designed first as the direction-preview stage, and those previews must already show the full homepage section flow
+- Only after the user chooses the homepage direction should the agent design the remaining pages
+- Every selected section must also have a dedicated standalone page design
+- Use the same visual system across homepage sections and standalone pages
+- The standalone pages should expand the corresponding homepage section rather than feel like unrelated templates
+
+### Phase 3.5 — Website Source Audit for `copy-site` and `improve-site`
+
+When `ui_source` is `website` and the strategy is `copy-site` or `improve-site`, perform a source audit before finalizing design or content assumptions.
+
+Required audit behavior:
+
+- Fetch the source homepage
+- Discover internal links from header, footer, sitemap, locale switchers, and obvious section CTAs
+- Fetch the relevant static pages that define the site's real context
+- Check locale variants when multiple languages are visible or when locale-prefixed URLs exist
+- Capture page titles, section headings, subheadings, CTA labels, menu labels, footer text, contact information, and other static marketing copy
+- Use this source content inventory to keep the generated CMS structure and seeded content aligned with the real site
+
+Discovery rules:
+
+- Prefer the navigation pages and high-signal marketing pages first
+- Include locale variants such as `/en/about-us` when present
+- Include pages that map to selected sections such as about, services, contact, pricing, blog, FAQ, team, portfolio, and gallery
+- If the site exposes a sitemap or a clear page index, use it to discover additional relevant pages
+- Do not scrape private, authenticated, checkout, cart, search, or irrelevant utility pages
+
+Content-copy rules:
+
+- For `copy-site`, preserve source static text as faithfully as practical for the CMS seed baseline
+- For `improve-site`, preserve the meaning, page purpose, and factual source content while improving presentation and UX
+- When locales exist, carry source-language content into the corresponding locale seed content rather than inventing replacement copy
+- Only generate entirely new marketing copy when the source content is missing, clearly incomplete, or the user asked for a rewrite
+
+Examples:
+
+- homepage includes `about`, `services`, `contact`
+- also design `/about`, `/services`, `/contact`
+- if `blog` exists, design blog listing and blog detail
+- if `pricing` exists, design a dedicated pricing page
+- if `gallery` exists, design a dedicated gallery page
+- if `team` exists, design a dedicated team page
+
+Required component coverage:
+
+- header
+- hero
+- section heading pattern
+- cards or content blocks
+- CTA block
+- footer
+- mobile navigation
+
+Add section-specific components when relevant:
+
+- services grid
+- pricing cards
+- testimonials
+- blog listing
+- contact form
+- gallery
+- team
+- FAQ
+- portfolio
+- menu or catalog
+
+### Phase 4 — Produce the Handoff Files
+
+After the user approves the full-page design review, write the token, library, and handoff files described below.
 
 ---
 
-## The 10 Design Scenarios
+## Required Design Decisions
 
-Route to the correct scenario based on the user's prompt or `ui_source_ref`.
+Before handoff, lock:
 
----
+- primary and secondary color system
+- neutral surfaces
+- typography families for display and body
+- spacing rhythm
+- radius and shadow language
+- motion personality
+- hover behavior
+- section transitions
+- page transition approach
+- ambient motion choice
+- mobile adaptation rules
 
-### Scenario 1 — Copy Exact Style
-*"Make it look exactly like https://apudairy.mn"*
-
-```
-GOAL: Pixel-faithful recreation. No creative deviation.
-
-WORKFLOW:
-  1. Screenshot reference site (mobile 375, tablet 768, desktop 1280)
-  2. Run Design Audit (format below)
-  3. Extract exact values: color palette, fonts, spacing, components, image ratios
-  4. Recreate in Pencil page by page: homepage, article/detail, listing, contact, header, footer
-  5. Present audit + Pencil design side-by-side to user
-  6. User approves → export tokens → write back to site.config.json
-
-RULE: Do NOT inject personal style. Fidelity is the metric.
-ALLOWED: Fixing obvious bugs (broken contrast, font fallbacks, accessibility issues)
-```
+If `languages` includes Cyrillic or CJK languages, choose font families that support them.
 
 ---
 
-### Scenario 2 — New Design from Requirements
-*"Build a tour site, modern and trustworthy"*
+## `design-tokens.json` Requirements
 
-```
-GOAL: Original design rooted in the site's tone, type, and color_hint.
+This file is the source of truth for frontend styling and motion.
 
-WORKFLOW:
-  1. Moodboard — 3 distinct visual directions in Pencil:
-     - Color + typography + layout style per direction
-     - Label each: "Direction A: Editorial gravitas", etc.
-     - User picks or blends
-  2. Design system:
-     - Color palette (primary, secondary, semantic, neutrals)
-     - Typography scale (display, h1–h3, body, caption, label)
-     - Spacing (4px base), border radius, shadows
-     - Component library (button, badge, card, input, nav)
-  3. Page designs: homepage, detail page, listing, contact/about, 404
-  4. Mobile (375px) for all pages
-  5. User approves → export tokens → hand off
-
-RULE: Make one bold creative decision per design. Don't be generic.
-FORBIDDEN: Inter font + purple gradient + rounded cards. This is AI slop default.
-```
-
----
-
-### Scenario 3 — Copy + Improve
-*"Use apudairy.mn's style but modernize it"*
-
-```
-WORKFLOW:
-  1. Full Design Audit of reference site
-  2. Before/After analysis:
-     - Keep: color brand, logo placement, content hierarchy
-     - Fix: contrast ratios, mobile experience, typography scale
-     - Modernize: shadows, gradients, button styles, spacing
-  3. Improvement Proposal (format below)
-  4. User approves scope
-  5. Redesign in Pencil with tracked changes (label retained vs improved)
-  6. Mobile-first versions
-  7. User approves → export → hand off
-
-RULE: Evolution, not revolution. Client must recognize their own site.
-```
-
----
-
-### Scenario 4 — Brand-First Design
-*"We have a brand guide. Build from it."*
-
-```
-WORKFLOW:
-  1. Read brand guide (PDF, Figma URL, or image uploads)
-  2. Map brand tokens to web design system:
-     - Brand colors → CSS custom property names
-     - Brand fonts → next/font loading
-     - Brand spacing → Tailwind extensions
-  3. Build page designs using ONLY brand-approved elements
-  4. Flag any gaps (e.g. no dark mode palette — propose one)
-  5. User approves → export → hand off
-
-RULE: You are a brand steward. No creative license unless there are gaps.
-```
-
----
-
-### Scenario 5 — Competitive Differentiation
-*"Make it look better than our competitors: site-a.mn, site-b.mn"*
-
-```
-WORKFLOW:
-  1. Audit all competitor sites using Design Audit format
-  2. Competitive matrix: typography, color, layout, interactions
-  3. Differentiation strategy — pick 2-3 specific choices:
-     "Everyone uses Inter — we use Playfair Display → editorial authority"
-  4. Design with the differentiation strategy as the brief
-  5. Present competitive comparison in Pencil
-  6. User approves → export → hand off
-```
-
----
-
-### Scenario 6 — Dark Mode First
-*"Build a dark, premium site"*
-
-```
-WORKFLOW:
-  1. Design dark palette first (oklch recommended):
-     - Surface scale: oklch(8%) → oklch(15%) → oklch(22%)
-     - Text scale: oklch(95%) → oklch(65%) → oklch(40%)
-     - Accent: high-chroma color that reads on dark (cyan, amber, electric blue)
-  2. Design all pages dark-first in Pencil
-  3. Derive light mode as second pass
-  4. Verify contrast: WCAG AA minimum (4.5:1 body text)
-  5. User approves both modes → export both token sets → hand off
-
-RULE: Never use pure #000 or #fff. Use oklch with slight chroma for warmth.
-```
-
----
-
-### Scenario 7 — Mongolian Cultural Identity
-*"It needs to feel Mongolian, not Western"*
-
-```
-WORKFLOW:
-  1. Cultural elements to reference:
-     - Ulzii (eternal knot) as motif system
-     - Mongolian color associations: blue/sky, red/tradition, gold/prosperity
-     - Traditional textile patterns as texture
-     - Mongolian calligraphy as typographic accent
-  2. Design with cultural elements as:
-     - Decorative border/divider motifs (SVG-ready)
-     - Culturally-rooted color palette
-     - Typography: Mongolian script accents + modern Cyrillic body font
-  3. Avoid: tourist clichés (yurt icons everywhere), stereotyping
-  4. User approves → export → hand off
-
-RULE: Subtlety. Culture as texture, not costume.
-```
-
----
-
-### Scenario 8 — Rapid Iteration / A-B Design
-*"Show me 3 design directions and I'll pick one"*
-
-```
-WORKFLOW:
-  1. Build 3 distinct directions in Pencil (separate artboard sections)
-  2. Each direction: name, 1-line concept, homepage above-fold only,
-     color swatches, typography specimen
-  3. Present all 3 side by side
-  4. User picks (or mixes: "A's colors, B's typography, C's layout")
-  5. Build full design from chosen direction
-  6. Approval → export → hand off
-
-TIME BUDGET: 3 directions ≈ 2x the time of 1 full design.
-```
-
----
-
-### Scenario 9 — Redesign Existing erxes Tenant
-*"They already have a site on erxes, redesign it"*
-
-```
-WORKFLOW:
-  1. Screenshot the current live site
-  2. Run Design Audit
-  3. Check erxes CMS content types in use (posts, categories, tags)
-  4. Identify content components that MUST be preserved
-  5. Redesign the wrapper while keeping content hierarchy intact
-  6. Pencil design must map 1:1 to erxes fields:
-     post.title → h1, post.excerpt → lead, post.featuredImage → hero image
-  7. User approves → export → hand off
-
-RULE: Never hide content behind design. CMS fields are the design contract.
-```
-
----
-
-### Scenario 10 — Performance-First Design
-*"It needs to load fast on mobile"*
-
-```
-CONSTRAINTS:
-  - No hero videos, no autoplay animations
-  - Image-light (typography-dominant)
-  - No web fonts over 50kb total (use system stack fallbacks)
-  - No third-party embeds above the fold
-  - Skeleton loading states for every component
-
-WORKFLOW:
-  1. Design with performance constraints as the creative brief
-  2. Annotate each component: estimated asset weight + loading priority
-  3. Typography-first hero (no large image)
-  4. Layer 0: HTML + system fonts; Layer 1: CSS; Layer 2: Full experience
-  5. User approves → export with performance notes → hand off
-
-RULE: Design the skeleton state as carefully as the loaded state.
-```
-
----
-
-## Creating a Design with Pencil CLI
-
-```bash
-pencil --out output/<slug>/designs/design.pen \
-       --prompt "<design description>" \
-       --export output/<slug>/designs/design.png \
-       --export-scale 2
-```
-
-Key flags:
-- `--out` — where to save the `.pen` file (required)
-- `--prompt` — what to design (required) — pass the brief directly, Pencil's AI handles creative decisions
-- `--export` — export image of the result
-- `--export-scale 2` — crisp 2x resolution
-- `--in` — start from an existing `.pen` file (for iteration)
-
-**Timing:** simple component = 1–2 min, landing page section = 2–3 min, full page = 3–5+ min. Tell the user upfront. Use timeout ≥ 600000ms.
-
-After generating, read the exported PNG and show it to the user.
-
-### Iterating
-
-```bash
-pencil --in output/<slug>/designs/design.pen \
-       --out output/<slug>/designs/design-v2.pen \
-       --prompt "Make the header larger, change accent to forest green" \
-       --export output/<slug>/designs/design-v2.png \
-       --export-scale 2
-```
-
----
-
-## Pencil Workflow Steps
-
-```
-STEP 1 — Project setup
-  Save all files to output/<slug>/designs/
-  Pages to design: Design System, Homepage, Detail/Article, Listing, Contact/About, Mobile
-
-STEP 2 — Design System page first
-  Color palette swatches
-  Typography specimens (all scale levels, real content in site language)
-  Component library: button variants, badge, card (default/featured/compact),
-    input, nav, skeleton loading states
-
-STEP 3 — Page designs (desktop 1280px first)
-  Each page: above-the-fold → full scroll → hover states → loading state
-
-STEP 4 — Mobile views (375px)
-  Priority: homepage above-fold, detail page, navigation
-
-STEP 5 — Annotate for code generation
-  Each component: token references, interaction spec, erxes CMS field mapping, responsive notes
-
-STEP 6 — User review
-  Show exported PNG
-  List all design decisions with rationale
-  Collect feedback as numbered list
-  Iterate until user says "approved"
-
-STEP 7 — Export
-  Export design-tokens.json (format below)
-  Write extracted color_hint back to site.config.json
-  Write detected sections back to site.config.json if required_sections was "design"
-```
-
----
-
-## Design Audit Format
-
-Use every time you analyze an existing site.
-
-```markdown
-# Design Audit: [Site Name]
-
-## Visual Identity
-- Primary color: #[hex]
-- Secondary: [list]
-- Accent: [hex]
-- Background: [hex] / Text: [hex] / Text muted: [hex]
-
-## Typography
-- Display: [family, weight, size range]
-- Body: [family, weight, line-height]
-- Scale: h1–h4, body, caption sizes
-
-## Spacing
-- Base unit: [4px/8px]
-- Container max: [px] / Gutter: [px] / Section padding: [desktop / mobile]
-
-## Layout
-- Grid: [columns] / Breakpoints: [mobile/tablet/desktop]
-- Sidebar: [yes/no, width, position]
-
-## Components
-- Card: [border/shadow/flat, border-radius]
-- Button: [filled/outline/ghost, radius]
-- Nav: [sticky/static, mobile behavior]
-- Image ratio: [16:9/3:2/1:1]
-
-## Issues Found
-- [ ] [e.g. contrast ratio 2.1:1 on muted text — fails WCAG AA]
-
-## Opportunities
-- [ ] [e.g. Add skeleton loading states]
-```
-
----
-
-## Design Token Export Format
-
-Export as `output/<slug>/designs/design-tokens.json` when design is approved.
-Step 4 (generate.md) reads this to configure Tailwind and CSS variables.
+It must include at minimum:
 
 ```json
 {
   "meta": {
-    "site": "<slug>",
-    "approved_at": "<ISO datetime>",
-    "scenario": "<1–10>",
-    "dark_mode": true
+    "siteName": "example-site",
+    "visualDirection": "editorial-luxury",
+    "motionLevel": 3,
+    "defaultLocale": "mn",
+    "locales": ["mn", "en"]
   },
   "colors": {
-    "brand": {
-      "50": "#...", "100": "#...", "500": "#...", "600": "#...", "900": "#..."
-    },
+    "brand": {},
+    "neutral": {},
     "semantic": {
-      "background":     { "light": "#...", "dark": "#..." },
-      "surface":        { "light": "#...", "dark": "#..." },
-      "surface_raised": { "light": "#...", "dark": "#..." },
-      "border":         { "light": "#...", "dark": "#..." },
-      "text":           { "light": "#...", "dark": "#..." },
-      "text_muted":     { "light": "#...", "dark": "#..." },
-      "accent":         { "light": "#...", "dark": "#..." }
+      "background": "",
+      "foreground": "",
+      "card": "",
+      "cardForeground": "",
+      "popover": "",
+      "popoverForeground": "",
+      "primary": "",
+      "primaryForeground": "",
+      "secondary": "",
+      "secondaryForeground": "",
+      "muted": "",
+      "mutedForeground": "",
+      "accent": "",
+      "accentForeground": "",
+      "border": "",
+      "input": "",
+      "ring": "",
+      "success": "",
+      "warning": "",
+      "destructive": ""
     }
   },
   "typography": {
-    "display_font": { "family": "Playfair Display", "source": "google", "weights": [700, 800] },
-    "body_font":    { "family": "Source Serif 4",   "source": "google", "weights": [400, 500] },
-    "scale": {
-      "display": { "size": "clamp(2rem, 5vw, 3.5rem)", "weight": 800, "tracking": "-0.03em", "leading": 1.05 },
-      "h1":      { "size": "clamp(1.75rem, 4vw, 2.5rem)", "weight": 700, "tracking": "-0.02em", "leading": 1.1 },
-      "h2":      { "size": "clamp(1.25rem, 3vw, 1.75rem)", "weight": 600, "tracking": "-0.015em", "leading": 1.2 },
-      "body":    { "size": "1rem", "weight": 400, "leading": 1.65 },
-      "caption": { "size": "0.75rem", "weight": 400 },
-      "label":   { "size": "0.75rem", "weight": 600, "tracking": "0.08em", "transform": "uppercase" }
-    }
+    "families": {
+      "display": "",
+      "body": "",
+      "mono": ""
+    },
+    "scale": {}
   },
   "spacing": {
-    "base": 4,
-    "scale": { "xs": "4px", "sm": "8px", "md": "16px", "lg": "24px", "xl": "40px", "2xl": "64px", "section": "clamp(3rem, 8vw, 6rem)" },
-    "container_max": "1280px",
-    "gutter": "clamp(1rem, 4vw, 2rem)"
+    "scale": {},
+    "layout": {}
   },
-  "radius": { "sm": "4px", "md": "8px", "lg": "12px", "xl": "16px", "pill": "9999px" },
-  "shadows": {
-    "card":       "0 1px 3px oklch(0% 0 0 / 0.08), 0 4px 12px oklch(0% 0 0 / 0.06)",
-    "card_hover": "0 4px 16px oklch(0% 0 0 / 0.12)",
-    "elevated":   "0 8px 32px oklch(0% 0 0 / 0.16)"
-  },
-  "animation": {
-    "duration": { "fast": "150ms", "normal": "250ms", "slow": "400ms" },
-    "easing": { "smooth": "cubic-bezier(0.4,0,0.2,1)", "spring": "cubic-bezier(0.34,1.56,0.64,1)" }
-  },
-  "components": {
-    "card":   { "border_radius": "lg", "shadow": "card", "image_ratio": "16/9", "hover": "translateY(-2px)" },
-    "button": { "border_radius": "md", "padding": "12px 20px", "font_weight": 600 },
-    "nav":    { "height": "64px", "sticky": true, "blur": true }
+  "radius": {},
+  "shadows": {},
+  "motion": {
+    "duration": {},
+    "easing": {},
+    "spring_configs": {},
+    "variants": {},
+    "gsap_configs": {}
   }
 }
 ```
 
-After exporting tokens:
-- Write `colors.semantic.accent.light` → `site.config.json` as `color_hint` (e.g. `"forest-green"`)
-- Write detected sections → `site.config.json` as `required_sections` if it was `"design"`
+Rules:
+
+- No placeholder values
+- No missing semantic keys
+- Motion variants must match the actual design behavior
+- Token names should be stable and implementation-friendly
 
 ---
 
-## Design Quality Standards
+## `ui-libraries.json` Requirements
 
-### Typography
-- Never use system stack as primary — always load a distinctive display font
-- Body minimum 16px, line-height 1.6+
-- Mongolian Cyrillic must be in the font subset (add `cyrillic` subset)
-- Heading letter-spacing: always negative (-0.015em to -0.03em) at large sizes
-- Max 2 font families (display + body; mono optional)
+This file tells the frontend agent exactly what to install and why.
 
-### Color
-- WCAG AA minimum: 4.5:1 body, 3:1 large text, 3:1 UI components
-- Never pure #000 or #fff — use near-neutral oklch
-- Accent must work on both light and dark backgrounds
+It must include:
 
-### Layout
-- Container max: 1280px (content), 720px (article body)
-- Section spacing: min 48px, prefer `clamp(3rem, 8vw, 6rem)`
-- All spacing divisible by 4 (8 preferred)
-- Must work at 320px minimum width
-
-### Components
-- Every interactive element needs: default, hover, active, focus, disabled states
-- Every image card needs a fallback (gradient or initials) when image fails
-- Skeleton loading states required for: card, header, nav
-
-### Forbidden Patterns
+```json
+{
+  "motion_level": 3,
+  "visual_direction": "editorial-luxury",
+  "packages": [],
+  "shadcn_components": [],
+  "custom_components": [],
+  "animation_config": {
+    "core_library": "framer-motion",
+    "scroll_library": "lenis",
+    "text_animation": "custom",
+    "page_transition": "framer",
+    "ambient_system": "css",
+    "micro_interactions": "framer-motion",
+    "gsap_plugins": []
+  }
+}
 ```
-❌ Inter + purple gradient + generic rounded cards = AI slop
-❌ Stock photo hero + centered white text + gradient overlay + CTA button
-❌ Rainbow category colors with 8+ hues
-❌ Hover states that only change color (must change ≥ 2 properties)
-❌ Cards with no visual hierarchy (all elements same weight)
-❌ Mobile nav that is just "desktop nav but smaller"
-```
+
+Rules:
+
+- Only include libraries the design actually uses
+- Match motion level to library weight
+- Include `gsap`, `three`, `rive`, `lottie`, `barba`, `vanilla-tilt`, `react-scramble`, or similar only when justified by the design
+- Include shadcn components and copied UI library patterns only if they are part of the approved system
 
 ---
 
-## Hard Rules
+## `HANDOFF.md` Requirements
 
-| # | Rule |
-|---|------|
-| 1 | NEVER write Next.js or any code here — design only |
-| 2 | ALWAYS build Design System page before page designs |
-| 3 | ALWAYS get user approval before continuing to Step 4 |
-| 4 | All text in designs must be real content in the site's language — no lorem ipsum |
-| 5 | Every font must include Cyrillic subset if site language includes `mn` or `ru` |
-| 6 | `design-tokens.json` must be exported before handing off |
-| 7 | Write `color_hint` and `required_sections` back to `site.config.json` before Step 4 |
+This file connects design to frontend and CMS.
+
+It must include:
+
+- design summary
+- approved visual direction
+- approved homepage option label
+- homepage preview artifact paths
+- source website inventory when `ui_source` is `website`
+- motion level
+- chosen fonts and why
+- chosen libraries and why
+- setup commands for required packages
+- section-by-section layout guidance
+- component inventory
+- animation rules
+- interaction rules
+- responsive behavior
+- accessibility notes
+- content tone guidance per language
+- exact items that must not change during implementation
+- exact Pencil file paths used during design
+
+Also include these two sections explicitly:
+
+### 0. Approval Record
+
+Include:
+
+- homepage options shown
+- selected option
+- preview artifact file paths
+- Pencil project paths used
+- confirmation that the homepage previews covered the full homepage section flow
+- confirmation that `design.pen` and `design.png` came from the approved Pencil direction
+- any locked constraints the frontend must not reinterpret
+
+When `ui_source` is `website` and strategy is `copy-site` or `improve-site`, also include:
+
+- source pages audited
+- locale variants audited
+- static text/content areas that should be preserved into CMS seed data
+- the path to `source-audit.json`
+
+### 1. Frontend Build Map
+
+Map the design to implementation targets such as:
+
+- homepage section sequence
+- header
+- hero
+- section wrappers
+- cards
+- CTA
+- footer
+- standalone section pages for every selected section
+- dynamic CMS page templates
+- blog listing and blog detail
+
+### 2. erxes CMS Field Map
+
+Map the design to CMS data that Step 5 will seed:
+
+- homepage sections and their order
+- page slugs for each section
+- menu structure for header and footer
+- which sections need long-form page content
+- whether blog is required
+- recommended categories and tags if blog exists
+- translation expectations for all locales
+
+When the source is an existing website, also map:
+
+- source page URL → CMS page slug
+- source locale URL → locale content bucket
+- source static text blocks that should be preserved or adapted
+
+This is how the design stage supports dynamic erxes content without changing the existing mutation scripts.
+
+---
+
+## Section Detection Rules
+
+If `sections` is empty or set to `design`, inspect the approved design and detect the real sections present.
+
+Allowed output values:
+
+- `about`
+- `services`
+- `blog`
+- `contact`
+- `gallery`
+- `pricing`
+- `team`
+- `testimonials`
+- `faq`
+- `menu`
+- `portfolio`
+
+Write the detected list back into `site.config.json` as `required_sections` or `sections`, following the current project flow.
+
+Show the detected list to the user and get confirmation before Step 4.
+
+---
+
+## Color Extraction Rules
+
+If `ui_source` is `pencil`, `figma`, `screenshot`, or `website`:
+
+- extract the dominant primary color from the source
+- write it back into `site.config.json` as `color_hint`
+- do not ask the user for it unless the source is too ambiguous
+
+Use meaningful names like:
+
+- `forest-green`
+- `navy`
+- `warm-orange`
+- `sky-blue`
+- `oxblood`
+
+---
+
+## Quality Bar
+
+The approved design must be:
+
+- production-oriented
+- visually coherent across sections
+- responsive in structure
+- animation-aware
+- accessible in contrast and hierarchy
+- realistic for a Next.js + Tailwind implementation
+- compatible with dynamic erxes CMS content
+
+Do not produce a pretty mockup that cannot survive real CMS data.
+
+---
+
+## Anti-Patterns
+
+Do not:
+
+- stop at a single hero image
+- stop at partial homepage concepts when the user needs a homepage choice
+- design all pages before the user chooses a homepage direction
+- design only the homepage when standalone section pages are required
+- output only a PNG without tokens and handoff
+- generate tokens or `HANDOFF.md` before the homepage option is chosen
+- fake Pencil completion with placeholder `.png` or `.pen` files
+- copy non-image files into `.png` outputs
+- treat a website reference as homepage-only when the user asked to copy or improve the full site context
+- open or modify unrelated `.pen` projects outside the approved current-site path
+- invent frontend code in this step
+- choose random libraries without mapping them to motion needs
+- use placeholder content strategy
+- design layouts that break when menu labels, page titles, or CMS text get longer
+- ignore multilingual typography needs
+
+---
+
+## Completion Gate
+
+Step 3.5 is complete only when all of these are true:
+
+- 2 to 3 homepage previews were built in Pencil
+- homepage preview exports exist
+- homepage previews show the full homepage section sequence
+- the user approved one homepage option
+- `design.pen` exists
+- `design.png` exists
+- `design-tokens.json` exists
+- `ui-libraries.json` exists
+- `HANDOFF.md` exists
+- `HANDOFF.md` contains the approval record
+- sections are confirmed
+- `color_hint` is set
+- all design artifacts came from the approved `.pen` path for this site
+
+If the source is a website with strategy `copy-site` or `improve-site`, Step 3.5 is not complete until the relevant source pages and locale variants were audited and recorded in the handoff.
+If the source is a website with strategy `copy-site` or `improve-site`, `source-audit.json` must exist and be used during handoff creation.
+
+If any artifact is a placeholder, blank stub, or file-type fake, Step 3.5 is not complete.
+
+Only then should the pipeline continue to `agents/frontend.md` and `agents/generate.md`.

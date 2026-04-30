@@ -8,6 +8,7 @@
     "erxes:pages": "tsx scripts/erxes-pages.ts",
     "erxes:posts": "tsx scripts/erxes-posts.ts",
     "erxes:menu": "tsx scripts/erxes-menu.ts",
+    "site:audit": "tsx scripts/site-audit.ts",
     "deploy": "tsx scripts/deploy.ts"
   },
   "dependencies": {

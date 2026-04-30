@@ -233,6 +233,14 @@ All pages live under `app/[locale]/` — never under `app/` directly.
 - `url: "/about"` → `app/[locale]/about/page.tsx`
 - `url: "/contact"` → `app/[locale]/contact/page.tsx`
 
+Required page model:
+
+- The homepage (`/`) should compose the selected sections as a landing page
+- Every selected section should also have its own standalone page route
+- Reuse the same section components where possible, but adapt layout depth for standalone pages
+- If `blog` exists, generate a listing page and detail pages
+- If a section is selected, do not leave it homepage-only unless the design handoff explicitly marks it as decorative-only
+
 Each page receives `params: { locale: string }` and passes it as `language` to every query.
 
 **Dynamic CMS page** `app/[locale]/[slug]/page.tsx`:
