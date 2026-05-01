@@ -1,4 +1,36 @@
-# Step 0 — Setup
+# Pipeline Entry Point
+
+## Section Check — Ask First
+
+Before anything else, ask the user which sections they already have ready.
+
+> "Which of these do you already have ready?
+> - **Section A** — Business Analysis (requirements document, BRD)
+> - **Section B** — UX/UI (research doc, wireframes, design files)
+> - **Section C** — Development (frontend code)
+>
+> Select any that apply, or say **none** to start from the beginning."
+
+> **Note:** `site.config.json` is always required regardless of which section you jump to. If it does not exist yet, collect the minimum fields (`name`, `template_type`, `language`, `erxes_endpoint`, `erxes_app_token`, `client_portal_id`) before proceeding to the target section.
+
+**If user has Section A ready:**
+- Ask: "Please share your business requirements document — paste the content or give me the file path."
+- Save to `output/<slug>/business-requirements.md`
+- Ensure `site.config.json` exists (collect minimum fields if missing)
+- Skip Section A entirely → jump to **Section B — Step 1 (UX Research)**
+
+**If user has Section B ready:**
+- Ask: "Please share your design files — Pencil `.pen` file path, Figma link, or screenshot paths."
+- Save references to `site.config.json` as `ui_source` and `ui_source_ref`
+- Ensure `site.config.json` exists (collect minimum fields if missing)
+- Skip Sections A and B → jump to **Section C — Step 1 (Development)**
+
+**If user says none or skips:**
+- Proceed with **Section A — Step 1 (Setup)** below
+
+---
+
+# Section A — Step 1 (Setup)
 
 Run this before anything else. Ask every field — do not assume or skip.
 
@@ -88,7 +120,7 @@ Run this before anything else. Ask every field — do not assume or skip.
    > Recommended options: `about`, `services`, `blog`, `contact`, `gallery`, `pricing`, `team`, `testimonials`, `faq`, `menu`, `portfolio`, `design`
    - Valid sections: `about`, `services`, `blog`, `contact`, `gallery`, `pricing`, `team`, `testimonials`, `faq`, `menu`, `portfolio`
    - If the user includes `hero`, keep it, but do not require it
-   - If the user types `design`: skip saving sections now — defer to Step 3.5 where the UI source is analyzed. After analyzing the design, extract the sections present in the layout and save them to `site.config.json` before continuing to Step 4.
+   - If the user types `design`: skip saving sections now — defer to Section B — Step 2 (Design) where the UI source is analyzed. After analyzing the design, extract the sections present in the layout and save them to `site.config.json` before continuing to Section C — Step 1.
 
 6. **UI source**
    > Render as `single-select`
@@ -134,18 +166,12 @@ Run this before anything else. Ask every field — do not assume or skip.
 8. **Color hint** — skip this question if `ui_source` is anything other than `words`
    > Render as `single-select + Other input`
    > Recommended options: `brown`, `blue`, `forest-green`
-   - If the user provided a design (`pencil`, `figma`, `screenshot`, or `website`), do **not** ask this — the color will be extracted from the design in Step 3.5. Set `color_hint` to `null`.
+   - If the user provided a design (`pencil`, `figma`, `screenshot`, or `website`), do **not** ask this — the color will be extracted from the design in Section B — Step 2 (Design). Set `color_hint` to `null`.
 
 9. **Extra notes**
    > Render as `textarea`
    > Optional
 
-9. **Deployment target**
-   > "Deploy to Vercel after building, or just push to GitHub? Choose: `vercel` / `github`"
-   - `vercel` — push to GitHub and deploy to Vercel (live URL returned). Requires `VERCEL_TOKEN` and `VERCEL_ORG_ID` in `.env`. If either is missing, ask:
-     - "Vercel API token?" — get from vercel.com → Settings → Tokens
-     - "Vercel team/org ID?" — get from vercel.com → Team Settings → General → Team ID
-   - `github` — push to GitHub only, no Vercel deploy
 10. **Deployment target**
    > Render as `single-select + Other input`
    > Recommended options: `vercel`, `github`

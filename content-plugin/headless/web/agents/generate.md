@@ -1,4 +1,4 @@
-# Step 4 — Generate Code
+# Section C — Step 1 (Generate Code)
 
 Write all files directly into `output/<slug>/`.
 

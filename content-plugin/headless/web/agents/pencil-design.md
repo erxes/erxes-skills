@@ -1,6 +1,6 @@
-# Step 3.5 — Design System + Pencil Handoff
+# Section B — Step 2 (Design System + Pencil Handoff)
 
-Use this file for **all UI design work** before Step 4 code generation.
+Use this file for **all UI design work** before Section C development.
 
 This stage does not write frontend code. It creates the approved visual system and the exact handoff files that `agents/frontend.md` expects.
 
@@ -102,7 +102,7 @@ Write these full handoff files only after the user selects one homepage option a
 - `output/<slug>/ui-libraries.json`
 - `output/<slug>/HANDOFF.md`
 
-These files are required. Step 4 should not start without them and without explicit post-design approval.
+These files are required. Section C — Step 1 (Development) should not start without them and without explicit post-design approval.
 
 Invalid output examples:
 
@@ -358,7 +358,7 @@ Before leaving this phase:
 - ask `do you wanna edit design before build frontend?`
 - wait for free-form page-specific feedback or explicit approval
 - if feedback is given, apply it in Pencil and ask again
-- do not hand off to Step 4 until that review loop is closed
+- do not hand off to Section C — Step 1 until that review loop is closed
 
 Page model:
 
@@ -666,7 +666,7 @@ Allowed output values:
 
 Write the detected list back into `site.config.json` as `required_sections` or `sections`, following the current project flow.
 
-Show the detected list to the user and get confirmation before Step 4.
+Show the detected list to the user and get confirmation before Section C — Step 1.
 
 ---
 
@@ -728,7 +728,7 @@ Do not:
 
 ## Completion Gate
 
-Step 3.5 is complete only when all of these are true:
+Section B — Step 2 is complete only when all of these are true:
 
 - 2 to 3 homepage previews were built in Pencil
 - homepage preview exports exist
@@ -744,9 +744,9 @@ Step 3.5 is complete only when all of these are true:
 - `color_hint` is set
 - all design artifacts came from the approved `.pen` path for this site
 
-If the source is a website with strategy `copy-site` or `improve-site`, Step 3.5 is not complete until the relevant source pages and locale variants were audited and recorded in the handoff.
+If the source is a website with strategy `copy-site` or `improve-site`, Section B — Step 2 is not complete until the relevant source pages and locale variants were audited and recorded in the handoff.
 If the source is a website with strategy `copy-site` or `improve-site`, `source-audit.json` must exist and be used during handoff creation.
 
-If any artifact is a placeholder, blank stub, or file-type fake, Step 3.5 is not complete.
+If any artifact is a placeholder, blank stub, or file-type fake, Section B — Step 2 is not complete.
 
 Only then should the pipeline continue to `agents/frontend.md` and `agents/generate.md`.

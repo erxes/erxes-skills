@@ -7,7 +7,7 @@ description: Build Next.js frontend from Pencil design and design tokens with ze
 
 ---
 
-> **Pipeline position:** Step 2 of 3. Runs after `erxes-design` skill.
+> **Pipeline position:** Section C — Step 1. Runs after Section B (Design).
 > **Core mandate:** Build pixel-faithful, zero-error Next.js 15 frontend.
 >                   Implement EVERY animation library the design skill specced — precisely.
 >                   Motion Levels 0–5. All visual directions. All animation systems.
@@ -26,7 +26,7 @@ NEVER       = Invent design values. Skip library installations. Leave type error
               Use "any". Hardcode hex values. Skip animation implementations.
               Leave a motion spec from HANDOFF.md unimplemented.
               Upgrade the starter's Next.js / React stack or use @latest tooling inside it.
-POSITION    = Step 2 of 3 in the pipeline
+POSITION    = Section C — Step 1 in the pipeline
 ```
 
 ---
@@ -76,7 +76,7 @@ Web Search      → Find correct library APIs, TypeScript types, breaking change
 ### 0.1 Read All Design Inputs
 
 ```
-[ ] Verify Step 3.5 actually completed in Pencil before coding
+[ ] Verify Section B — Step 2 (Design) actually completed in Pencil before coding
 [ ] Confirm homepage previews were created and one option was approved
 [ ] Confirm HANDOFF.md includes an Approval Record with the chosen homepage option
 [ ] Confirm design.pen and design.png are real exports from the approved direction, not placeholders

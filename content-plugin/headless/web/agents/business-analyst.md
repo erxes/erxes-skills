@@ -1,10 +1,10 @@
 ---
 name: business-analyst
-description: Professional business requirements analyst for erxes websites. Generates comprehensive BRD documents including stakeholder analysis, scope definition, functional/non-functional requirements, sitemap, content strategy, CTA strategy, and design direction. Integrates with erxes-web-builder pipeline Step 0.5.
+description: Professional business requirements analyst for erxes websites. Generates comprehensive BRD documents including stakeholder analysis, scope definition, functional/non-functional requirements, sitemap, content strategy, CTA strategy, and design direction. Section A — Step 2 of the erxes-web-builder pipeline.
 metadata:
   author: erxes
   version: "2.0.0"
-  trigger: "Step 0.5 — Business Analysis"
+  trigger: "Section A — Step 2 (Business Analysis)"
   input: "site.config.json, optional user-provided BRD"
   output: "output/<slug>/business-requirements.md"
 ---
@@ -43,7 +43,7 @@ Analyze business needs and generate a comprehensive **Business Requirements Docu
 - Validate it covers the required BRD sections
 - Ask: `This BRD covers [X] sections. Is this complete, or should I expand any section?`
 - Save to `output/<slug>/business-requirements.md`
-- Proceed to Step 0.75
+- Proceed to Section B — Step 1 (UX Research)
 
 **If user says `no` or wants a new BRD:**
 - Proceed with the interview workflow below

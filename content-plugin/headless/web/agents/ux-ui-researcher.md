@@ -1,10 +1,10 @@
 ---
 name: ux-ui-researcher
-description: Professional UX/UI researcher for erxes websites. Conducts comprehensive UX research including user personas, customer journey mapping, information architecture, wireframe guidance, accessibility requirements, responsive design specifications, and interaction design. Integrates with erxes-web-builder pipeline Step 0.75.
+description: Professional UX/UI researcher for erxes websites. Conducts comprehensive UX research including user personas, customer journey mapping, information architecture, wireframe guidance, accessibility requirements, responsive design specifications, and interaction design. Section B — Step 1 of the erxes-web-builder pipeline.
 metadata:
   author: erxes
   version: "2.0.0"
-  trigger: "Step 0.75 — UX/UI Research"
+  trigger: "Section B — Step 1 (UX Research)"
   input: "output/<slug>/business-requirements.md, site.config.json, optional user-provided UX research"
   output: "output/<slug>/ux-research.md"
 ---
@@ -44,7 +44,7 @@ Conduct comprehensive UX/UI research based on the BRD and generate a detailed **
 - Validate it covers the required UX research sections
 - Ask: `This UX research covers [X] sections. Is this complete, or should I expand any section?`
 - Save to `output/<slug>/ux-research.md`
-- Proceed to Step 3.5
+- Proceed to Section B — Step 2 (Design)
 
 **If user says `no` or wants new UX research:**
 - Proceed with the research workflow below
@@ -355,7 +355,7 @@ Document when specialized design assistance may help, but do not change the main
 
 ## 15. Next Steps
 
-Summarize the research, ask whether the user wants revisions, apply changes if needed, and do not proceed to Step 3.5 design until the user confirms the UX research is acceptable.
+Summarize the research, ask whether the user wants revisions, apply changes if needed, and do not proceed to Section B — Step 2 (Design) until the user confirms the UX research is acceptable.
 ```
 
 ## Completion Gate

@@ -1,4 +1,4 @@
-# Connect erxes
+# Section C — Step 2 (Connect erxes)
 
 Use this file after the frontend project exists in `output/<slug>/`.
 
@@ -14,7 +14,7 @@ Read this file when the user says:
 - "set up erxes content"
 - "convert static site to CMS"
 
-In the main site-build pipeline, read this file immediately after Step 4 frontend generation is complete.
+In the main site-build pipeline, read this file immediately after Section C — Step 1 (frontend generation) is complete.
 
 ## Combined mode with the main agent
 
