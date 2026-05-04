@@ -59,8 +59,8 @@ Run this before anything else. Ask every field — do not assume or skip.
   - `color_hint`
   - `deploy_target`
 - `multi-select + other`:
-  - `languages`
-  - `sections`
+  - `languages` — render as a horizontal row of toggle chips
+  - `sections` — render as a **wrapping chip grid (2–3 columns)**, never a vertical list
 - `text input`:
   - `name`
   - `ui_source_ref`
@@ -116,7 +116,7 @@ Run this before anything else. Ask every field — do not assume or skip.
    > Recommended options: `formal`, `casual`, `modern`, `traditional`, `playful`
 
 5. **Sections**
-   > Render as `multi-select + Other input`
+   > Render as `multi-select chip grid + Other input` — lay chips out in a **wrapping grid (2–3 columns)**, NOT a tall vertical list. This keeps the control compact and prevents overflow.
    > Recommended options: `about`, `services`, `blog`, `contact`, `gallery`, `pricing`, `team`, `testimonials`, `faq`, `menu`, `portfolio`, `design`
    - Valid sections: `about`, `services`, `blog`, `contact`, `gallery`, `pricing`, `team`, `testimonials`, `faq`, `menu`, `portfolio`
    - If the user includes `hero`, keep it, but do not require it
