@@ -79,9 +79,9 @@ Run this before anything else. Ask every field — do not assume or skip.
 
 **Conditional input rules**
 
-- `ui_source_ref` depends on `ui_source`
-- `design_strategy` depends on `ui_source`
-- `reference_url` appears when `design_strategy` is `copy-site` or `improve-site`
+- `ui_source` appears only when `design_strategy` is `from-scratch` or `brand-first`
+- `ui_source_ref` follows `ui_source`; for `copy-site`/`improve-site` it is the reference URL
+- `reference_url` appears when `design_strategy` is `copy-site` or `improve-site` (set automatically from `ui_source_ref`)
 - `competitor_urls` appears when `design_strategy` is `beat-competitors`
 - `color_hint` appears only when `ui_source` is `words`
 - `vercel_token` and `vercel_org_id` appear only when `deploy_target` is `vercel`
@@ -122,51 +122,54 @@ Run this before anything else. Ask every field — do not assume or skip.
    - If the user includes `hero`, keep it, but do not require it
    - If the user types `design`: skip saving sections now — defer to Section B — Step 2 (Design) where the UI source is analyzed. After analyzing the design, extract the sections present in the layout and save them to `site.config.json` before continuing to Section C — Step 1.
 
-6. **UI source**
-   > Render as `single-select`
-   > Recommended options: `words`, `pencil`, `figma`, `screenshot`, `website`
-   - `words` — user describes what they want in text; agent generates using Pencil AI guided by that description
-   - `pencil` — user has an existing `.pen` file to use as the starting design
-   - `figma` — user provides a Figma file link or exported assets
-   - `screenshot` — user uploads one or more screenshots as visual reference
-   - `website` — agent scrapes an existing website URL as design reference
-   - Save as `ui_source` in `site.config.json`
-   - Then render `ui_source_ref` as a text input with a source-specific placeholder:
-     - `words` → "Describe the look and feel you want."
-     - `pencil` → "Path to your `.pen` file."
-     - `figma` → "Figma file URL or exported image paths."
-     - `screenshot` → "Screenshot file path(s)."
-     - `website` → "URL of the existing website."
-   - Save the follow-up answer as `ui_source_ref` in `site.config.json`
-
-7. **Design strategy**
-   - Ask this for **all** `ui_source` values before any design work starts
-   - Render as `single-select + Other input`
-   - Recommended options: `from-scratch`, `copy-site`, `improve-site`, `brand-first`, `beat-competitors`
+6. **Design strategy**
+   > Render as `single-select + Other input`
+   > Recommended options: `from-scratch`, `copy-site`, `improve-site`, `brand-first`, `beat-competitors`
+   - `from-scratch` — build a completely new design
+   - `copy-site` — replicate an existing website's look
+   - `improve-site` — take an existing site and make it better
+   - `brand-first` — start from brand identity (colors, fonts, logo)
+   - `beat-competitors` — analyze competitors and outdesign them
    - Save as `design_strategy` in `site.config.json`
 
    **If `design_strategy` is `copy-site` or `improve-site`:**
-   - If `ui_source` is `website`:
-     - Reuse `ui_source_ref` as `reference_url` by default
-     - Only ask for another URL if the user says the source site to copy/improve is different from `ui_source_ref`
-   - If `ui_source` is `pencil`, `figma`, or `screenshot`, ask:
+   - Set `ui_source` to `website` automatically — do **not** ask the UI source question
+   - Ask for the reference URL:
      > Render as `text input`
-     > Label: "Source website URL to copy or improve"
-   - Save as `reference_url` in `site.config.json`
+     > Label: "URL of the site to copy or improve"
+   - Save as both `ui_source_ref` and `reference_url` in `site.config.json`
+   - Set `competitor_urls` to `[]`
 
    **If `design_strategy` is `beat-competitors`:**
-   - Render as `repeatable URL inputs`
-   - Require `2` to `5` entries
-   - Save them as `competitor_urls` array in `site.config.json`
+   - Set `ui_source` to `words` automatically — do **not** ask the UI source question
+   - Ask for competitor URLs:
+     > Render as `repeatable URL inputs`
+     > Require `2` to `5` entries
+   - Save as `competitor_urls` in `site.config.json`
+   - Set `reference_url` to `null`
 
    **If `design_strategy` is `from-scratch` or `brand-first`:**
    - Set `reference_url` to `null`
    - Set `competitor_urls` to `[]`
+   - Ask question 7 (UI source) below
 
-8. **Color hint** — skip this question if `ui_source` is anything other than `words`
+7. **UI source** — ask **only** when `design_strategy` is `from-scratch` or `brand-first`
+   > Render as `single-select`
+   > Recommended options: `words`, `pencil`, `screenshot`
+   - `words` — user describes what they want in text; agent generates using Pencil AI guided by that description
+   - `pencil` — user has an existing `.pen` file to use as the starting design
+   - `screenshot` — user uploads one or more screenshots as visual reference
+   - Save as `ui_source` in `site.config.json`
+   - Then render `ui_source_ref` as a text input with a source-specific placeholder:
+     - `words` → "Describe the look and feel you want."
+     - `pencil` → "Path to your `.pen` file."
+     - `screenshot` → "Screenshot file path(s)."
+   - Save the follow-up answer as `ui_source_ref` in `site.config.json`
+
+8. **Color hint** — ask **only** when `ui_source` is `words`
    > Render as `single-select + Other input`
    > Recommended options: `brown`, `blue`, `forest-green`
-   - If the user provided a design (`pencil`, `figma`, `screenshot`, or `website`), do **not** ask this — the color will be extracted from the design in Section B — Step 2 (Design). Set `color_hint` to `null`.
+   - If `ui_source` is `pencil` or `screenshot`, do **not** ask — color will be extracted from the design. Set `color_hint` to `null`.
 
 9. **Extra notes**
    > Render as `textarea`
@@ -229,8 +232,8 @@ Write `site.config.json`:
   "color_hint": "<answer or null>",
   "extra_notes": "<answer or null>",
   "deploy_target": "<vercel|github>",
-  "ui_source": "<words|pencil|figma|screenshot|website>",
-  "ui_source_ref": "<description, .pen path, figma url, screenshot paths, or website url>",
+  "ui_source": "<words|pencil|screenshot|website>",
+  "ui_source_ref": "<description, .pen path, screenshot paths, or website url>",
   "design_strategy": "<from-scratch|copy-site|improve-site|brand-first|beat-competitors>",
   "reference_url": "<website url or null>",
   "competitor_urls": ["<url-1>", "<url-2>"]
