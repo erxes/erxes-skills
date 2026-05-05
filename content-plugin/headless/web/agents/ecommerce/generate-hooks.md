@@ -8,7 +8,12 @@
 import { useMutation, useQuery } from "@apollo/client/react";
 import { useAtom } from "jotai";
 import { useCallback } from "react";
-import { LOGIN, REGISTER, FORGOT_PASSWORD, RESET_PASSWORD } from "@/graphql/auth/mutations";
+import {
+  LOGIN,
+  REGISTER,
+  FORGOT_PASSWORD,
+  RESET_PASSWORD,
+} from "@/graphql/auth/mutations";
 import { CURRENT_USER as CURRENT_USER_QUERY } from "@/graphql/auth/queries/currentUser";
 import { currentUserAtom, triggerRefetchUserAtom } from "@/store/auth.store";
 import {
@@ -31,7 +36,7 @@ export function useCurrentUser() {
     loading,
     error,
     refetch,
-    triggerRefetchUser: () => refetch(),  // directly refetch — do NOT use setTrigger(true)
+    triggerRefetchUser: () => refetch(), // directly refetch — do NOT use setTrigger(true)
   };
 }
 
@@ -62,6 +67,8 @@ export function useLogin() {
           window.location.href = redirectAfterLogin;
           return { success: true, token, redirect: redirectAfterLogin };
         }
+        window.location.href = "/";
+        return { success: true, token };
       }
 
       return { success: !!token, token };
@@ -116,7 +123,10 @@ export function useForgotPassword() {
   const forgotPassword = useCallback(
     async (input: IForgotPasswordInput) => {
       const { data } = await mutation({
-        variables: { email: input.email, clientPortalId: process.env.NEXT_PUBLIC_ERXES_CP_TOKEN },
+        variables: {
+          email: input.email,
+          clientPortalId: process.env.NEXT_PUBLIC_ERXES_CP_TOKEN,
+        },
       });
       return { success: !!(data as any)?.clientPortalUserForgotPassword };
     },
@@ -190,7 +200,8 @@ export function useOrderDetail(orderId: string) {
 
 export function useOrderCUD() {
   const [addMutation, { loading: addLoading }] = useMutation(ORDERS_ADD);
-  const [removeMutation, { loading: removeLoading }] = useMutation(ORDERS_REMOVE);
+  const [removeMutation, { loading: removeLoading }] =
+    useMutation(ORDERS_REMOVE);
   const [, setActiveOrder] = useAtom(activeOrderAtom);
   const [, setCartItems] = useAtom(cartItemsAtom);
   const [, setOrderLoading] = useAtom(orderLoadingAtom);
@@ -205,7 +216,7 @@ export function useOrderCUD() {
         bonusCount?: number;
       }>;
       totalAmount: number;
-      type: string;           // "delivery" | "pickup" | "eat" — ЗААВАЛ шаардлагатай
+      type: string; // "delivery" | "pickup" | "eat" — ЗААВАЛ шаардлагатай
       customerId?: string;
       customerType?: string;
       registerNumber?: string;
@@ -232,7 +243,10 @@ export function useOrderCUD() {
           setCartItems([]);
         }
 
-        return { success: !!order?._id, order: { ...order, totalAmount: calculatedTotal } };
+        return {
+          success: !!order?._id,
+          order: { ...order, totalAmount: calculatedTotal },
+        };
       } finally {
         setOrderLoading(false);
       }
@@ -268,7 +282,11 @@ import {
   CHECK_INVOICE,
   PAYMENT_TRANSACTIONS_ADD,
 } from "@/graphql/ecommerce/mutations/payment";
-import { paymentsAtom, selectedPaymentAtom, invoiceAtom } from "@/store/payment.store";
+import {
+  paymentsAtom,
+  selectedPaymentAtom,
+  invoiceAtom,
+} from "@/store/payment.store";
 
 export function usePayments() {
   const { data, loading, error } = useQuery(PAYMENTS, {
@@ -338,7 +356,9 @@ export function useCheckInvoice() {
 }
 
 export function useAddPaymentTransaction() {
-  const [addMutation, { loading, error }] = useMutation(PAYMENT_TRANSACTIONS_ADD);
+  const [addMutation, { loading, error }] = useMutation(
+    PAYMENT_TRANSACTIONS_ADD,
+  );
 
   const addTransaction = useCallback(
     async (params: {
