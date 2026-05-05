@@ -19,7 +19,7 @@ pnpm add jotai
 pnpm add react-hook-form zod @hookform/resolvers
 
 # UI utilities
-pnpm add clsx tailwind-merge class-variance-authority
+pnpm add clsx tailwind-merge class-variance-authority @radix-ui/react-dialog lucide-react
 
 # Payment
 pnpm add @stripe/stripe-js @stripe/react-stripe-js
