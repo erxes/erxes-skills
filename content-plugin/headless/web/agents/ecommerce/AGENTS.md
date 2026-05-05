@@ -188,9 +188,6 @@ Read [`agents/pencil-design.md`](../pencil-design.md). Use `ui_source_ref` as th
 **`pencil`** — existing `.pen` file
 Open file at `ui_source_ref` path using Pencil MCP tools. Use it as the base homepage direction, create full-homepage options in Pencil first, export preview images, show the user the choices, then after approval expand the chosen direction into the full design package listed above.
 
-**`figma`** — Figma file or exported assets
-Use URL or image paths in `ui_source_ref` as visual reference. Reconstruct full-homepage direction previews in Pencil first, export preview images, get a user choice, then expand the selected direction into the full design package listed above.
-
 **`screenshot`** — uploaded screenshots
 Read image files in `ui_source_ref`. Extract layout, sections, colors, and component patterns, rebuild full-homepage direction previews in Pencil first, export preview images, get a user choice, then expand the selected direction into the full design package listed above.
 
@@ -203,7 +200,7 @@ pnpm site:audit "<reference-url-or-ui_source_ref>" "output/<slug>/source-audit.j
 
 Use that audit JSON as the source-of-truth inventory for both structure and static content, then turn that into full-homepage direction previews in Pencil, export preview images, get a user choice, then expand the selected direction into the full design package listed above.
 
-**For `pencil` / `figma` / `screenshot` / `website`:**
+**For `pencil` / `screenshot` / `website`:**
 Extract dominant primary color → write to `store.config.json` as `color_hint`. Do not ask user.
 
 **If `design_strategy` is `copy-site` or `improve-site`:**
