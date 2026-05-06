@@ -4,6 +4,37 @@
 
 ---
 
+## Design Binding — Read Before Writing ANY Page
+
+**Hard gate:** Do not write any page until the steps in `generate-components.md` Design Binding section are complete (design-tokens.json read, HANDOFF.md read, globals.css verified).
+
+### Page-level design rules
+
+- Every page layout must use the spacing rhythm from `design-tokens.json` → `spacing.layout`
+- Section backgrounds must alternate using `colors.semantic.background` and `colors.semantic.card` per the HANDOFF.md section plan
+- Page headings must use `typography.families.display` font
+- Body text must use `typography.families.body` font
+- All interactive states (hover, focus, active) must use the token-mapped colors — do not hardcode hex values
+- If `motion.motionLevel` > 0 in `design-tokens.json`, apply entrance animations from `motion.variants` to page sections
+
+### Per-page design source
+
+Before writing each page, check `HANDOFF.md` section **1. Frontend Build Map** for that page's layout notes. If HANDOFF.md has specific guidance for a page (e.g. hero layout, product grid columns, checkout panel split), follow it exactly.
+
+| Page | Check HANDOFF.md for |
+|---|---|
+| Homepage | hero layout, section order, featured grid columns |
+| Products | filter sidebar position, grid columns, card style |
+| Product detail | image gallery layout, info panel layout, review section |
+| Cart | line item layout, summary panel position |
+| Checkout | form/summary split, delivery fields order, payment selector style |
+| Login / Register | form card width, centered vs split layout |
+| Profile | sidebar nav style, content panel layout |
+| Orders | list item style, status badge colors |
+| Wishlist | grid columns, card remove action placement |
+
+---
+
 ## Homepage (`app/[locale]/page.tsx`) — Server
 
 Fetches `poscProducts` (page: 1, perPage: 8). Renders hero section + featured products grid + "View All" link to `/products`.

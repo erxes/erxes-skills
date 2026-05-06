@@ -238,6 +238,45 @@ Strategy rules:
 
 If useful, record the chosen strategy in the handoff summary as `design_strategy`.
 
+### Phase 0.75 — Source & Competitor Audit
+
+**Run this phase immediately after Phase 0.5, before presenting any design directions.**
+
+This phase fetches real data that informs direction choices. Do not skip it — directions created without audit data will be generic.
+
+#### When `design_strategy` is `copy-site` or `improve-site`
+
+Run the site audit on the reference URL:
+
+```bash
+pnpm site:audit "<reference_url>" "output/<slug>/source-audit.json"
+```
+
+Read `source-audit.json` before Phase 1. Extract:
+- dominant colors and visual language
+- layout patterns and section structure
+- typography feel
+- navigation labels and information architecture
+- static marketing copy to preserve in CMS seed
+
+#### When `design_strategy` is `beat-competitors`
+
+Run site audit on each competitor URL from `competitor_urls`:
+
+```bash
+pnpm site:audit "<competitor-url-1>" "output/<slug>/competitor-1-audit.json"
+pnpm site:audit "<competitor-url-2>" "output/<slug>/competitor-2-audit.json"
+# repeat for each competitor URL
+```
+
+Read all competitor audit files before Phase 1. Extract:
+- visual patterns competitors share (identify what looks generic or repetitive)
+- typography and color choices across competitors
+- layout conventions the new design must deliberately break
+- interaction and motion patterns worth outperforming
+
+**Do not present design directions until the audit files exist and have been read.**
+
 ### Phase 1 — Present Direction
 
 Present **3 design directions** before any full design work. Do not skip this just because the user wants the site built quickly.
@@ -256,7 +295,17 @@ Each direction must include:
 - complexity
 - why it fits this project
 
-Good direction families include:
+**Direction families are mandatory per strategy — do not mix across strategies without a strong reason.**
+
+| Strategy | Mandatory direction families | Character |
+|---|---|---|
+| `copy-site` | Swiss Grid, Editorial Luxury | faithful, structured, high-fidelity |
+| `improve-site` | Morphic Soft, Aurora Gradient | evolved, elevated, familiar but upgraded |
+| `beat-competitors` | Neon Brutalist, Glass Future, Midnight Cinema | bold, differentiated, deliberately distinct from audit findings |
+| `brand-first` | Derived from brand inputs only — do not apply a preset family | identity-locked, fill missing pieces only |
+| `from-scratch` | Any family from the full list below | open creative direction |
+
+Full direction family list (available for `from-scratch` and as secondary references):
 
 - Glass Future
 - Neon Brutalist
@@ -275,11 +324,7 @@ If the source is an existing design, make the three options:
 - improved
 - bold reinterpretation
 
-Map those options to strategy when relevant:
-
-- `copy-site` → bias toward `faithful`
-- `improve-site` → bias toward `improved`
-- `beat-competitors` → bias toward `bold reinterpretation`
+These options map directly to the mandatory families above — use the strategy's assigned families, not a free pick.
 
 ### Phase 1.5 — Homepage Direction Preview Gate
 
@@ -369,22 +414,43 @@ Page model:
 - Use the same visual system across homepage sections and standalone pages
 - The standalone pages should expand the corresponding homepage section rather than feel like unrelated templates
 
-### Phase 3.5 — Website Source Audit for `copy-site` and `improve-site`
+**Ecommerce page model** — when `template_type` is `ecommerce`, design ALL of the following pages after the homepage direction is approved:
 
-When `ui_source` is `website` and the strategy is `copy-site` or `improve-site`, perform a source audit before finalizing design or content assumptions.
+| Page | Route | Key elements to design |
+|---|---|---|
+| Product listing | `/products` | filter sidebar, product grid, sort controls, pagination |
+| Product detail | `/products/[id]` | image gallery, price, variant selector, add-to-cart, reviews section |
+| Cart | `/cart` | line items, quantity controls, order summary, checkout CTA |
+| Checkout | `/checkout` | delivery form, payment method selector, order summary panel |
+| Login | `/login` | email/password form, social login options, redirect-back hint |
+| Register | `/register` | registration form, terms checkbox |
+| Profile | `/profile` | editable personal info form, avatar |
+| Orders | `/orders` | order history list with status badges |
+| Order detail | `/orders/[id]` | items, delivery status timeline, totals |
+| Wishlist | `/wishlist` | saved product grid with remove and add-to-cart actions |
 
-Required audit behavior:
+- Design all ecommerce pages in the same Pencil file as the homepage (`output/<slug>/designs/design.pen`)
+- Include mobile viewport for cart, checkout, and product detail — these are high-traffic mobile pages
+- Cart drawer design is required in addition to the full cart page
+- Auth pages (login, register) must match the overall visual system but can be minimal layout
 
-- Fetch the source homepage
+### Phase 3.5 — Content Audit Finalization for `copy-site` and `improve-site`
+
+**Note:** The site audit command (`pnpm site:audit`) was already run in Phase 0.75. This phase uses that output to finalize content decisions before building full page designs.
+
+If `source-audit.json` does not exist, stop and run Phase 0.75 first before continuing.
+
+Re-read `output/<slug>/source-audit.json` and finalize:
+
 - Discover internal links from header, footer, sitemap, locale switchers, and obvious section CTAs
-- Fetch the relevant static pages that define the site's real context
+- Fetch any relevant pages not yet covered by the initial audit
 - Check locale variants when multiple languages are visible or when locale-prefixed URLs exist
 - Capture page titles, section headings, subheadings, CTA labels, menu labels, footer text, contact information, and other static marketing copy
-- Use this source content inventory to keep the generated CMS structure and seeded content aligned with the real site
+- Use this content inventory to keep CMS structure and seeded content aligned with the real site
 
 Discovery rules:
 
-- Prefer the navigation pages and high-signal marketing pages first
+- Prefer navigation pages and high-signal marketing pages first
 - Include locale variants such as `/en/about-us` when present
 - Include pages that map to selected sections such as about, services, contact, pricing, blog, FAQ, team, portfolio, and gallery
 - If the site exposes a sitemap or a clear page index, use it to discover additional relevant pages
@@ -428,6 +494,23 @@ Add section-specific components when relevant:
 - FAQ
 - portfolio
 - menu or catalog
+
+**Ecommerce-specific required components** — when `template_type` is `ecommerce`, also cover:
+
+- product card (image, name, price, wishlist icon, add-to-cart)
+- product grid (responsive, with skeleton loading state)
+- product image gallery (main image + thumbnail strip)
+- variant selector (size, color chips)
+- cart drawer (slide-in panel with line items and subtotal)
+- cart line item (image, name, qty stepper, remove)
+- checkout delivery form
+- checkout order summary panel
+- payment method selector
+- order status badge (pending, processing, delivered, cancelled)
+- order history row
+- wishlist card (product card variant with remove action)
+- auth form (shared style for login and register)
+- profile form (editable fields with save button)
 
 ### Phase 4 — Produce the Handoff Files
 
@@ -746,6 +829,21 @@ Section B — Step 2 is complete only when all of these are true:
 
 If the source is a website with strategy `copy-site` or `improve-site`, Section B — Step 2 is not complete until the relevant source pages and locale variants were audited and recorded in the handoff.
 If the source is a website with strategy `copy-site` or `improve-site`, `source-audit.json` must exist and be used during handoff creation.
+
+If `template_type` is `ecommerce`, Section B — Step 2 is not complete until ALL of the following page designs exist in the approved Pencil file:
+- homepage (with all selected homepage sections)
+- `/products` — product listing
+- `/products/[id]` — product detail
+- `/cart` — cart page
+- `/checkout` — checkout page
+- `/login` — login page
+- `/register` — register page
+- `/profile` — profile page
+- `/orders` — order history
+- `/orders/[id]` — order detail
+- `/wishlist` — wishlist page
+- cart drawer component
+- all ecommerce-specific components listed in Phase 3
 
 If any artifact is a placeholder, blank stub, or file-type fake, Section B — Step 2 is not complete.
 
