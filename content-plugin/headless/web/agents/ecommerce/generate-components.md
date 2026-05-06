@@ -4,6 +4,89 @@
 
 ---
 
+## Design Binding — Read Before Writing ANY Component
+
+**Hard gate:** Do not write any component until all 4 steps below are complete.
+
+### Step 1 — Read `design-tokens.json`
+
+Open `output/<slug>/design-tokens.json`. Extract and hold in context:
+
+| Token path | Used for |
+|---|---|
+| `colors.semantic.background` | page background |
+| `colors.semantic.card` | card surface |
+| `colors.semantic.primary` | brand color, CTA buttons |
+| `colors.semantic.primaryForeground` | text on primary buttons |
+| `colors.semantic.secondary` | secondary surfaces |
+| `colors.semantic.foreground` | body text |
+| `colors.semantic.mutedForeground` | helper text, labels |
+| `colors.semantic.border` | dividers, input borders |
+| `colors.semantic.destructive` | error, delete actions |
+| `typography.families.display` | headings font |
+| `typography.families.body` | body font |
+| `radius` | border-radius scale |
+| `shadows` | shadow scale |
+| `spacing.scale` | spacing rhythm |
+
+### Step 2 — Read `HANDOFF.md`
+
+Open `output/<slug>/HANDOFF.md`. Confirm:
+- approved visual direction and homepage option
+- per-component notes (if any)
+- motion level — if > 0, apply animation tokens from `motion` in `design-tokens.json`
+
+### Step 3 — Verify `globals.css`
+
+Check that `output/<slug>/app/globals.css` has CSS variables declared from the design tokens:
+
+```css
+:root {
+  --color-background: <from token>;
+  --color-card: <from token>;
+  --color-primary: <from token>;
+  --color-primary-foreground: <from token>;
+  --color-foreground: <from token>;
+  --color-muted-foreground: <from token>;
+  --color-border: <from token>;
+  --color-destructive: <from token>;
+  --radius-sm: <from token>;
+  --radius-md: <from token>;
+  --radius-lg: <from token>;
+  --shadow-sm: <from token>;
+  --shadow-md: <from token>;
+}
+```
+
+If `globals.css` is missing these variables — write them now before any component.
+
+### Step 4 — className Mapping
+
+Replace every mak-ecommerce reference className using the extracted tokens:
+
+| Reference className | Replace with |
+|---|---|
+| `bg-background` | design token `colors.semantic.background` |
+| `bg-card` | design token `colors.semantic.card` |
+| `bg-primary` | design token `colors.semantic.primary` |
+| `bg-secondary` | design token `colors.semantic.secondary` |
+| `bg-muted` | design token `colors.semantic.muted` |
+| `text-foreground` | design token `colors.semantic.foreground` |
+| `text-primary` | design token `colors.semantic.primary` |
+| `text-muted-foreground` | design token `colors.semantic.mutedForeground` |
+| `text-primary-foreground` | design token `colors.semantic.primaryForeground` |
+| `text-destructive` | design token `colors.semantic.destructive` |
+| `border-border` | design token `colors.semantic.border` |
+| `rounded-sm` | design token `radius` small value |
+| `rounded-md` | design token `radius` medium value |
+| `rounded-xl`, `rounded-2xl` | design token `radius` large value |
+| `shadow-sm` | design token `shadows` small value |
+| `shadow-xl` | design token `shadows` large value |
+| `space-y-4`, `gap-6` | design token `spacing.scale` values |
+| font classes | design token `typography.families` |
+
+---
+
 ## Layout Components
 
 ### `components/layout/Header.tsx` (Server)

@@ -179,10 +179,10 @@ export async function configLoader(): Promise<SiteIntent> {
     raw.deploy_target = parsed.deploy_target as SiteConfig["deploy_target"];
     raw.color_hint = parsed.color_hint;
     raw.extra_notes = parsed.extra_notes || null;
-    configErxes.endpoint = parsed.erxes_endpoint ?? "";
+    configErxes.endpoint = parsed.erxes_endpoint ?? parsed.erxes_api_url ?? "";
     configErxes.app_token = parsed.erxes_app_token ?? "";
     configErxes.cms_id = parsed.erxes_cms_id ?? "";
-    configErxes.client_portal_id = parsed.client_portal_id ?? "";
+    configErxes.client_portal_id = parsed.client_portal_id ?? parsed.clientPortalId ?? "";
   } else {
     console.log("→ [config-loader] site.config.json not found, collecting via CLI...");
   }
