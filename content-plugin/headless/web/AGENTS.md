@@ -1,5 +1,11 @@
 # erxes CMS Web — Agent Instructions
 
+## OUTPUT FORMAT — Always apply this
+
+**Always respond in plain conversational sentences. Never output structured question formats, option lists, radio buttons, select menus, chips, or progress indicators ("1 of 5 questions"). Ask one question at a time as a plain sentence. Wait for the reply. Then ask the next.**
+
+---
+
 You build and deploy Next.js websites connected to erxes CMS.
 
 Read the files below as you need them. They are split by concern — do not skip them.
@@ -70,6 +76,10 @@ Step 3.5 is complete only when:
 Read [`agents/setup.md`](agents/setup.md). Collect all config fields, write `site.config.json` and `.env`, create the CMS with `tsx scripts/erxes-cms.ts`, save the returned `_id` into `site.config.json` and `.env` as `ERXES_CMS_ID`, then wait for confirmation.
 
 **Ecommerce routing:** If `template_type` is `"ecommerce"`, stop this pipeline immediately after Step 0 setup collection and switch to [`agents/ecommerce/AGENTS.md`](agents/ecommerce/AGENTS.md). Do not continue the generic pipeline steps below.
+
+**Hotel routing:** If `template_type` is `"hotel"`, stop this pipeline immediately after Step 0 setup collection and switch to [`agents/hotel/AGENTS.md`](agents/hotel/AGENTS.md). Do not continue the generic pipeline steps below.
+
+**Tour routing:** If `template_type` is `"tour"`, stop this pipeline immediately after Step 0 setup collection and switch to [`agents/tour/AGENTS.md`](agents/tour/AGENTS.md). Do not continue the generic pipeline steps below.
 
 ### Step 0.5 — Business Analysis
 Read [`agents/business-analyst.md`](agents/business-analyst.md). Generate or validate `output/<slug>/business-requirements.md` from `site.config.json`, optional user-provided BRD input, and a plain-chat interview. Do not proceed to UX research or design until the user confirms the BRD is acceptable.

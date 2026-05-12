@@ -2,13 +2,23 @@
 
 Write all files directly into `output/<slug>/`.
 
-**Images — always use the shared `Image` component:**
-```tsx
-import Image from "@/components/common/Image";
-// <Image src={url} alt={alt} width={800} height={600} />
-```
-- Never use `<img>` tags or `next/image` directly in generated pages or section components.
-- `Image` handles erxes file URLs (`/read-file?key=…`), fallback to `/images/placeholder.png`, and load errors automatically.
+## Starter inventory — read before writing anything
+
+The cloned starter already contains these. **Import from them — do not recreate.**
+
+| Already exists | Import / usage |
+| -------------- | -------------- |
+| Apollo client + provider | `@/lib/apollo/client`, `@/lib/apollo/server-client`, `@/lib/apollo/provider` |
+| Auth context + hook | `import { AuthProvider, useAuth } from "@/lib/auth/AuthContext"` — **only for `has_auth = true` (ecommerce / tour / hotel)** |
+| Protected route wrapper | `import RequireAuth from "@/lib/auth/RequireAuth"` — **only for `has_auth = true`** |
+| Payment hook | `import { useInvoice } from "@/lib/hooks/useInvoice"` — **only for `has_auth = true`** |
+| Image component | `import Image from "@/components/common/Image"` — **always use this, never `<img>` or `next/image`** |
+| Loader / EmptyState / Pagination | `@/components/common/Loader`, `EmptyState`, `Pagination` |
+| All GraphQL operations + types | `@/graphql/auth/*`, `@/graphql/cms/*`, `@/graphql/ecommerce/*`, `@/graphql/hotel/*`, `@/graphql/tour/*` |
+| i18n routing | `@/i18n/routing` — only update `locales` + `defaultLocale`, never rewrite the file |
+| Root locale layout | `src/app/[locale]/layout.tsx` — update it, do not replace it |
+
+For `has_auth = true` (ecommerce / tour / hotel) only: add `<AuthProvider>` inside `<ApolloClientProvider>` in the locale layout. **Do not add `AuthProvider` for `business` sites.**
 
 ---
 
@@ -233,90 +243,173 @@ export default async function LocaleLayout({ children, params }: LayoutProps<"/[
 
 ---
 
-## 4d. Pages — one per menu item
+## 4d. Pages
 
-All pages live under `app/[locale]/` — never under `app/` directly.
+All pages live under `app/[locale]/` — never under `app/` directly. Each page receives `params: { locale: string }` and passes it as `language` to every query.
 
-- `url: "/"` → `app/[locale]/page.tsx`
-- `url: "/about"` → `app/[locale]/about/page.tsx`
-- `url: "/contact"` → `app/[locale]/contact/page.tsx`
+### Page type decision tree
 
-Required page model:
+| Section | Page type | Route |
+| ------- | --------- | ----- |
+| `about`, `services`, `team`, `gallery`, `pricing`, `portfolio`, `testimonials`, `faq` | CMS content → `[slug]/page.tsx` | `/about`, `/services`, etc. |
+| `contact` | Dedicated page with form | `contact/page.tsx` |
+| `blog` | Listing + detail | `blog/page.tsx`, `blog/[slug]/page.tsx` |
+| `menu` (restaurant) | Dedicated page | `menu/page.tsx` |
+| Homepage | Compose selected section components | `page.tsx` |
 
-- The homepage (`/`) should compose the selected sections as a landing page
-- Every selected section should also have its own standalone page route
-- Reuse the same section components where possible, but adapt layout depth for standalone pages
-- If `blog` exists, generate a listing page and detail pages
-- If a section is selected, do not leave it homepage-only unless the design handoff explicitly marks it as decorative-only
+**Rule:** The homepage composes all selected sections as a landing page. Every section also gets its own standalone page route — reuse the same section component, adapt layout depth as needed.
 
-Each page receives `params: { locale: string }` and passes it as `language` to every query.
+---
 
-**Dynamic CMS page** `app/[locale]/[slug]/page.tsx`:
-```typescript
-import { getClient } from "@/lib/apollo-client";
-import { GET_PAGE_BY_SLUG, GET_PAGES } from "@/lib/graphql/queries/cms";
-import { routing } from "@/i18n/routing";
-import { notFound } from "next/navigation";
+### Homepage `app/[locale]/page.tsx` — Server Component
 
-export async function generateStaticParams() {
-  const results = await Promise.all(
-    routing.locales.map(async (locale) => {
-      const { data } = await getClient().query({
-        query: GET_PAGES,
-        variables: { language: locale },
-        context: { fetchOptions: { next: { revalidate: 60 } } },
-      });
-      return (data.cpPages ?? []).map((p: { slug: string }) => ({ locale, slug: p.slug }));
-    })
-  );
-  return results.flat();
-}
+```tsx
+import { getServerApolloClient } from "@/lib/apollo/server-client";
+import { CP_PAGES } from "@/graphql/cms/queries/page";
+// Import each section component
+import HeroSection from "@/components/sections/Hero";
+import AboutSection from "@/components/sections/About";
+// ... other sections
 
-export default async function CmsPage({ params }: { params: { locale: string; slug: string } }) {
-  const { locale, slug } = await params;
-  const { data } = await getClient().query({
-    query: GET_PAGE_BY_SLUG,
-    variables: { slug, language: locale },
-    context: { fetchOptions: { next: { revalidate: 60 } } },
+export default async function HomePage({ params }: { params: Promise<{ locale: string }> }) {
+  const { locale } = await params;
+  const client = await getServerApolloClient();
+  const { data } = await client.query({
+    query: CP_PAGES,
+    variables: { language: locale },
   });
-  if (!data.cpPageDetail) notFound();
+  const pages = data?.cpPages ?? [];
+  const getPage = (slug: string) => pages.find((p: { slug: string }) => p.slug === slug);
+
   return (
     <main>
-      <div dangerouslySetInnerHTML={{ __html: data.cpPageDetail.content ?? "" }} />
+      <HeroSection />
+      <AboutSection page={getPage("about")} />
+      {/* render each selected section */}
     </main>
   );
 }
 ```
 
-**Dynamic blog post** `app/[locale]/blog/[slug]/page.tsx`:
-```typescript
-import { getClient } from "@/lib/apollo-client";
-import { GET_POST_BY_SLUG, GET_POSTS } from "@/lib/graphql/queries/cms";
+---
+
+### CMS content pages — `app/[locale]/[slug]/page.tsx`
+
+Used for: about, services, team, gallery, pricing, portfolio, testimonials, faq.
+
+```tsx
+import { getServerApolloClient } from "@/lib/apollo/server-client";
+import { CP_PAGE_DETAIL, CP_PAGES } from "@/graphql/cms/queries/page";
 import { routing } from "@/i18n/routing";
 import { notFound } from "next/navigation";
 
 export async function generateStaticParams() {
   const results = await Promise.all(
     routing.locales.map(async (locale) => {
-      const { data } = await getClient().query({
-        query: GET_POSTS,
-        variables: { language: locale },
-        context: { fetchOptions: { next: { revalidate: 60 } } },
-      });
-      return (data.cpPosts ?? []).map((p: { slug: string }) => ({ locale, slug: p.slug }));
+      const client = await getServerApolloClient();
+      const { data } = await client.query({ query: CP_PAGES, variables: { language: locale } });
+      return (data?.cpPages ?? []).map((p: { slug: string }) => ({ locale, slug: p.slug }));
     })
   );
   return results.flat();
 }
 
-export default async function PostPage({ params }: { params: { locale: string; slug: string } }) {
+export default async function CmsPage({ params }: { params: Promise<{ locale: string; slug: string }> }) {
   const { locale, slug } = await params;
-  const { data } = await getClient().query({
-    query: GET_POST_BY_SLUG,
-    variables: { slug, language: locale },
-    context: { fetchOptions: { next: { revalidate: 60 } } },
-  });
-  if (!data.cpPostDetail) notFound();
+  const client = await getServerApolloClient();
+  const { data } = await client.query({ query: CP_PAGE_DETAIL, variables: { slug, language: locale } });
+  if (!data?.cpPageDetail) notFound();
+  const page = data.cpPageDetail;
+  return (
+    <main>
+      <h1>{page.title}</h1>
+      <div dangerouslySetInnerHTML={{ __html: page.content ?? "" }} />
+    </main>
+  );
+}
+```
+
+---
+
+### Contact page — `app/[locale]/contact/page.tsx`
+
+Dedicated page — fetches CMS content for intro text, renders a contact form client component.
+
+```tsx
+import { getServerApolloClient } from "@/lib/apollo/server-client";
+import { CP_PAGE_DETAIL } from "@/graphql/cms/queries/page";
+import ContactForm from "@/components/sections/ContactForm";
+
+export default async function ContactPage({ params }: { params: Promise<{ locale: string }> }) {
+  const { locale } = await params;
+  const client = await getServerApolloClient();
+  const { data } = await client.query({ query: CP_PAGE_DETAIL, variables: { slug: "contact", language: locale } });
+  const page = data?.cpPageDetail;
+  return (
+    <main>
+      {page && <div dangerouslySetInnerHTML={{ __html: page.content ?? "" }} />}
+      <ContactForm locale={locale} />
+    </main>
+  );
+}
+```
+
+`ContactForm` is a `"use client"` component with name, email, message fields. On submit, call `cpFormsSubmit` or your CRM mutation.
+
+---
+
+### Blog listing — `app/[locale]/blog/page.tsx`
+
+```tsx
+import { getServerApolloClient } from "@/lib/apollo/server-client";
+import { CP_POSTS } from "@/graphql/cms/queries/post";
+import { Link } from "@/i18n/routing";
+
+export default async function BlogPage({ params }: { params: Promise<{ locale: string }> }) {
+  const { locale } = await params;
+  const client = await getServerApolloClient();
+  const { data } = await client.query({ query: CP_POSTS, variables: { language: locale } });
+  const posts = data?.cpPosts ?? [];
+  return (
+    <main>
+      <h1>Blog</h1>
+      <ul>
+        {posts.map((post: { _id: string; slug?: string; title?: string; excerpt?: string }) => (
+          <li key={post._id}>
+            <Link href={`/blog/${post.slug}`}>{post.title}</Link>
+            <p>{post.excerpt}</p>
+          </li>
+        ))}
+      </ul>
+    </main>
+  );
+}
+```
+
+### Blog detail — `app/[locale]/blog/[slug]/page.tsx`
+
+```tsx
+import { getServerApolloClient } from "@/lib/apollo/server-client";
+import { CP_POST_DETAIL, CP_POSTS } from "@/graphql/cms/queries/post";
+import { routing } from "@/i18n/routing";
+import { notFound } from "next/navigation";
+
+export async function generateStaticParams() {
+  const results = await Promise.all(
+    routing.locales.map(async (locale) => {
+      const client = await getServerApolloClient();
+      const { data } = await client.query({ query: CP_POSTS, variables: { language: locale } });
+      return (data?.cpPosts ?? []).map((p: { slug: string }) => ({ locale, slug: p.slug }));
+    })
+  );
+  return results.flat();
+}
+
+export default async function PostPage({ params }: { params: Promise<{ locale: string; slug: string }> }) {
+  const { locale, slug } = await params;
+  const client = await getServerApolloClient();
+  const { data } = await client.query({ query: CP_POST_DETAIL, variables: { slug, language: locale } });
+  if (!data?.cpPostDetail) notFound();
   const post = data.cpPostDetail;
   return (
     <article>
@@ -436,51 +529,23 @@ export async function generateMetadata(
 
 ## 4f. Auth (`has_auth` — ecommerce / tour / hotel only)
 
-Skip this section entirely if `site_type` is `business`.
+**Skip this section entirely if `site_type` is `business`.** Do not add `AuthProvider`, auth pages, or `RequireAuth` to business sites.
 
-The starter already has all GraphQL operations in `src/graphql/auth/`. Import from there — do not rewrite the queries.
+`AuthProvider`, `useAuth`, and `RequireAuth` are pre-built in the starter — do not recreate them.
 
-### Auth context — `lib/auth/AuthContext.tsx`
+### Layout — add `AuthProvider`
+
+In `app/[locale]/layout.tsx`, wrap children with `AuthProvider` inside `ApolloClientProvider`:
 
 ```tsx
-"use client";
-import { createContext, useContext, useEffect, useState } from "react";
-import { useQuery, useMutation } from "@apollo/client";
-import { CLIENT_PORTAL_CURRENT_USER } from "@/graphql/auth/queries";
-import { CLIENT_PORTAL_LOGOUT } from "@/graphql/auth/mutations";
-import type { CPUser } from "@/graphql/auth/queries";
-
-interface AuthContextValue {
-  user: CPUser | null;
-  loading: boolean;
-  logout: () => Promise<void>;
-  refetch: () => void;
-}
-
-const AuthContext = createContext<AuthContextValue>({
-  user: null, loading: true, logout: async () => {}, refetch: () => {},
-});
-
-export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const { data, loading, refetch } = useQuery(CLIENT_PORTAL_CURRENT_USER);
-  const [logoutMutation] = useMutation(CLIENT_PORTAL_LOGOUT);
-
-  const logout = async () => {
-    await logoutMutation();
-    refetch();
-  };
-
-  return (
-    <AuthContext.Provider value={{ user: data?.clientPortalCurrentUser ?? null, loading, logout, refetch }}>
-      {children}
-    </AuthContext.Provider>
-  );
-}
-
-export const useAuth = () => useContext(AuthContext);
+import { AuthProvider } from "@/lib/auth/AuthContext";
+// ...
+<ApolloClientProvider>
+  <AuthProvider>
+    {children}
+  </AuthProvider>
+</ApolloClientProvider>
 ```
-
-Add `<AuthProvider>` inside `ApolloClientProvider` in `app/[locale]/layout.tsx`.
 
 ### Pages to generate
 
@@ -498,21 +563,26 @@ Add `<AuthProvider>` inside `ApolloClientProvider` in `app/[locale]/layout.tsx`.
 ```tsx
 "use client";
 import { useMutation } from "@apollo/client";
-import { CLIENT_PORTAL_USER_LOGIN_WITH_CREDENTIALS } from "@/graphql/auth/mutations";
+import { CLIENT_PORTAL_USER_LOGIN_WITH_CREDENTIALS } from "@/graphql/auth/mutations/loginWithCredentials";
 import { useAuth } from "@/lib/auth/AuthContext";
 import { useRouter } from "next/navigation";
 
 export default function LoginPage() {
   const router = useRouter();
-  const { refetch } = useAuth();
-  const [login, { loading, error }] = useMutation(CLIENT_PORTAL_USER_LOGIN_WITH_CREDENTIALS);
+  const { login } = useAuth();
+  const [loginMutation, { loading, error }] = useMutation(CLIENT_PORTAL_USER_LOGIN_WITH_CREDENTIALS);
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     const form = new FormData(e.currentTarget);
-    await login({ variables: { email: form.get("email"), password: form.get("password") } });
-    refetch();
-    router.push("/account");
+    const { data } = await loginMutation({
+      variables: { email: form.get("email"), password: form.get("password") },
+    });
+    const token = data?.clientPortalUserLoginWithCredentials?.token;
+    if (token) {
+      login(token);
+      router.push("/account");
+    }
   }
 
   return (
@@ -526,35 +596,21 @@ export default function LoginPage() {
 }
 ```
 
-Follow the same pattern for register (`CLIENT_PORTAL_USER_REGISTER`), forgot password (`CLIENT_PORTAL_USER_FORGOT_PASSWORD`), reset password (`CLIENT_PORTAL_USER_RESET_PASSWORD`), and verify (`CLIENT_PORTAL_USER_VERIFY`).
+Follow the same pattern for register, forgot-password, reset-password, and verify using the corresponding mutations from `@/graphql/auth/mutations/`.
 
-### Protected route wrapper — `components/auth/RequireAuth.tsx`
+### Protected pages
+
+Wrap `/account` (and any other protected page) with the pre-built `RequireAuth`:
 
 ```tsx
-"use client";
-import { useAuth } from "@/lib/auth/AuthContext";
-import { useRouter } from "next/navigation";
-import { useEffect } from "react";
+import RequireAuth from "@/lib/auth/RequireAuth";
 
-export function RequireAuth({ children }: { children: React.ReactNode }) {
-  const { user, loading } = useAuth();
-  const router = useRouter();
-
-  useEffect(() => {
-    if (!loading && !user) router.replace("/login");
-  }, [user, loading, router]);
-
-  if (loading) return <div>Loading...</div>;
-  if (!user) return null;
-  return <>{children}</>;
+export default function AccountPage() {
+  return <RequireAuth><AccountContent /></RequireAuth>;
 }
 ```
 
-Wrap the `/account` page with `<RequireAuth>`.
-
 ### Header auth button
-
-In `components/Header.tsx`, add a client sub-component that shows login/logout based on auth state:
 
 ```tsx
 "use client";
@@ -571,9 +627,6 @@ export function AuthButton() {
 
 ### Rules
 - All auth forms are `"use client"` — they use mutations and state
-- The `/account` page is always protected with `<RequireAuth>`
-- Use `CLIENT_PORTAL_USER_LOGIN_WITH_OTP` as an alternative login flow if the site config requests OTP
-- Never store tokens in `localStorage` — erxes sets an HTTP-only cookie on login
 - All UI text must be in the site's language — use `messages/<locale>.json` for auth labels
 
 ---
