@@ -4,6 +4,89 @@
 
 ---
 
+## Design Binding — Read Before Writing ANY Component
+
+**Hard gate:** Do not write any component until all 4 steps below are complete.
+
+### Step 1 — Read `design-tokens.json`
+
+Open `output/<slug>/design-tokens.json`. Extract and hold in context:
+
+| Token path | Used for |
+|---|---|
+| `colors.semantic.background` | page background |
+| `colors.semantic.card` | card surface |
+| `colors.semantic.primary` | brand color, CTA buttons |
+| `colors.semantic.primaryForeground` | text on primary buttons |
+| `colors.semantic.secondary` | secondary surfaces |
+| `colors.semantic.foreground` | body text |
+| `colors.semantic.mutedForeground` | helper text, labels |
+| `colors.semantic.border` | dividers, input borders |
+| `colors.semantic.destructive` | error, delete actions |
+| `typography.families.display` | headings font |
+| `typography.families.body` | body font |
+| `radius` | border-radius scale |
+| `shadows` | shadow scale |
+| `spacing.scale` | spacing rhythm |
+
+### Step 2 — Read `HANDOFF.md`
+
+Open `output/<slug>/HANDOFF.md`. Confirm:
+- approved visual direction and homepage option
+- per-component notes (if any)
+- motion level — if > 0, apply animation tokens from `motion` in `design-tokens.json`
+
+### Step 3 — Verify `globals.css`
+
+Check that `output/<slug>/app/globals.css` has CSS variables declared from the design tokens:
+
+```css
+:root {
+  --color-background: <from token>;
+  --color-card: <from token>;
+  --color-primary: <from token>;
+  --color-primary-foreground: <from token>;
+  --color-foreground: <from token>;
+  --color-muted-foreground: <from token>;
+  --color-border: <from token>;
+  --color-destructive: <from token>;
+  --radius-sm: <from token>;
+  --radius-md: <from token>;
+  --radius-lg: <from token>;
+  --shadow-sm: <from token>;
+  --shadow-md: <from token>;
+}
+```
+
+If `globals.css` is missing these variables — write them now before any component.
+
+### Step 4 — className Mapping
+
+Replace every mak-ecommerce reference className using the extracted tokens:
+
+| Reference className | Replace with |
+|---|---|
+| `bg-background` | design token `colors.semantic.background` |
+| `bg-card` | design token `colors.semantic.card` |
+| `bg-primary` | design token `colors.semantic.primary` |
+| `bg-secondary` | design token `colors.semantic.secondary` |
+| `bg-muted` | design token `colors.semantic.muted` |
+| `text-foreground` | design token `colors.semantic.foreground` |
+| `text-primary` | design token `colors.semantic.primary` |
+| `text-muted-foreground` | design token `colors.semantic.mutedForeground` |
+| `text-primary-foreground` | design token `colors.semantic.primaryForeground` |
+| `text-destructive` | design token `colors.semantic.destructive` |
+| `border-border` | design token `colors.semantic.border` |
+| `rounded-sm` | design token `radius` small value |
+| `rounded-md` | design token `radius` medium value |
+| `rounded-xl`, `rounded-2xl` | design token `radius` large value |
+| `shadow-sm` | design token `shadows` small value |
+| `shadow-xl` | design token `shadows` large value |
+| `space-y-4`, `gap-6` | design token `spacing.scale` values |
+| font classes | design token `typography.families` |
+
+---
+
 ## Layout Components
 
 ### `components/layout/Header.tsx` (Server)
@@ -49,26 +132,196 @@ export default async function Header() {
 "use client";
 
 import { useAtom } from "jotai";
-import { useState } from "react";
-import { cartCountAtom } from "@/store/cart.store";
-import { CartDrawer } from "./CartDrawer";
+import Image from "next/image";
+import { Link, useRouter } from "@/i18n/routing";
+import { cartItemsAtom, cartCountAtom, cartTotalAtom } from "@/store/cart.store";
+import { currentUserAtom } from "@/store/auth.store";
+import { formatPrice, isValidUrl } from "@/lib/utils";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+  SheetClose,
+} from "@/components/ui/sheet";
 
 export function CartButton() {
   const [count] = useAtom(cartCountAtom);
-  const [open, setOpen] = useState(false);
 
   return (
-    <>
-      <button onClick={() => setOpen(true)} className="relative ...">
-        {/* cart icon SVG */}
-        {count > 0 && (
-          <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-[10px] text-primary-foreground">
-            {count}
+    <Sheet>
+      <SheetTrigger asChild>
+        <button
+          className="relative p-2 text-white hover:text-primary transition-colors"
+          aria-label="Сагс"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="20"
+            height="20"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <circle cx="8" cy="21" r="1" />
+            <circle cx="19" cy="21" r="1" />
+            <path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12" />
+          </svg>
+          {count > 0 && (
+            <span className="absolute -top-0.5 -right-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-[10px] text-primary-foreground font-bold">
+              {count}
+            </span>
+          )}
+        </button>
+      </SheetTrigger>
+      <SheetContent side="right" className="w-full sm:max-w-md flex flex-col">
+        <SheetHeader>
+          <SheetTitle>Сагс</SheetTitle>
+        </SheetHeader>
+        <CartItems />
+      </SheetContent>
+    </Sheet>
+  );
+}
+
+function CartItems() {
+  const [cartItems, setCartItems] = useAtom(cartItemsAtom);
+  const [total] = useAtom(cartTotalAtom);
+  const [currentUser] = useAtom(currentUserAtom);
+  const router = useRouter();
+
+  const updateQuantity = (productId: string, delta: number) => {
+    setCartItems((prev) =>
+      prev
+        .map((item) =>
+          item.productId === productId
+            ? { ...item, count: Math.max(0, item.count + delta) }
+            : item
+        )
+        .filter((item) => item.count > 0)
+    );
+  };
+
+  const removeItem = (productId: string) => {
+    setCartItems((prev) => prev.filter((item) => item.productId !== productId));
+  };
+
+  const handleCheckout = () => {
+    if (!currentUser) {
+      sessionStorage.setItem("redirectAfterLogin", "/checkout");
+      router.push("/login");
+    } else {
+      router.push("/checkout");
+    }
+  };
+
+  if (cartItems.length === 0) {
+    return (
+      <div className="flex flex-1 flex-col items-center justify-center py-12">
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          width="48"
+          height="48"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1.5"
+          className="text-muted-foreground mb-4"
+        >
+          <circle cx="8" cy="21" r="1" />
+          <circle cx="19" cy="21" r="1" />
+          <path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12" />
+        </svg>
+        <p className="text-muted-foreground">Сагс хоосон байна</p>
+        <SheetClose asChild>
+          <Link
+            href="/products"
+            className="mt-4 inline-flex items-center rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
+          >
+            Бараа үзэх
+          </Link>
+        </SheetClose>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex flex-1 flex-col">
+      <div className="flex-1 overflow-y-auto space-y-4 pr-1 py-4">
+        {cartItems.map((item) => (
+          <div
+            key={item.productId}
+            className="flex gap-3 rounded-xl border border-border bg-secondary p-3"
+          >
+            <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-lg bg-muted overflow-hidden">
+              {item.productImgUrl && isValidUrl(item.productImgUrl) ? (
+                <Image
+                  src={item.productImgUrl}
+                  alt={item.productName || ""}
+                  width={64}
+                  height={64}
+                  className="h-full w-full object-cover"
+                />
+              ) : (
+                <span className="text-xl">📦</span>
+              )}
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium text-foreground truncate">
+                {item.productName || "Бараа"}
+              </p>
+              <p className="text-xs text-muted-foreground">
+                {formatPrice(item.unitPrice || 0)}
+              </p>
+              <div className="mt-2 flex items-center gap-2">
+                <button
+                  onClick={() => updateQuantity(item.productId, -1)}
+                  className="flex h-6 w-6 items-center justify-center rounded border border-border bg-card text-foreground hover:bg-secondary"
+                >
+                  −
+                </button>
+                <span className="text-sm font-medium text-foreground w-6 text-center">
+                  {item.count}
+                </span>
+                <button
+                  onClick={() => updateQuantity(item.productId, 1)}
+                  className="flex h-6 w-6 items-center justify-center rounded border border-border bg-card text-foreground hover:bg-secondary"
+                >
+                  +
+                </button>
+                <button
+                  onClick={() => removeItem(item.productId)}
+                  className="ml-auto text-xs text-destructive hover:underline"
+                >
+                  Устгах
+                </button>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <div className="mt-4 border-t border-border pt-4 space-y-4">
+        <div className="flex items-center justify-between">
+          <span className="text-sm text-muted-foreground">Нийт</span>
+          <span className="text-lg font-bold text-foreground">
+            {formatPrice(total)}
           </span>
-        )}
-      </button>
-      <CartDrawer open={open} onClose={() => setOpen(false)} />
-    </>
+        </div>
+        <SheetClose asChild>
+          <button
+            onClick={handleCheckout}
+            className="block w-full rounded-xl bg-primary py-3 text-center text-sm font-semibold text-primary-foreground hover:bg-primary/90 transition-colors"
+          >
+            Захиалах
+          </button>
+        </SheetClose>
+      </div>
+    </div>
   );
 }
 ```
@@ -133,84 +386,6 @@ export function UserButton() {
         {/* logout icon SVG */}
       </button>
     </div>
-  );
-}
-```
-
-### `components/layout/CartDrawer.tsx` (Client)
-
-Key behavior: if guest clicks checkout → save `redirectAfterLogin` to sessionStorage and redirect to `/login`.
-
-```typescript
-"use client";
-
-import { useAtom } from "jotai";
-import Image from "next/image";
-import { useRouter } from "@/i18n/routing";
-import { Sheet, SheetClose, SheetContent, SheetHeader, SheetTitle, SheetFooter } from "@/components/ui/sheet";
-import { Button } from "@/components/ui/button";
-import { cartItemsAtom, cartTotalAtom } from "@/store/cart.store";
-import { currentUserAtom } from "@/store/auth.store";
-import { formatPrice, isValidUrl } from "@/lib/utils";
-
-interface CartDrawerProps { open: boolean; onClose: () => void; }
-
-export function CartDrawer({ open, onClose }: CartDrawerProps) {
-  const [items, setItems] = useAtom(cartItemsAtom);
-  const [total] = useAtom(cartTotalAtom);
-  const [currentUser] = useAtom(currentUserAtom);
-  const router = useRouter();
-
-  const removeItem = (productId: string) =>
-    setItems((prev) => prev.filter((item) => item.productId !== productId));
-
-  const updateQuantity = (productId: string, count: number) => {
-    if (count <= 0) { removeItem(productId); return; }
-    setItems((prev) => prev.map((item) => item.productId === productId ? { ...item, count } : item));
-  };
-
-  const handleCheckout = () => {
-    if (!currentUser) {
-      sessionStorage.setItem("redirectAfterLogin", "/checkout");
-      router.push("/login");
-      onClose();
-      return;
-    }
-    router.push("/checkout");
-    onClose();
-  };
-
-  return (
-    <Sheet open={open} onOpenChange={(op) => !op && onClose()}>
-      <SheetContent side="right" showCloseButton={false} className="...">
-        <SheetHeader className="...">
-          <SheetTitle>{/* "Сагс" + item count */}</SheetTitle>
-          <SheetClose asChild><Button variant="ghost" size="icon">×</Button></SheetClose>
-        </SheetHeader>
-
-        {items.length > 0 ? (
-          <>
-            <div className="flex-1 overflow-y-auto ...">
-              {items.map((item) => (
-                <div key={item.productId} className="...">
-                  {/* product image with isValidUrl check */}
-                  {/* product name, price, quantity controls (−/+), remove button */}
-                </div>
-              ))}
-            </div>
-            <SheetFooter className="...">
-              <span>{/* total label */}</span>
-              <span>{formatPrice(total)}</span>
-              <Button onClick={handleCheckout} className="w-full">{/* Checkout button */}</Button>
-            </SheetFooter>
-          </>
-        ) : (
-          <div className="...">
-            {/* empty cart icon + message */}
-          </div>
-        )}
-      </SheetContent>
-    </Sheet>
   );
 }
 ```
@@ -494,4 +669,103 @@ FormItem.displayName = "FormItem";
 export { Form, FormItem };
 ```
 
-> **Note:** `components/ui/sheet.tsx` is provided by the starter repo. Do NOT recreate it.
+### `components/ui/sheet.tsx`
+
+```typescript
+import * as React from "react";
+import * as SheetPrimitive from "@radix-ui/react-dialog";
+import { cva, type VariantProps } from "class-variance-authority";
+import { X } from "lucide-react";
+import { cn } from "@/lib/utils";
+
+const Sheet = SheetPrimitive.Root;
+const SheetTrigger = SheetPrimitive.Trigger;
+const SheetClose = SheetPrimitive.Close;
+const SheetPortal = SheetPrimitive.Portal;
+
+const SheetOverlay = React.forwardRef<
+  React.ElementRef<typeof SheetPrimitive.Overlay>,
+  React.ComponentPropsWithoutRef<typeof SheetPrimitive.Overlay>
+>(({ className, ...props }, ref) => (
+  <SheetPrimitive.Overlay
+    className={cn(
+      "fixed inset-0 z-50 bg-black/60 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0",
+      className
+    )}
+    {...props}
+    ref={ref}
+  />
+));
+SheetOverlay.displayName = SheetPrimitive.Overlay.displayName;
+
+const sheetVariants = cva(
+  "fixed z-50 gap-4 bg-card p-6 shadow-lg transition ease-in-out data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:duration-300 data-[state=open]:duration-500",
+  {
+    variants: {
+      side: {
+        top: "inset-x-0 top-0 border-b data-[state=closed]:slide-out-to-top data-[state=open]:slide-in-from-top",
+        bottom: "inset-x-0 bottom-0 border-t data-[state=closed]:slide-out-to-bottom data-[state=open]:slide-in-from-bottom",
+        left: "inset-y-0 left-0 h-full w-3/4 border-r data-[state=closed]:slide-out-to-left data-[state=open]:slide-in-from-left sm:max-w-sm",
+        right: "inset-y-0 right-0 h-full w-full border-l data-[state=closed]:slide-out-to-right data-[state=open]:slide-in-from-right sm:max-w-md",
+      },
+    },
+    defaultVariants: { side: "right" },
+  }
+);
+
+interface SheetContentProps
+  extends React.ComponentPropsWithoutRef<typeof SheetPrimitive.Content>,
+    VariantProps<typeof sheetVariants> {}
+
+const SheetContent = React.forwardRef<
+  React.ElementRef<typeof SheetPrimitive.Content>,
+  SheetContentProps
+>(({ side = "right", className, children, ...props }, ref) => (
+  <SheetPortal>
+    <SheetOverlay />
+    <SheetPrimitive.Content
+      ref={ref}
+      className={cn(sheetVariants({ side }), className)}
+      {...props}
+    >
+      {children}
+      <SheetPrimitive.Close className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-secondary">
+        <X className="h-4 w-4 text-muted-foreground" />
+        <span className="sr-only">Close</span>
+      </SheetPrimitive.Close>
+    </SheetPrimitive.Content>
+  </SheetPortal>
+));
+SheetContent.displayName = SheetPrimitive.Content.displayName;
+
+const SheetHeader = ({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) => (
+  <div className={cn("flex flex-col space-y-2 text-center sm:text-left", className)} {...props} />
+);
+SheetHeader.displayName = "SheetHeader";
+
+const SheetFooter = ({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) => (
+  <div className={cn("flex flex-col-reverse sm:flex-row sm:justify-end sm:space-x-2", className)} {...props} />
+);
+SheetFooter.displayName = "SheetFooter";
+
+const SheetTitle = React.forwardRef<
+  React.ElementRef<typeof SheetPrimitive.Title>,
+  React.ComponentPropsWithoutRef<typeof SheetPrimitive.Title>
+>(({ className, ...props }, ref) => (
+  <SheetPrimitive.Title ref={ref} className={cn("text-lg font-semibold text-foreground", className)} {...props} />
+));
+SheetTitle.displayName = SheetPrimitive.Title.displayName;
+
+const SheetDescription = React.forwardRef<
+  React.ElementRef<typeof SheetPrimitive.Description>,
+  React.ComponentPropsWithoutRef<typeof SheetPrimitive.Description>
+>(({ className, ...props }, ref) => (
+  <SheetPrimitive.Description ref={ref} className={cn("text-sm text-muted-foreground", className)} {...props} />
+));
+SheetDescription.displayName = SheetPrimitive.Description.displayName;
+
+export {
+  Sheet, SheetPortal, SheetOverlay, SheetTrigger, SheetClose,
+  SheetContent, SheetHeader, SheetFooter, SheetTitle, SheetDescription,
+};
+```
