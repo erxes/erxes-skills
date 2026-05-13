@@ -4,45 +4,14 @@ emoji: 🔌
 description: >
   Manage contacts, companies, products, tags, documents, brands, automations,
   team members, organization data, block plugin records, and operation plugin
-  records on an erxes instance. Always read this skill before answering an
-  erxes data question. Use when the user wants to view, create, update, or
-  remove erxes data through GraphQL.
+  records on an erxes instance. Use when the user wants to view, create,
+  update, or remove erxes data through GraphQL.
 requires:
   - env: ERXES_BASE_URL
     description: "erxes gateway URL, for example https://your-subdomain.next.erxes.io/gateway or http://localhost:4000"
 ---
 
 # erxes– Чадварууд
-
-## Bootstrap
-
-When OpenClaw bootstrap is complete and no erxes session exists yet, ask the
-user this exact question before trying any API call:
-
-Need your erxes base URL to connect. What's your erxes gateway URL?
-
-Something like https://yourname.next.erxes.io/gateway or http://localhost:4000 if self-hosted.
-
-- Ask for only the erxes base URL. Do not ask for an app token, auth token,
-  cookie, JWT, or API key.
-- Accept tenant URLs such as `https://blockoperation.next.erxes.io/`; the login
-  script normalizes them to `https://blockoperation.next.erxes.io/gateway`.
-- After the user provides the URL, run `scripts/login.sh` and use its returned
-  session JSON for the current task.
-
-## Must Read First
-
-Before making any GraphQL request, read the relevant local skill reference:
-
-- Read this `SKILL.md` first for auth, safety, and routing rules.
-- Read [operation-api.md](./operation-api.md) before answering operation
-  questions about teams, projects, tasks, triage, statuses, cycles, milestones,
-  notes, activities, or templates.
-- Read [block-api.md](./block-api.md) before answering block questions about
-  buildings, units, opportunities, contracts, offers, invoices, documents, or
-  payment plans.
-- Do not guess GraphQL field names. If the reference does not list a query,
-  inspect the live schema before calling it.
 
 ## Login
 
@@ -57,7 +26,6 @@ ERXES_BASE_URL=<url> ERXES_CLIENT_ID=${ERXES_CLIENT_ID:-erxes-local} bash script
 - Accept the URL in whatever form the user gives and normalize it to `ERXES_BASE_URL=<url>`.
 - Do not explain OAuth internals unless the user asks.
 - Do not ask the user to copy tokens manually.
-- Do not ask the user for an app token, auth token, cookie, JWT, or API key.
 - Do not store tokens in project files.
 - The script opens the browser, waits for approval, and prints a session JSON payload to stdout.
 
@@ -69,16 +37,11 @@ After login, use the returned session payload directly.
 
 - Read `accessToken` from the login JSON response.
 - Send `Authorization: Bearer <accessToken>` and `erxes-subdomain: <subdomain>` headers on GraphQL calls.
-- Never use `Cookie: auth-token=...` for normal assistant workflows.
 - If the access token expires during the current task, use the in-memory `refreshToken` to get a new access token.
 - Do not write tokens to `.auth.json` or any other project file.
 - Read [erxes-graphql-api.md](./erxes-graphql-api.md) only when you need query or mutation examples.
 - Assume OpenClaw is operating as the erxes owner unless the live API proves otherwise.
 - Do not stop a normal workflow just because the backend source defines permission names. Treat those as implementation detail, not a user-facing blocker.
-- Keep GraphQL calls focused on the user's question. For example, if the user
-  asks "what teams do we have?", read `operation-api.md` and call `getTeams`.
-  Do not query unrelated organization structures, departments, branches, or
-  users unless the user asks for them.
 
 ---
 

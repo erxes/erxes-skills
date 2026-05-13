@@ -1,29 +1,15 @@
 #!/bin/bash
 # erxes OAuth Device Flow login
 # Usage: ERXES_BASE_URL=https://example.next.erxes.io/gateway bash scripts/login.sh
-# Also accepts tenant roots such as https://example.next.erxes.io/
 set -euo pipefail
 
-RAW_BASE="${ERXES_BASE_URL:-}"
+BASE="${ERXES_BASE_URL%/}"
 CLIENT="${ERXES_CLIENT_ID:-erxes-local}"
 
-if [ -z "$RAW_BASE" ]; then
-  echo "Need your erxes base URL to connect. What's your erxes gateway URL?" >&2
-  echo "" >&2
-  echo "Something like https://yourname.next.erxes.io/gateway or http://localhost:4000 if self-hosted." >&2
+if [ -z "$BASE" ]; then
+  echo "ERXES_BASE_URL is required" >&2
   exit 1
 fi
-
-BASE="${RAW_BASE%/}"
-case "$BASE" in
-  http://localhost:*|https://localhost:*|http://127.0.0.1:*|https://127.0.0.1:*)
-    ;;
-  */gateway)
-    ;;
-  *)
-    BASE="$BASE/gateway"
-    ;;
-esac
 
 # Extract subdomain from a gateway URL like https://demo.next.erxes.io/gateway -> demo
 SUB=$(echo "$BASE" | sed -E 's|https?://([^./]+).*|\1|')
