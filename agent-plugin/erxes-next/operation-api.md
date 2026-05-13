@@ -9,6 +9,16 @@ Use this file when the user wants to operate operation-side work records through
 
 Assume OpenClaw is operating as the erxes owner by default. Backend permission names exist, but they should not be treated as a normal blocker for owner-run workflows.
 
+## Critical Query Rules
+
+- Read this file before making operation GraphQL calls.
+- Do not invent operation field names.
+- Use the team query documented in the Teams And Team Members section for
+  "what teams do we have?", "list teams", and similar team-list questions.
+- Never call `operationTeams`; it is not an operation_api query field.
+- Keep calls scoped to the user's question. Do not query departments, branches,
+  users, or organization structures when the user asked for operation teams.
+
 ## Safety Rules
 
 - Read, list, search, filter, group, and summarize can run directly.
