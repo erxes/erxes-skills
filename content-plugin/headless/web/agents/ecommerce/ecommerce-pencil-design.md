@@ -182,6 +182,16 @@ Capture:
 - motion ambition
 - constraints like mobile performance, accessibility, dark mode, or JS fallback
 
+**Ecommerce intake — also capture:**
+
+- `product_category` — what the store sells (fashion, electronics, beauty, food, home, sports, jewelry, art, stationery, pets, etc.)
+- `price_point` — `luxury`, `mid-range`, or `budget`
+- `brand_personality` — a 2–3 word description (e.g. "bold and playful", "minimal and cold", "warm and handcrafted", "raw and rebellious")
+
+If these are not in `site.config.json` or `extra_notes`, infer them from the reference URL, store name, product images, or audit data. Do not ask unless the source gives no signal at all.
+
+These three inputs are required before Phase 1. Direction choices that ignore `product_category` or `price_point` will produce generic output.
+
 If `ui_source` is not `words`, infer as much as possible from the source and avoid asking for color or style basics that can be extracted.
 
 ### Phase 0.5 — Design Strategy Mode
@@ -238,6 +248,75 @@ Strategy rules:
 
 If useful, record the chosen strategy in the handoff summary as `design_strategy`.
 
+### Phase 0.75 — Source & Competitor Audit
+
+**Run this phase immediately after Phase 0.5, before presenting any design directions.**
+
+This phase fetches real data that informs direction choices. Do not skip it — directions created without audit data will be generic.
+
+#### When `design_strategy` is `copy-site` or `improve-site`
+
+Run the site audit on the reference URL:
+
+```bash
+pnpm site:audit "<reference_url>" "output/<slug>/source-audit.json"
+```
+
+Read `source-audit.json` before Phase 1. Extract:
+
+- dominant colors and visual language
+- layout patterns and section structure
+- typography feel
+- navigation labels and information architecture
+- static marketing copy to preserve in CMS seed
+
+#### When `design_strategy` is `beat-competitors`
+
+Run site audit on each competitor URL from `competitor_urls`:
+
+```bash
+pnpm site:audit "<competitor-url-1>" "output/<slug>/competitor-1-audit.json"
+pnpm site:audit "<competitor-url-2>" "output/<slug>/competitor-2-audit.json"
+# repeat for each competitor URL
+```
+
+Read all competitor audit files before Phase 1. Extract:
+
+- visual patterns competitors share (identify what looks generic or repetitive)
+- typography and color choices across competitors
+- layout conventions the new design must deliberately break
+- interaction and motion patterns worth outperforming
+
+**Do not present design directions until the audit files exist and have been read.**
+
+#### Brand Fingerprint — extract before Phase 1
+
+After reading audit files, derive a **Brand Fingerprint** for this specific store. This fingerprint must drive direction choices in Phase 1 — directions that ignore it will produce generic output.
+
+Extract and record:
+
+- **Dominant color energy** — warm, cold, neutral, vibrant, muted, monochrome
+- **Typography feel** — serif editorial, sans-serif clean, expressive display, handwritten, mono
+- **Layout character** — dense and grid-heavy, airy and spacious, asymmetric and editorial, structured and systematic
+- **Motion personality** — subtle and refined, playful and bouncy, cinematic and slow, sharp and snappy
+- **Visual temperature** — dark and moody, bright and clean, earthy and textured, neon and electric
+- **Store personality** — derived from `product_category` + `price_point` + `brand_personality`
+
+Store personality reference:
+
+| Category          | Luxury                              | Mid-range                          | Budget                             |
+| ----------------- | ----------------------------------- | ---------------------------------- | ---------------------------------- |
+| Fashion / Apparel | dark editorial, minimal, slow       | clean grid, accessible, modern     | bold color, playful, high contrast |
+| Electronics       | cold precision, dark, sharp         | functional, structured, reliable   | energetic, bright, deal-focused    |
+| Beauty / Cosmetics | soft gradient, editorial, intimate | fresh, pastel, friendly            | vibrant, trendy, youthful          |
+| Food / Beverage   | moody, textured, artisan            | warm, inviting, lifestyle-forward  | colorful, fast, appetite-driven    |
+| Home / Furniture  | warm editorial, material-rich       | cozy, accessible, lifestyle        | colorful, practical, direct        |
+| Sports / Outdoor  | dark, intense, kinetic              | energetic, bold, action-forward    | bright, motivational, graphic      |
+| Jewelry / Watches | pure black or white, precious, slow | elegant, clean, aspirational       | playful, colorful, gifting-focused |
+| Art / Handmade    | expressive, textured, anti-grid     | creative, curated, personal        | raw, indie, zine-like              |
+
+**Do not present directions until the Brand Fingerprint is complete.**
+
 ### Phase 1 — Present Direction
 
 Present **3 design directions** before any full design work. Do not skip this just because the user wants the site built quickly.
@@ -256,7 +335,9 @@ Each direction must include:
 - complexity
 - why it fits this project
 
-Good direction families include:
+**Direction families must be chosen from the intersection of strategy and Brand Fingerprint — never pick the same family twice across different stores.**
+
+Full direction family list:
 
 - Glass Future
 - Neon Brutalist
@@ -269,17 +350,39 @@ Good direction families include:
 - Swiss Grid
 - Aurora Gradient
 
-If the source is an existing design, make the three options:
+**Step 1 — Filter by strategy:**
 
-- faithful
-- improved
-- bold reinterpretation
+| Strategy           | Eligible families                                                            | Character                                                       |
+| ------------------ | ---------------------------------------------------------------------------- | --------------------------------------------------------------- |
+| `copy-site`        | Swiss Grid, Editorial Luxury, Morphic Soft, Organic Texture                  | faithful, high-fidelity — pick the one closest to the source    |
+| `improve-site`     | Morphic Soft, Aurora Gradient, Glass Future, Editorial Luxury                | evolved, elevated — pick the one the source is closest to, then upgrade it |
+| `beat-competitors` | Neon Brutalist, Glass Future, Midnight Cinema, Data Precision, Aurora Gradient | bold, differentiated — pick what competitors are NOT doing      |
+| `brand-first`      | Derived from brand inputs only — do not apply a preset family                | identity-locked                                                 |
+| `from-scratch`     | Any family from the full list                                                | open — must be guided by Brand Fingerprint, not random          |
 
-Map those options to strategy when relevant:
+**Step 2 — Filter by Brand Fingerprint:**
 
-- `copy-site` → bias toward `faithful`
-- `improve-site` → bias toward `improved`
-- `beat-competitors` → bias toward `bold reinterpretation`
+After strategy filtering, use the Brand Fingerprint to select the 2–3 most fitting families. Rules:
+
+- A luxury fashion store must not receive the same family as a budget electronics store
+- A food store must not receive the same family as a jewelry store
+- A dark moody fingerprint must bias toward Midnight Cinema, Neon Brutalist, or Editorial Luxury — not Aurora Gradient or Morphic Soft
+- A warm handcrafted fingerprint must bias toward Organic Texture or Morphic Soft — not Glass Future or Data Precision
+- A cold precise fingerprint must bias toward Swiss Grid, Data Precision, or Glass Future
+
+**Step 3 — Assign 3 distinct directions, one per option:**
+
+Present exactly 3 directions, each from a different family. Do not assign the same family to two options.
+
+- Option A — closest to the source or the most expected fit for this store type
+- Option B — elevated or modernized version of the brand fingerprint
+- Option C — deliberate contrast that challenges the expected direction while still fitting the product category
+
+If the source is an existing design, frame them as:
+
+- faithful (Option A)
+- improved (Option B)
+- bold reinterpretation (Option C)
 
 ### Phase 1.5 — Homepage Direction Preview Gate
 
@@ -369,22 +472,43 @@ Page model:
 - Use the same visual system across homepage sections and standalone pages
 - The standalone pages should expand the corresponding homepage section rather than feel like unrelated templates
 
-### Phase 3.5 — Website Source Audit for `copy-site` and `improve-site`
+**Ecommerce page model** — when `template_type` is `ecommerce`, design ALL of the following pages after the homepage direction is approved:
 
-When `ui_source` is `website` and the strategy is `copy-site` or `improve-site`, perform a source audit before finalizing design or content assumptions.
+| Page            | Route            | Key elements to design                                               |
+| --------------- | ---------------- | -------------------------------------------------------------------- |
+| Product listing | `/products`      | filter sidebar, product grid, sort controls, pagination              |
+| Product detail  | `/products/[id]` | image gallery, price, variant selector, add-to-cart, reviews section |
+| Cart            | `/cart`          | line items, quantity controls, order summary, checkout CTA           |
+| Checkout        | `/checkout`      | delivery form, payment method selector, order summary panel          |
+| Login           | `/login`         | email/password form, social login options, redirect-back hint        |
+| Register        | `/register`      | registration form, terms checkbox                                    |
+| Profile         | `/profile`       | editable personal info form, avatar                                  |
+| Orders          | `/orders`        | order history list with status badges                                |
+| Order detail    | `/orders/[id]`   | items, delivery status timeline, totals                              |
+| Wishlist        | `/wishlist`      | saved product grid with remove and add-to-cart actions               |
 
-Required audit behavior:
+- Design all ecommerce pages in the same Pencil file as the homepage (`output/<slug>/designs/design.pen`)
+- Include mobile viewport for cart, checkout, and product detail — these are high-traffic mobile pages
+- Cart drawer design is required in addition to the full cart page
+- Auth pages (login, register) must match the overall visual system but can be minimal layout
 
-- Fetch the source homepage
+### Phase 3.5 — Content Audit Finalization for `copy-site` and `improve-site`
+
+**Note:** The site audit command (`pnpm site:audit`) was already run in Phase 0.75. This phase uses that output to finalize content decisions before building full page designs.
+
+If `source-audit.json` does not exist, stop and run Phase 0.75 first before continuing.
+
+Re-read `output/<slug>/source-audit.json` and finalize:
+
 - Discover internal links from header, footer, sitemap, locale switchers, and obvious section CTAs
-- Fetch the relevant static pages that define the site's real context
+- Fetch any relevant pages not yet covered by the initial audit
 - Check locale variants when multiple languages are visible or when locale-prefixed URLs exist
 - Capture page titles, section headings, subheadings, CTA labels, menu labels, footer text, contact information, and other static marketing copy
-- Use this source content inventory to keep the generated CMS structure and seeded content aligned with the real site
+- Use this content inventory to keep CMS structure and seeded content aligned with the real site
 
 Discovery rules:
 
-- Prefer the navigation pages and high-signal marketing pages first
+- Prefer navigation pages and high-signal marketing pages first
 - Include locale variants such as `/en/about-us` when present
 - Include pages that map to selected sections such as about, services, contact, pricing, blog, FAQ, team, portfolio, and gallery
 - If the site exposes a sitemap or a clear page index, use it to discover additional relevant pages
@@ -428,6 +552,23 @@ Add section-specific components when relevant:
 - FAQ
 - portfolio
 - menu or catalog
+
+**Ecommerce-specific required components** — when `template_type` is `ecommerce`, also cover:
+
+- product card (image, name, price, wishlist icon, add-to-cart)
+- product grid (responsive, with skeleton loading state)
+- product image gallery (main image + thumbnail strip)
+- variant selector (size, color chips)
+- cart drawer (slide-in panel with line items and subtotal)
+- cart line item (image, name, qty stepper, remove)
+- checkout delivery form
+- checkout order summary panel
+- payment method selector
+- order status badge (pending, processing, delivered, cancelled)
+- order history row
+- wishlist card (product card variant with remove action)
+- auth form (shared style for login and register)
+- profile form (editable fields with save button)
 
 ### Phase 4 — Produce the Handoff Files
 
@@ -724,6 +865,18 @@ Do not:
 - design layouts that break when menu labels, page titles, or CMS text get longer
 - ignore multilingual typography needs
 
+**Ecommerce-specific anti-patterns — these produce the same-looking store every time:**
+
+- do not default to white background, blue or black primary CTA, and a standard 3-column product grid — this is the generic ecommerce template that looks like every other store
+- do not pick the same direction family regardless of what the store sells — a jewelry store and an electronics store must look completely different
+- do not ignore `product_category`, `price_point`, or `brand_personality` when choosing directions
+- do not present 3 directions that all use light backgrounds and sans-serif typography unless the Brand Fingerprint explicitly demands it
+- do not skip the Brand Fingerprint step and go straight to directions
+- do not assign Aurora Gradient or Morphic Soft to a store whose fingerprint is dark, cold, or raw
+- do not assign Neon Brutalist or Midnight Cinema to a store whose fingerprint is warm, soft, or handcrafted
+- do not use the same hero layout pattern (large image left, text right, CTA below) for every store — vary the hero composition based on product category and visual ambition
+- do not design ecommerce product cards that look identical across stores — card style must reflect the brand personality (e.g. minimal floating card for luxury, bold outlined card for budget, soft shadowed card for beauty)
+
 ---
 
 ## Completion Gate
@@ -746,6 +899,22 @@ Section B — Step 2 is complete only when all of these are true:
 
 If the source is a website with strategy `copy-site` or `improve-site`, Section B — Step 2 is not complete until the relevant source pages and locale variants were audited and recorded in the handoff.
 If the source is a website with strategy `copy-site` or `improve-site`, `source-audit.json` must exist and be used during handoff creation.
+
+If `template_type` is `ecommerce`, Section B — Step 2 is not complete until ALL of the following page designs exist in the approved Pencil file:
+
+- homepage (with all selected homepage sections)
+- `/products` — product listing
+- `/products/[id]` — product detail
+- `/cart` — cart page
+- `/checkout` — checkout page
+- `/login` — login page
+- `/register` — register page
+- `/profile` — profile page
+- `/orders` — order history
+- `/orders/[id]` — order detail
+- `/wishlist` — wishlist page
+- cart drawer component
+- all ecommerce-specific components listed in Phase 3
 
 If any artifact is a placeholder, blank stub, or file-type fake, Section B — Step 2 is not complete.
 
