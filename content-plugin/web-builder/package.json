@@ -1,0 +1,14 @@
+{
+  "name": "erxes-web-builder-templates",
+  "version": "1.0.0",
+  "description": "Template variant builder for erxes web builder",
+  "scripts": {
+    "clone": "tsx scripts/clone.ts"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "tsx": "^4.0.0",
+    "typescript": "^5.0.0"
+  },
+  "packageManager": "pnpm@10.33.2"
+}
