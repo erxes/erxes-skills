@@ -1,11 +1,10 @@
 {
-  "ownerId": "kn7fcjad721dqasge0s8tk714s85632x",
+  "schemaVersion": 1,
+  "kind": "agent-plugin",
   "slug": "erxes-next",
   "name": "erxes Next",
-  "type": "agent-plugin",
   "version": "1.0.7",
   "entry": "instructions.md",
-  "publishedAt": 1776750733646,
   "description": "Confidential OAuth plugin for operating erxes Next data through GraphQL with strict anti-hallucination rules.",
   "requiredEnv": [
     {
