@@ -1,33 +1,33 @@
 {
   "ownerId": "kn7fcjad721dqasge0s8tk714s85632x",
-  "slug": "erxes-next",
-  "name": "erxes Next",
+  "slug": "erxes-next-plugin",
+  "name": "erxes-next-plugin",
   "type": "agent-plugin",
-  "version": "1.0.7",
+  "version": "1.0.13",
   "entry": "instructions.md",
   "publishedAt": 1776750733646,
   "description": "Confidential OAuth plugin for operating erxes Next data through GraphQL with strict anti-hallucination rules.",
   "requiredEnv": [
     {
-      "name": "ERXES_BASE_URL",
       "label": "erxes gateway URL",
       "required": true,
       "secret": false,
-      "description": "Gateway URL, for example https://your-subdomain.next.erxes.io/gateway or http://localhost:4000"
+      "description": "Gateway URL, for example https://your-subdomain.next.erxes.io/gateway or http://localhost:4000",
+      "key": "ERXES_BASE_URL"
     },
     {
-      "name": "ERXES_CLIENT_ID",
       "label": "OAuth confidential client ID",
       "required": true,
       "secret": false,
-      "description": "Client ID from erxes Settings > OAuth Clients"
+      "description": "Client ID from erxes Settings > OAuth Clients",
+      "key": "ERXES_CLIENT_ID"
     },
     {
-      "name": "ERXES_CLIENT_SECRET",
       "label": "OAuth confidential client secret",
       "required": true,
       "secret": true,
-      "description": "Secret shown once when creating a confidential OAuth client"
+      "description": "Secret shown once when creating a confidential OAuth client",
+      "key": "ERXES_CLIENT_SECRET"
     }
   ],
   "matches": {
@@ -72,5 +72,30 @@
     "operation": "operation-api.md",
     "loginScript": "scripts/login.sh",
     "refreshScript": "scripts/refresh-token.sh"
+  },
+  "displayName": "erxes Next",
+  "id": "erxes-next-plugin",
+  "configSchema": {
+    "type": "object",
+    "additionalProperties": false,
+    "properties": {
+      "erxesBaseUrl": {
+        "type": "string",
+        "description": "erxes gateway URL, for example https://your-subdomain.next.erxes.io/gateway or http://localhost:4000"
+      },
+      "clientId": {
+        "type": "string",
+        "description": "Confidential OAuth client ID from erxes Settings > OAuth Clients"
+      },
+      "clientSecret": {
+        "type": "string",
+        "description": "Confidential OAuth client secret shown once when creating the client"
+      }
+    },
+    "required": [
+      "erxesBaseUrl",
+      "clientId",
+      "clientSecret"
+    ]
   }
 }
