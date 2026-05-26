@@ -39,10 +39,10 @@ Do not walk the user through OAuth internals unless they explicitly ask. Do not 
 ## Expiry facts
 
 - Device code approval expires after 10 minutes.
-- Confidential OAuth clients should return `expiresIn: 28800` seconds, about 8 hours.
+- Confidential OAuth clients should return `expiresIn` based on the selected access-token lifetime: `31536000` for 1 year, `15552000` for 6 months, or `7776000` for 3 months.
 - `ERXES_CLIENT_SECRET` is required; helpers send it as `oauth_secret`.
 - Refresh tokens rotate on every refresh. Replace the in-memory refresh token after each successful refresh.
-- If `expiresIn` is lower than 28800, treat fast expiry as a backend/client configuration mismatch, not a hallucinated platform outage.
+- If `expiresIn` is not one of the expected confidential lifetime values, treat it as a backend/client configuration mismatch, not a hallucinated platform outage.
 
 ## Session payload
 
@@ -57,7 +57,7 @@ The script returns JSON like this:
     "tokenType": "Bearer",
     "accessToken": "...",
     "refreshToken": "...",
-    "expiresIn": 28800
+    "expiresIn": 31536000
   }
 }
 ```

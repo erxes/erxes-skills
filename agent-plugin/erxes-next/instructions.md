@@ -51,9 +51,9 @@ ERXES_BASE_URL=<url> ERXES_CLIENT_ID=<client-id> ERXES_CLIENT_SECRET=<client-sec
 - Do not store tokens in project files.
 - The script opens the browser, waits for approval, and prints a session JSON payload to stdout.
 - Device codes expire after 10 minutes.
-- Confidential OAuth clients should return `expiresIn: 28800` seconds, about 8 hours.
+- Confidential OAuth clients should return `expiresIn` based on the selected access-token lifetime: `31536000` for 1 year, `15552000` for 6 months, or `7776000` for 3 months.
 - Missing or wrong `ERXES_CLIENT_SECRET` produces `invalid_client`.
-- If `expiresIn` is lower than 28800, treat it as a backend/client configuration mismatch and report it with the sanitized OAuth response.
+- If `expiresIn` is not one of the expected confidential lifetime values, treat it as a backend/client configuration mismatch and report it with the sanitized OAuth response.
 
 Use [erxes-app-token-auth.md](./erxes-app-token-auth.md) only when you need the quick login reference.
 

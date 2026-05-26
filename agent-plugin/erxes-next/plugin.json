@@ -61,7 +61,7 @@
     "clientIdEnv": "ERXES_CLIENT_ID",
     "clientSecretEnv": "ERXES_CLIENT_SECRET",
     "clientSecretHeader": "oauth_secret",
-    "expectedAccessTokenExpiresIn": 28800
+    "expectedAccessTokenExpiresInValues": [31536000, 15552000, 7776000]
   },
   "files": {
     "instructions": "instructions.md",
