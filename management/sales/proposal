@@ -1,0 +1,421 @@
+---
+name: erxes-proposal
+preamble-tier: 2
+version: 1.0.0
+description: |
+  Interactive proposal generator for erxes co-development engagements.
+  Gathers client parameters via AskUserQuestion and produces a publication-ready
+  markdown proposal following the 70/30 Co-Development Lego Model and 1-Year
+  20x Productivity Upskilling Buffet. One command, fully formatted proposal out.
+  Use when asked to "write a proposal", "generate proposal", "create erxes proposal",
+  or "prepare a client proposal".
+allowed-tools:
+  - WriteFile
+  - ReadFile
+  - AskUserQuestion
+  - Shell
+---
+
+## Preamble (run first)
+
+```bash
+mkdir -p ~/erxes-proposals
+_DATE=$(date +%Y-%m-%d)
+_YEAR=$(date +%Y)
+_MONTH=$(date +%m)
+_DAY=$(date +%d)
+echo "PROPOSAL_DATE=$_DATE"
+echo "PROPOSAL_YEAR=$_YEAR"
+# Set dynamic start date for roadmap (next Monday)
+_ROADMAP_START=$(date -v+monday +%Y-%m-%d 2>/dev/null || date -d "next monday" +%Y-%m-%d 2>/dev/null || echo "$_DATE")
+echo "ROADMAP_START=$_ROADMAP_START"
+```
+
+## AskUserQuestion Format
+
+**ALWAYS follow this structure for every AskUserQuestion call:**
+
+1. **Re-ground:** State the customer name (if known), the proposal type, and current step. (1 sentence)
+2. **Simplify:** Explain what information is needed in plain English. Use concrete examples. No jargon.
+3. **Recommend:** `RECOMMENDATION: Choose [X] because [one-line reason]`
+4. **Options:** Lettered options `A) ... B) ... C) ...` — when an option involves pricing, show the monthly cost.
+
+Assume the user is a busy salesperson who hasn't looked at this thread in 20 minutes.
+
+---
+
+## Pricing Reference Table
+
+Use this table for ALL cost calculations. Never guess pricing.
+
+| Software Tier | Monthly Fee (USD) | Description |
+|---------------|-------------------|-------------|
+| Tier 1 | $250 | Micro-businesses / startups needing core messaging & CRM |
+| Tier 2 | $750 | Growing companies needing advanced marketing & workflows |
+| Tier 3 | $1,500 | Enterprise-grade operations needing multi-brand, custom integrations |
+
+| Training Tier | Monthly Fee (USD) | Seats | Description |
+|---------------|-------------------|-------|-------------|
+| Tier 1 | $250 | Up to 10 | Small team upskilling |
+| Tier 2 | $750 | Up to 35 | Growing department training |
+| Tier 3 | $1,500 | Up to 80 | Organization-wide transformation |
+
+**Calculations:**
+- Total Monthly = Software Fee + Training Fee
+- Annual Estimate = Total Monthly × 12
+
+---
+
+## Variable Interpolation Rules
+
+When generating the proposal, replace these tokens exactly:
+
+| Token | Source Variable | Example |
+|-------|-----------------|---------|
+| `{{CUSTOMER_NAME}}` | User-provided customer name | XacBank |
+| `{{PAIN_POINTS}}` | User-provided pain points | Manual workflows, high support costs |
+| `{{TARGET_PRODUCT}}` | User-provided product/service | Corporate Website, Loyalty Mobile App |
+| `{{SOFTWARE_TIER}}` | Selected software tier | Tier 2 |
+| `{{SOFTWARE_COST}}` | From Pricing Reference | 750 |
+| `{{TRAINING_TIER}}` | Selected training tier | Tier 2 |
+| `{{TRAINING_COST}}` | From Pricing Reference | 750 |
+| `{{TRAINING_SEATS}}` | Seats for selected training tier | Up to 35 |
+| `{{TOTAL_MONTHLY}}` | SOFTWARE_COST + TRAINING_COST | 1,500 |
+| `{{PROPOSAL_DATE}}` | From preamble | 2026-05-31 |
+| `{{ROADMAP_START}}` | From preamble (next Monday) | 2026-06-01 |
+
+**CRITICAL:** Remove ALL placeholder brackets like `[Customer Name]` or `[Insert ...]` from the final output. Every token must be replaced with an actual value or removed.
+
+---
+
+## Phase 0: Intake — Gather Core Parameters
+
+Execute these steps sequentially. Do NOT batch them into a single AskUserQuestion.
+
+### Step 0A: Customer Name
+
+Use AskUserQuestion:
+
+> **Re-ground:** Starting a new erxes co-development proposal.
+>
+> **Simplify:** Who is this proposal for? Enter the company or organization name.
+>
+> **Examples:** XacBank, Mobicom, APU, Acme Corp
+
+Store the response as `$CUSTOMER_NAME`.
+
+### Step 0B: Pain Points & Objectives
+
+Use AskUserQuestion:
+
+> **Re-ground:** Preparing proposal for **{{CUSTOMER_NAME}}**.
+>
+> **Simplify:** What are the client's main pain points or goals? This shapes the Executive Summary. Be specific — "manual workflows" is better than "inefficiency".
+>
+> **Examples:**
+> - "Manual customer onboarding, siloed data across 3 departments"
+> - "High developer costs, 6-month release cycles, legacy tech debt"
+> - "No CRM, spreadsheets for sales tracking, no marketing automation"
+
+Store as `$PAIN_POINTS`.
+
+### Step 0C: Target Product/Service
+
+Use AskUserQuestion:
+
+> **Re-ground:** Proposal for **{{CUSTOMER_NAME}}** addressing: *{{PAIN_POINTS}}*.
+>
+> **Simplify:** What will we build or optimize together? This becomes the headline of the proposal.
+>
+> **Examples:** Corporate Website, Loyalty Mobile App, Internal Workflow Automation, Customer Portal, AI Support System
+
+Store as `$TARGET_PRODUCT`.
+
+### Step 0D: Software Foundation Tier
+
+Use AskUserQuestion:
+
+> **Re-ground:** Proposal for **{{CUSTOMER_NAME}}** — building *{{TARGET_PRODUCT}}*.
+>
+> **Simplify:** Which erxes Software Foundation tier fits this client?
+>
+> **RECOMMENDATION:** Choose Tier 2 for most growing companies — it covers advanced marketing automation and workflows without the enterprise overhead.
+>
+> | Tier | Monthly Cost | Best For |
+> |------|--------------|----------|
+> | A) Tier 1 | $250/mo | Micro-businesses, startups, single teams |
+> | B) Tier 2 | $750/mo | Growing companies, multi-department needs |
+> | C) Tier 3 | $1,500/mo | Enterprise, multi-brand, heavy integrations |
+
+Store the selection as `$SOFTWARE_TIER` and lookup cost as `$SOFTWARE_COST`.
+
+### Step 0E: Training Buffet Tier
+
+Use AskUserQuestion:
+
+> **Re-ground:** Proposal for **{{CUSTOMER_NAME}}** — Software Tier: {{SOFTWARE_TIER}} (${{SOFTWARE_COST}}/mo).
+>
+> **Simplify:** How many team members need upskilling? The 20x Productivity Buffet gives unlimited class access per seat.
+>
+> **RECOMMENDATION:** Match the training tier to the software tier for symmetry and maximum value.
+>
+> | Tier | Monthly Cost | Seats | Best For |
+> |------|--------------|-------|----------|
+> | A) Tier 1 | $250/mo | Up to 10 | Small core team |
+> | B) Tier 2 | $750/mo | Up to 35 | Department-wide |
+> | C) Tier 3 | $1,500/mo | Up to 80 | Full organization |
+
+Store as `$TRAINING_TIER`, `$TRAINING_COST`, and `$TRAINING_SEATS`.
+
+### Step 0F: Calculate Totals
+
+Compute in the session context:
+- `$TOTAL_MONTHLY` = `$SOFTWARE_COST` + `$TRAINING_COST`
+- `$ANNUAL_ESTIMATE` = `$TOTAL_MONTHLY` × 12
+
+---
+
+## Phase 1: Validation — Confirm Before Generate
+
+Use AskUserQuestion with a summary:
+
+> **Re-ground:** Proposal for **{{CUSTOMER_NAME}}** — all parameters collected.
+>
+> **Simplify:** Here's what we'll generate. Confirm or edit before we write the file.
+>
+> | Parameter | Value |
+> |-----------|-------|
+> | Customer | {{CUSTOMER_NAME}} |
+> | Target Product | {{TARGET_PRODUCT}} |
+> | Pain Points | {{PAIN_POINTS}} |
+> | Software | {{SOFTWARE_TIER}} — ${{SOFTWARE_COST}}/mo |
+> | Training | {{TRAINING_TIER}} — ${{TRAINING_COST}}/mo ({{TRAINING_SEATS}} seats) |
+> | **Total Monthly** | **${{TOTAL_MONTHLY}}/mo** |
+> | **Annual Estimate** | **${{ANNUAL_ESTIMATE}}/year** |
+>
+> **RECOMMENDATION:** Generate the proposal now. We can always revise later.
+>
+> **Options:**
+> - A) Generate proposal — looks good
+> - B) Edit a parameter — tell me which one
+> - C) Cancel — discard this draft
+
+If B: return to the relevant Step 0X. If C: exit with `NEEDS_CONTEXT`.
+
+---
+
+## Phase 2: Generate Proposal
+
+Write the complete proposal to disk using WriteFile. Do NOT output it as chat text only — always save it.
+
+**File path:**
+```
+~/erxes-proposals/{{CUSTOMER_NAME | slugify}}-{{PROPOSAL_DATE}}.md
+```
+*(slugify: lowercase, replace spaces/special chars with hyphens)*
+
+**Full proposal template:**
+
+```markdown
+# BUSINESS & DIGITAL TRANSFORMATION PROPOSAL
+
+**Prepared For:** {{CUSTOMER_NAME}}
+**Prepared By:** erxes Inc.
+**Date:** {{PROPOSAL_DATE}}
+**Subject:** Building a 20x Productive Organization with erxes: Co-Development & Platform Synergy
+
+---
+
+## EXECUTIVE SUMMARY
+*Act I: Understanding the Challenge & Business Imperative*
+
+Dear {{CUSTOMER_NAME}} Team,
+
+In today's fast-paced digital economy, organizations face a critical choice: scale through costly headcount addition or multiply the output of their existing talent. {{CUSTOMER_NAME}} is currently navigating key challenges, specifically: **{{PAIN_POINTS}}**.
+
+This proposal outlines a unified strategy to transform {{CUSTOMER_NAME}} into a high-efficiency organization and successfully launch your **{{TARGET_PRODUCT}}**.
+
+We believe that the future of enterprise software is not passive buying, but a true co-development synergy. By deploying **erxes** as your core business infrastructure, upskilling your team with our buffet-style **20x Productivity Training subscription**, and executing a **70/30 co-development model**, we will turn {{CUSTOMER_NAME}} into a "Lego builder." Your team will gain the skills to build, optimize, and scale your own websites, mobile applications, and plugins, while erxes engineers handle the complex backend integrations.
+
+This approach delivers massive time and cost savings, giving you complete sovereignty over your software destiny.
+
+---
+
+## THE SOLUTION JOURNEY
+*Act II: The Four Pillars of Your Modern Experience Infrastructure*
+
+To achieve 20x growth, our solution integrates four robust pillars:
+
+### Pillar 1: The erxes Software Foundation (Core Infrastructure)
+We deploy erxes, the ultimate open-source Experience Operating System (xOS). erxes replaces fragmented, expensive SaaS tools with a single, highly modular business architecture.
+- **Full Ownership**: No vendor lock-in; you retain complete control over your databases and code.
+- **Modular Agility**: Add or swap plugins like Lego blocks depending on your business needs.
+
+### Pillar 2: Field-Driven Requirements (BRD & PRD Transformation)
+Software projects usually fail because outside analysts don't understand the real work. We believe Business Requirement Documents (BRD) and Product Requirement Documents (PRD) are most powerful when built by your team in the field.
+- **Field-Prepared Specifications**: We help your field workers write operational specs that reflect real-world processes.
+- **Automated Specification Blueprints**: We translate these field requirements into automated, executable system specifications and integration blueprints.
+
+### Pillar 3: The 70/30 Co-Development Lego Model
+This is the ultimate synergy for software development. Rather than paying external agencies for entire builds, we divide the work logically:
+- **Your Team (70% - 80%)**: Trained in our classes, your team prepares the BRDs/PRDs, constructs the UX/UI, and builds the initial coding structure in our classrooms.
+- **erxes Team (20% - 30%)**: Our senior engineers perform the crucial final steps — integrating backend and frontend components, configuring cloud databases, securing APIs, and taking the project live.
+
+### Pillar 4: The 1-Year 20x Productivity Upskilling Buffet
+Your team will continuously learn and build in our interactive classroom environment. Your subscription grants buffet-style access to our ever-growing classes:
+- **20x Productivity for C-Level**: Training your executives to lead automated, hyper-efficient teams.
+- **20x Marketing**: Mastering AI-driven campaigns, multi-channel lead generation, and targeted copy.
+- **20x Developer**: Harnessing AI coding assistants, modular scripting, and automated debugging.
+- **20x Mobile Developer**: Speeding up mobile app cycles to build your cross-platform apps.
+- **20x Accountant**: Automating bookkeeping, invoicing, and real-time financial reporting.
+
+---
+
+## PRODUCT & SERVICE CATALOG
+*Where Product and Service meet Actionable Automation*
+
+### A. Core Software & Platform Products
+1. **erxes Experience OS License ({{SOFTWARE_TIER}})**
+   - Access to core modules: contact management, unified inbox, sales pipelines, and campaign builders.
+2. **Custom Automation Studio & Integration Engine**
+   - The developer console for writing, deploying, and managing custom automated scripts and integration blocks.
+3. **20x Productivity Training Buffet Access**
+   - 1-Year continuous seat allocations ({{TRAINING_SEATS}}) for team upskilling in C-level, Marketing, Development, and Accounting.
+
+### B. Engineering & Strategy Services
+1. **BRD/PRD Technical Transformation & Architecture**
+   - Reviewing your field-prepared requirements and converting them into actionable integration specs and database blueprints.
+2. **20% - 30% Integration & Backend Engineering**
+   - Deep engineering support: connecting frontends, database tuning, setting up webhook endpoints, and running deployments.
+3. **Interactive Classroom Mentorship**
+   - Direct developer and business support inside our training classes as your team builds your **{{TARGET_PRODUCT}}**.
+
+---
+
+## ACTION PLAN
+*A 1-Year roadmap to continuous building and upskilling*
+
+```mermaid
+gantt
+    title erxes 70/30 Co-Development & Training Roadmap
+    dateFormat  YYYY-MM-DD
+    section Phase 1: Setup & Upskill
+    erxes Provisioning & C-Level Onboarding :active, des1, {{ROADMAP_START}}, 7d
+    Buffet Training Class Registration       : des2, after des1, 30d
+    section Phase 2: Requirements (Field)
+    Field BRD & PRD Document Drafting        : des3, after des1, 10d
+    Transformation into Automation Spec     : des4, after des3, 5d
+    section Phase 3: Co-Development (70/30)
+    Customer Team Builds (70% Code & UI)     : des5, after des4, 15d
+    erxes Team Integrates (20-30% Backend)   : des6, after des5, 7d
+    section Phase 4: Launch & Learn
+    Live Launch & Year-Round Upskilling      : des7, after des6, 280d
+```
+
+### Stage 1: Platform Provisioning & Core Upskilling (Week 1)
+- Deploy erxes Software Foundation in your cloud infrastructure.
+- Enroll C-level executives in **20x Productivity for C-Level** to align leadership on automated operations.
+- Map out seats for Marketers, Developers, and Accountants.
+
+### Stage 2: Field BRD/PRD Collection & Technical Translation (Week 2)
+- Empower your field staff to draft the operational requirements for your **{{TARGET_PRODUCT}}**.
+- erxes transforms these field requirements into structured technical integration specs.
+
+### Stage 3: Co-Development Execution (Weeks 3-4)
+- **70% Customer Building**: Your developers and marketers attend **20x Developer** and **20x Marketing** classes to write code, design layout blocks, and build workflows.
+- **30% erxes Integration**: erxes engineers hook up the backend, connect API endpoints, configure database flows, and perform security audits.
+
+### Stage 4: Live Launch & Continuous 1-Year Upskilling (Week 5 onwards)
+- Successfully deploy your **{{TARGET_PRODUCT}}**.
+- Your team continues to attend the ever-growing training buffet to adapt, add new Lego plugins, and continuously optimize processes.
+
+---
+
+## INVESTMENT & PRICING PLAN
+
+### Monthly Subscriptions Breakdown
+
+| Item / Program | Tier Level | Monthly Fee (USD) |
+| :--- | :--- | :--- |
+| **erxes Software Foundation Subscription** | {{SOFTWARE_TIER}} | ${{SOFTWARE_COST}} / month |
+| **20x Productivity Buffet Training Subscription** | {{TRAINING_TIER}} ({{TRAINING_SEATS}} seats) | ${{TRAINING_COST}} / month |
+| **Custom Automation Studio & Integration Engine** | Included in erxes Foundation | $0.00 / month |
+| **TOTAL ESTIMATED MONTHLY INVESTMENT** | | **${{TOTAL_MONTHLY}} / month** |
+
+### Annual Projection
+| Period | Amount (USD) |
+|--------|--------------|
+| Year 1 Total | ${{ANNUAL_ESTIMATE}} |
+
+### Crucial Pricing Notes & Exclusions:
+> [!IMPORTANT]
+> - **Server & Hosting Cost Excluded**: The subscription fees do not cover the cost of cloud server hosting (e.g., Hetzner, AWS, Google Cloud). This will be billed directly to you by your chosen cloud provider.
+> - **AI & API Tokens Excluded**: Standard subscription fees do not include token usage fees for AI interactions (AI Agent Swarms, OpenAI/Anthropic APIs). You can connect your own API keys or purchase token bundles separately.
+
+---
+
+## THE TRANSFORMED STATE
+*Act III: Your Future with erxes*
+
+By executing this proposal, {{CUSTOMER_NAME}} is not just buying software; you are establishing complete digital independence.
+
+1. **A Team of Lego Builders**: Your staff will no longer be dependent on external developers. They will understand how to build websites, mobile apps, and custom plugins like Lego blocks using erxes and our training buffet classes.
+2. **Maximized Field Insight**: By transforming your field workers' BRDs and PRDs directly into system specifications, your software will reflect your actual business operations — not an analyst's guess.
+3. **The 70/30 Development Speed**: You build the vision and initial structure (70-80%); we connect the wires and deploy (20-30%). This drastically cuts development cycles, saving you significant money and time.
+
+We look forward to partnering with you on this transformation.
+
+**Sincerely,**  
+The erxes Team
+```
+
+---
+
+## Phase 3: Deliver & Confirm
+
+After writing the file:
+
+1. Read the file back to verify it was saved correctly.
+2. Present to the user:
+
+> **DONE** — Proposal generated and saved.
+>
+> **File:** `~/erxes-proposals/{{CUSTOMER_NAME | slugify}}-{{PROPOSAL_DATE}}.md`
+>
+> **Summary:**
+> - Customer: {{CUSTOMER_NAME}}
+> - Product: {{TARGET_PRODUCT}}
+> - Total Monthly: ${{TOTAL_MONTHLY}}
+> - Annual Estimate: ${{ANNUAL_ESTIMATE}}
+>
+> **Next steps:**
+> - Review the proposal and customize any sections as needed
+> - Export to PDF for client delivery
+> - Run `/erxes-proposal` again anytime for a new client
+
+---
+
+## Persuasion & Writing Principles
+
+**Apply these rules during generation:**
+
+- **No Empty Buzzwords**: Do not use "cutting-edge", "revolutionary", or "world-class". Use metrics-driven and ownership-focused words: "open-source sovereignty", "automated", "data control", "quantifiable time savings".
+- **Focus on Action**: The Action Plan must feel immediate and structured. The transition from software setup to training must feel cohesive.
+- **Value Over Cost**: Frame the total monthly subscription as an investment that offsets existing multiple SaaS costs and headcount requirements.
+- **Sovereignty**: Keep emphasizing that because erxes is open-source, the customer has full code ownership and data control.
+- **No Internal Jargon in Output**: Never mention "OpenCode" or "OpenClaw" in the customer-facing proposal. Use "Automated Integration Blueprints" or "Unified Specification Documents" instead.
+
+---
+
+## Completion Status Protocol
+
+Report status at the end of every invocation:
+
+- **DONE** — Proposal generated, saved to `~/erxes-proposals/`, and verified.
+- **DONE_WITH_CONCERNS** — Proposal generated, but with pricing discrepancies or missing parameters noted.
+- **BLOCKED** — Could not write file (disk issue, invalid filename). State what was tried.
+- **NEEDS_CONTEXT** — Missing required customer parameter (user cancelled intake or chose to edit).
+
+**Escalation:**
+- If the user cancels 3 times during intake, STOP and report `NEEDS_CONTEXT`.
+- If file write fails 2 times, STOP and report `BLOCKED`.
