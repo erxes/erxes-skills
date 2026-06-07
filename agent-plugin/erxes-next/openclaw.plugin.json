@@ -1,8 +1,8 @@
 {
   "schemaVersion": 1,
   "kind": "agent-plugin",
-  "slug": "erxes-plugin",
-  "name": "erxes-plugin",
+  "slug": "erxes-next-plugin",
+  "name": "erxes-next-plugin",
   "version": "1.0.15",
   "entry": "instructions.md",
   "description": "Confidential OAuth plugin for operating erxes data through GraphQL with strict anti-hallucination rules.",
@@ -73,8 +73,8 @@
     "loginScript": "scripts/login.sh",
     "refreshScript": "scripts/refresh-token.sh"
   },
-  "displayName": "erxes",
-  "id": "erxes-plugin",
+  "displayName": "erxes-plugin",
+  "id": "erxes-next-plugin",
   "configSchema": {
     "type": "object",
     "additionalProperties": false,

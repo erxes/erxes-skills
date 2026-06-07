@@ -1,7 +1,7 @@
 {
   "ownerId": "kn7fcjad721dqasge0s8tk714s85632x",
-  "slug": "erxes-plugin",
-  "name": "erxes-plugin",
+  "slug": "erxes-next-plugin",
+  "name": "erxes-next-plugin",
   "type": "agent-plugin",
   "version": "1.0.15",
   "entry": "instructions.md",
@@ -74,8 +74,8 @@
     "loginScript": "scripts/login.sh",
     "refreshScript": "scripts/refresh-token.sh"
   },
-  "displayName": "erxes",
-  "id": "erxes-plugin",
+  "displayName": "erxes-plugin",
+  "id": "erxes-next-plugin",
   "configSchema": {
     "type": "object",
     "additionalProperties": false,
