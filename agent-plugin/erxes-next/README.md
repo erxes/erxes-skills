@@ -1,6 +1,6 @@
-# erxes Next Agent Plugin
+# erxes Agent Plugin
 
-This Clawhub/OpenClaw agent plugin lets agents operate erxes Next through the live GraphQL API using confidential OAuth device-flow authentication.
+This Clawhub/OpenClaw agent plugin lets agents operate erxes through the live GraphQL API using confidential OAuth device-flow authentication.
 
 The plugin is intentionally scoped to erxes. It should not fall back to generic CRM schemas, invented REST endpoints, or guessed GraphQL operations when an erxes lookup fails.
 
@@ -69,17 +69,17 @@ After editing plugin files:
 
    ```bash
    git status --short
-   git add agent-plugin/erxes-next/README.md agent-plugin/erxes-next/instructions.md agent-plugin/erxes-next/erxes-graphql-api.md agent-plugin/erxes-next/block-api.md agent-plugin/erxes-next/operation-api.md
-   git commit -m "docs: update erxes next plugin"
+   git add agent-plugin/erxes-next
+   git commit -m "fix: update erxes plugin oauth login"
    git push origin main
    ```
 
-3. In Clawhub, open the `erxes-next-plugin` plugin page.
+3. In Clawhub, open the `erxes-plugin` plugin page.
 
-4. Use the Clawhub update or publish action for the existing plugin slug:
+4. Use the Clawhub update or publish action for the plugin slug:
 
    ```txt
-   erxes-next-plugin
+   erxes-plugin
    ```
 
 5. Verify the installed plugin version or updated contents in a fresh Clawhub agent chat.

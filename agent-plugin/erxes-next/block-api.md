@@ -1,9 +1,9 @@
 ---
-title: block_api - SaaS Workflow Reference
+title: block_api – SaaS Workflow Reference
 description: User-facing workflows and exact GraphQL operations for erxes block_api
 ---
 
-# block_api - SaaS Workflow Reference
+# block_api – SaaS Workflow Reference
 
 Use this file when the user wants to operate block-side business records through natural language. Focus on business workflows, not source code.
 

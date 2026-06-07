@@ -19,7 +19,7 @@ if [ -z "$CLIENT" ]; then
 fi
 
 if [ -z "$SECRET" ]; then
-  echo "ERXES_CLIENT_SECRET is required for erxes-next confidential login" >&2
+  echo "ERXES_CLIENT_SECRET is required for erxes confidential login" >&2
   exit 1
 fi
 
@@ -31,10 +31,16 @@ fi
 # Extract subdomain from a gateway URL like https://demo.next.erxes.io/gateway -> demo
 SUB=$(echo "$BASE" | sed -E 's|https?://([^./]+).*|\1|')
 
-AUTH_HEADERS=(-H "Content-Type: application/json" -H "erxes-subdomain: $SUB" -H "oauth_secret: $SECRET")
+AUTH_HEADERS=(-H "Content-Type: application/json" -H "erxes-subdomain: $SUB")
+CLIENT_AUTH_BODY="\"client_id\":\"$CLIENT\",\"client_secret\":\"$SECRET\""
 
-TOK=$(curl -sf -X POST "$BASE/oauth/token" \
+TOK=$(curl -sS -X POST "$BASE/oauth/token" \
   "${AUTH_HEADERS[@]}" \
-  -d "{\"grant_type\":\"refresh_token\",\"refresh_token\":\"$REFRESH\",\"client_id\":\"$CLIENT\"}")
+  -d "{\"grant_type\":\"refresh_token\",\"refresh_token\":\"$REFRESH\",$CLIENT_AUTH_BODY}")
+
+if ! echo "$TOK" | grep -q '"accessToken"'; then
+  echo "OAuth refresh error: $TOK" >&2
+  exit 1
+fi
 
 printf '{"subdomain":"%s","base_url":"%s","client_id":"%s","token":%s}\n' "$SUB" "$BASE" "$CLIENT" "$TOK"

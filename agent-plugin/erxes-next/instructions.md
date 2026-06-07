@@ -1,6 +1,6 @@
-# erxes-next Clawhub Plugin Rules
+# erxes Clawhub Plugin Rules
 
-This plugin is for OpenClaw/Clawhub agents operating erxes Next through the live GraphQL API. It is not a generic CRM integration.
+This plugin is for OpenClaw/Clawhub agents operating erxes through the live GraphQL API. It is not a generic CRM integration.
 
 ## Hard Anti-Hallucination Rules
 
@@ -44,16 +44,16 @@ ERXES_BASE_URL=<url> ERXES_CLIENT_ID=<client-id> ERXES_CLIENT_SECRET=<client-sec
 
 - `ERXES_BASE_URL` is required.
 - `ERXES_CLIENT_ID` is required. Do not use a default client id.
-- `ERXES_CLIENT_SECRET` is required. erxes-next uses confidential OAuth only and helpers send it as the `oauth_secret` header.
+- `ERXES_CLIENT_SECRET` is required. erxes uses confidential OAuth only and helpers send it as `client_secret` in the OAuth JSON body.
 - Accept the URL in whatever form the user gives and normalize it to `ERXES_BASE_URL=<url>`.
 - Do not explain OAuth internals unless the user asks.
 - Do not ask the user to copy tokens manually.
 - Do not store tokens in project files.
 - The script opens the browser, waits for approval, and prints a session JSON payload to stdout.
 - Device codes expire after 10 minutes.
-- Confidential OAuth clients should return `expiresIn` based on the selected access-token lifetime: `31536000` for 1 year, `15552000` for 6 months, or `7776000` for 3 months.
+- Confidential OAuth clients should return `expiresIn: 28800` seconds, about 8 hours.
 - Missing or wrong `ERXES_CLIENT_SECRET` produces `invalid_client`.
-- If `expiresIn` is not one of the expected confidential lifetime values, treat it as a backend/client configuration mismatch and report it with the sanitized OAuth response.
+- If `expiresIn` is lower than 28800, treat it as a backend/client configuration mismatch and report it with the sanitized OAuth response.
 
 Use [erxes-app-token-auth.md](./erxes-app-token-auth.md) only when you need the quick login reference.
 
@@ -107,57 +107,57 @@ On `Unauthorized`, `invalid_grant`, expired token, or a GraphQL auth error:
 - `blockOpptyConvertToContract` needs both a target unit and a payment plan.
 - `operationConvertTriageToTask` may need a valid team-specific status type.
 
-## Contacts
+## Харилцагч
 
-- List all contacts
-- Search by name, email, or phone
-- View contact details
-- Group by type: customer, lead, or visitor
-- Add a new contact
-- Edit contact information
-- Delete a contact
-- Merge duplicate contacts
+- Бүх харилцагчийн жагсаалт харах
+- Нэр, имэйл, утсаар хайх
+- Харилцагчийн дэлгэрэнгүй мэдээлэл харах
+- Төрлөөр нь бүлэглэх (үйлчлүүлэгч / боломжит / зочин)
+- Шинэ харилцагч нэмэх
+- Харилцагчийн мэдээлэл засах
+- Харилцагч устгах
+- Давхардсан харилцагчийг нэгтгэх
 
-## Products
+## Бүтээгдэхүүн
 
-- List products
-- View one product in detail
-- Add a new product
-- Edit, delete, or merge products
-- Manage categories and units of measure
+- Бүтээгдэхүүний жагсаалт харах
+- Нэг бүтээгдэхүүний дэлгэрэнгүй харах
+- Шинэ бүтээгдэхүүн нэмэх
+- Бүтээгдэхүүн засах, устгах, нэгтгэх
+- Ангилал болон хэмжих нэгж удирдах
 
-## Tags
+## Шошго
 
-- View all tags
-- Add, edit, or delete tags
-- Attach tags to contacts or products
+- Бүх шошго харах
+- Шошго нэмэх, засах, устгах
+- Харилцагч эсвэл бүтээгдэхүүнд шошго хавсаргах
 
-## Documents
+## Баримт бичиг
 
-- List documents
-- Add, edit, or delete documents
+- Баримт бичгийн жагсаалт харах
+- Баримт бичиг нэмэх, засах, устгах
 
-## Brands
+## Брэнд
 
-- List brands
-- Add, edit, or delete brands
+- Брэндийн жагсаалт харах
+- Брэнд нэмэх, засах, устгах
 
-## Automations
+## Автоматжуулалт
 
-- List all automations
-- Add, edit, activate, or delete automations
+- Бүх автоматжуулалтын жагсаалт харах
+- Автоматжуулалт нэмэх, засах, идэвхжүүлэх, устгах
 
-## Organization Structure
+## Байгууллагын бүтэц
 
-- View departments, branches, units, and positions
-- Add, edit, or delete departments, branches, units, and positions
+- Хэлтэс, салбар, нэгж, албан тушаалын бүтэц харах
+- Хэлтэс, салбар, нэгж, тушаал нэмэх, засах, устгах
 
-## Team Members
+## Багийн гишүүд
 
-- List team members
-- Invite a new member
-- Edit member information
-- Deactivate a member
+- Гишүүдийн жагсаалт харах
+- Шинэ гишүүн урих
+- Гишүүний мэдээлэл засах
+- Гишүүнийг идэвхгүй болгох
 
 ## Block Plugin
 
@@ -186,8 +186,8 @@ On `Unauthorized`, `invalid_grant`, expired token, or a GraphQL auth error:
 - Delete, end-cycle, remove-member, and status-removal actions must always ask for confirmation first.
 
 ## Plugin Files
-- scripts/login.sh - Browser login helper
-- erxes-app-token-auth.md - Confidential OAuth login reference
-- erxes-graphql-api.md - Technical reference for operations
-- block-api.md - block_api SaaS workflows and exact GraphQL operations
-- operation-api.md - operation_api SaaS workflows and exact GraphQL operations
+- scripts/login.sh — Browser login helper
+- erxes-app-token-auth.md — Confidential OAuth login reference
+- erxes-graphql-api.md — Үйлдлүүдийн техникийн лавлах
+- block-api.md — block_api SaaS workflow болон exact GraphQL ops
+- operation-api.md — operation_api SaaS workflow болон exact GraphQL ops

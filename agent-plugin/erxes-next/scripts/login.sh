@@ -18,18 +18,19 @@ if [ -z "$CLIENT" ]; then
 fi
 
 if [ -z "$SECRET" ]; then
-  echo "ERXES_CLIENT_SECRET is required for erxes-next confidential login" >&2
+  echo "ERXES_CLIENT_SECRET is required for erxes confidential login" >&2
   exit 1
 fi
 
 # Extract subdomain from a gateway URL like https://demo.next.erxes.io/gateway -> demo
 SUB=$(echo "$BASE" | sed -E 's|https?://([^./]+).*|\1|')
 
-AUTH_HEADERS=(-H "Content-Type: application/json" -H "erxes-subdomain: $SUB" -H "oauth_secret: $SECRET")
+AUTH_HEADERS=(-H "Content-Type: application/json" -H "erxes-subdomain: $SUB")
+CLIENT_AUTH_BODY="\"client_id\":\"$CLIENT\",\"client_secret\":\"$SECRET\""
 
-RESP=$(curl -sf -X POST "$BASE/oauth/device/code" \
+RESP=$(curl -sS -X POST "$BASE/oauth/device/code" \
   "${AUTH_HEADERS[@]}" \
-  -d "{\"client_id\":\"$CLIENT\"}")
+  -d "{$CLIENT_AUTH_BODY}")
 
 DC=$(echo "$RESP" | grep -o '"device_code":"[^"]*"' | cut -d'"' -f4)
 URI=$(echo "$RESP" | grep -o '"verification_uri_complete":"[^"]*"' | cut -d'"' -f4 \
@@ -50,7 +51,7 @@ while true; do
   sleep 5
   TOK=$(curl -s -X POST "$BASE/oauth/token" \
     "${AUTH_HEADERS[@]}" \
-    -d "{\"grant_type\":\"urn:ietf:params:oauth:grant-type:device_code\",\"device_code\":\"$DC\",\"client_id\":\"$CLIENT\"}")
+    -d "{\"grant_type\":\"urn:ietf:params:oauth:grant-type:device_code\",\"device_code\":\"$DC\",$CLIENT_AUTH_BODY}")
 
   if echo "$TOK" | grep -q '"accessToken"'; then
     break

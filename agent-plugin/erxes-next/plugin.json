@@ -1,11 +1,11 @@
 {
   "schemaVersion": 1,
   "kind": "agent-plugin",
-  "slug": "erxes-next-plugin",
-  "name": "erxes-next-plugin",
-  "version": "1.0.13",
+  "slug": "erxes-plugin",
+  "name": "erxes-plugin",
+  "version": "1.0.15",
   "entry": "instructions.md",
-  "description": "Confidential OAuth plugin for operating erxes Next data through GraphQL with strict anti-hallucination rules.",
+  "description": "Confidential OAuth plugin for operating erxes data through GraphQL with strict anti-hallucination rules.",
   "requiredEnv": [
     {
       "label": "erxes gateway URL",
@@ -32,6 +32,7 @@
   "matches": {
     "keywords": [
       "erxes",
+      "erxes-plugin",
       "erxes-next",
       "xos",
       "contacts",
@@ -60,8 +61,8 @@
     "baseUrlEnv": "ERXES_BASE_URL",
     "clientIdEnv": "ERXES_CLIENT_ID",
     "clientSecretEnv": "ERXES_CLIENT_SECRET",
-    "clientSecretHeader": "oauth_secret",
-    "expectedAccessTokenExpiresInValues": [31536000, 15552000, 7776000]
+    "clientSecretBodyField": "client_secret",
+    "expectedAccessTokenExpiresIn": 28800
   },
   "files": {
     "instructions": "instructions.md",
@@ -72,8 +73,8 @@
     "loginScript": "scripts/login.sh",
     "refreshScript": "scripts/refresh-token.sh"
   },
-  "displayName": "erxes Next",
-  "id": "erxes-next-plugin",
+  "displayName": "erxes",
+  "id": "erxes-plugin",
   "configSchema": {
     "type": "object",
     "additionalProperties": false,

@@ -1,12 +1,12 @@
 ---
-title: erxes GraphQL API - Operations by Scope
-description: Complete reference for calling GraphQL mutations and queries after receiving an OAuth token
+title: erxes GraphQL API – Scope-ийн дагуу үйлдлүүд
+description: OAuth token авсны дараа GraphQL mutation/query дуудах бүрэн лавлах
 ---
 
-# erxes GraphQL API - Operations by Scope
+# erxes GraphQL API – Scope-ийн дагуу үйлдлүүд
 
-After receiving a token through OAuth Device Flow, call the GraphQL endpoint.  
-For login details, see `erxes-app-token-auth.md`.
+OAuth Device Flow-оор token авсны дараа GraphQL endpoint-г дуудна.
+Нэвтрэлтийн дэлгэрэнгүй: `erxes-app-token-auth.md`
 
 ---
 
@@ -18,7 +18,7 @@ POST http://localhost:4000/graphql
 
 ---
 
-## Headers (all calls)
+## Headers (бүх дуудлагад)
 
 ```http
 Content-Type: application/json
@@ -32,20 +32,20 @@ Authorization: Bearer <accessToken>
 
 ```json
 {
-  "query": "<GraphQL mutation or query string>",
+  "query": "<GraphQL mutation эсвэл query string>",
   "variables": { ... }
 }
 ```
 
 ---
 
-# Operations by Scope
+# Scope-ийн дагуу үйлдлүүд
 
 ---
 
 ## contacts:read
 
-### customers - List
+### customers — Жагсаалт
 
 ```graphql
 query Customers($page: Int, $perPage: Int, $searchValue: String) {
@@ -68,7 +68,7 @@ query Customers($page: Int, $perPage: Int, $searchValue: String) {
 }
 ```
 
-### customerDetail - View One in Detail
+### customerDetail — Нэгийг дэлгэрэнгүй харах
 
 ```graphql
 query CustomerDetail($_id: String!) {
@@ -89,7 +89,7 @@ query CustomerDetail($_id: String!) {
 
 ## contacts:create
 
-### customersAdd - Create Contact
+### customersAdd — Харилцагч үүсгэх
 
 ```graphql
 mutation CustomersAdd(
@@ -120,8 +120,8 @@ mutation CustomersAdd(
 {
   "query": "mutation CustomersAdd($firstName: String, $lastName: String, $primaryEmail: String, $primaryPhone: String, $state: String) { customersAdd(firstName: $firstName, lastName: $lastName, primaryEmail: $primaryEmail, primaryPhone: $primaryPhone, state: $state) { _id firstName lastName primaryEmail state } }",
   "variables": {
-    "firstName": "John",
-    "lastName": "Smith",
+    "firstName": "Бат",
+    "lastName": "Болд",
     "primaryEmail": "bat@example.com",
     "primaryPhone": "+97699001122",
     "state": "customer"
@@ -136,8 +136,8 @@ mutation CustomersAdd(
   "data": {
     "customersAdd": {
       "_id": "abc123...",
-      "firstName": "John",
-      "lastName": "Smith",
+      "firstName": "Бат",
+      "lastName": "Болд",
       "primaryEmail": "bat@example.com",
       "state": "customer"
     }
@@ -149,7 +149,7 @@ mutation CustomersAdd(
 
 ## contacts:update
 
-### customersEdit - Edit Information
+### customersEdit — Мэдээлэл засах
 
 ```graphql
 mutation CustomersEdit(
@@ -180,7 +180,7 @@ mutation CustomersEdit(
   "query": "mutation CustomersEdit($_id: String!, $firstName: String, $primaryPhone: String) { customersEdit(_id: $_id, firstName: $firstName, primaryPhone: $primaryPhone) { _id firstName primaryPhone } }",
   "variables": {
     "_id": "abc123...",
-    "firstName": "Jonathan",
+    "firstName": "Батаа",
     "primaryPhone": "+97699009900"
   }
 }
@@ -190,7 +190,7 @@ mutation CustomersEdit(
 
 ## contacts:remove
 
-### customersRemove - Remove
+### customersRemove — Устгах
 
 ```graphql
 mutation CustomersRemove($customerIds: [String]) {
@@ -211,7 +211,7 @@ mutation CustomersRemove($customerIds: [String]) {
 
 ## contacts:merge
 
-### customersMerge - Merge
+### customersMerge — Нэгтгэх
 
 ```graphql
 mutation CustomersMerge($customerIds: [String], $customerFields: JSON) {
@@ -230,7 +230,7 @@ mutation CustomersMerge($customerIds: [String], $customerFields: JSON) {
   "variables": {
     "customerIds": ["abc123...", "def456..."],
     "customerFields": {
-      "firstName": "John",
+      "firstName": "Бат",
       "primaryEmail": "bat@example.com"
     }
   }
@@ -241,7 +241,7 @@ mutation CustomersMerge($customerIds: [String], $customerFields: JSON) {
 
 ## products:read
 
-### products - List
+### products — Жагсаалт
 
 ```graphql
 query Products($page: Int, $perPage: Int, $searchValue: String) {
@@ -260,7 +260,7 @@ query Products($page: Int, $perPage: Int, $searchValue: String) {
 
 ## products:create
 
-### productsAdd - Create Product
+### productsAdd — Бүтээгдэхүүн үүсгэх
 
 ```graphql
 mutation ProductsAdd(
@@ -291,7 +291,7 @@ mutation ProductsAdd(
 {
   "query": "mutation ProductsAdd($name: String, $code: String, $unitPrice: Float) { productsAdd(name: $name, code: $code, unitPrice: $unitPrice) { _id name code unitPrice } }",
   "variables": {
-    "name": "Water 0.5L",
+    "name": "Ус 0.5л",
     "code": "WTR-001",
     "unitPrice": 1500
   }
@@ -302,7 +302,7 @@ mutation ProductsAdd(
 
 ## products:update
 
-### productsEdit - Edit
+### productsEdit — Засах
 
 ```graphql
 mutation ProductsEdit($_id: String!, $name: String, $unitPrice: Float) {
@@ -318,7 +318,7 @@ mutation ProductsEdit($_id: String!, $name: String, $unitPrice: Float) {
 
 ## products:remove
 
-### productsRemove - Remove
+### productsRemove — Устгах
 
 ```graphql
 mutation ProductsRemove($productIds: [String!]) {
@@ -330,7 +330,7 @@ mutation ProductsRemove($productIds: [String!]) {
 
 ## products:merge
 
-### productsMerge - Merge
+### productsMerge — Нэгтгэх
 
 ```graphql
 mutation ProductsMerge($productIds: [String], $productFields: JSON) {
@@ -345,7 +345,7 @@ mutation ProductsMerge($productIds: [String], $productFields: JSON) {
 
 ## products:manage
 
-### productCategoriesAdd - Create Category
+### productCategoriesAdd — Ангилал үүсгэх
 
 ```graphql
 mutation ProductCategoriesAdd($name: String!, $code: String, $parentId: String) {
@@ -357,7 +357,7 @@ mutation ProductCategoriesAdd($name: String!, $code: String, $parentId: String) 
 }
 ```
 
-### uomsAdd - Create Unit of Measure
+### uomsAdd — Хэмжих нэгж үүсгэх
 
 ```graphql
 mutation UomsAdd($name: String!, $code: String!) {
@@ -373,7 +373,7 @@ mutation UomsAdd($name: String!, $code: String!) {
 
 ## tags:read
 
-### tags - List
+### tags — Жагсаалт
 
 ```graphql
 query Tags($type: String) {
@@ -390,7 +390,7 @@ query Tags($type: String) {
 
 ## tags:create
 
-### tagsAdd - Create Tag
+### tagsAdd — Tag үүсгэх
 
 ```graphql
 mutation TagsAdd($name: String!, $type: String!, $colorCode: String) {
@@ -418,7 +418,7 @@ mutation TagsAdd($name: String!, $type: String!, $colorCode: String) {
 
 ## tags:update
 
-### tagsEdit - Edit Tag
+### tagsEdit — Tag засах
 
 ```graphql
 mutation TagsEdit($_id: String!, $name: String, $colorCode: String) {
@@ -434,7 +434,7 @@ mutation TagsEdit($_id: String!, $name: String, $colorCode: String) {
 
 ## tags:remove
 
-### tagsRemove - Remove Tag
+### tagsRemove — Tag устгах
 
 ```graphql
 mutation TagsRemove($_id: String!) {
@@ -446,7 +446,7 @@ mutation TagsRemove($_id: String!) {
 
 ## tags:tag
 
-### tagsTag - Attach Tag to Object
+### tagsTag — Объектод tag хавсаргах
 
 ```graphql
 mutation TagsTag($type: String!, $targetIds: [String!]!, $tagIds: [String!]!) {
@@ -469,7 +469,7 @@ mutation TagsTag($type: String!, $targetIds: [String!]!, $tagIds: [String!]!) {
 
 ## documents:read
 
-### documents - List
+### documents — Жагсаалт
 
 ```graphql
 query Documents($contentType: String) {
@@ -487,9 +487,9 @@ query Documents($contentType: String) {
 
 ## documents:create + documents:update
 
-### documentsSave - Create / Edit
+### documentsSave — Үүсгэх / Засах
 
-If `_id` is provided, the existing document is edited. If `_id` is omitted, a new document is created.
+`_id` өгвөл засах, өгөхгүй бол шинээр үүсгэнэ.
 
 ```graphql
 mutation DocumentsSave(
@@ -517,7 +517,7 @@ mutation DocumentsSave(
 
 ## documents:remove
 
-### documentsRemove - Remove
+### documentsRemove — Устгах
 
 ```graphql
 mutation DocumentsRemove($_id: String!) {
@@ -529,7 +529,7 @@ mutation DocumentsRemove($_id: String!) {
 
 ## brands:read
 
-### brands - List
+### brands — Жагсаалт
 
 ```graphql
 query Brands {
@@ -545,7 +545,7 @@ query Brands {
 
 ## brands:create
 
-### brandsAdd - Create Brand
+### brandsAdd — Brand үүсгэх
 
 ```graphql
 mutation BrandsAdd($name: String!, $description: String) {
@@ -561,7 +561,7 @@ mutation BrandsAdd($name: String!, $description: String) {
 
 ## brands:update
 
-### brandsEdit - Edit Brand
+### brandsEdit — Brand засах
 
 ```graphql
 mutation BrandsEdit($_id: String!, $name: String!, $description: String) {
@@ -576,7 +576,7 @@ mutation BrandsEdit($_id: String!, $name: String!, $description: String) {
 
 ## brands:remove
 
-### brandsRemove - Remove
+### brandsRemove — Устгах
 
 ```graphql
 mutation BrandsRemove($ids: [String!]) {
@@ -588,7 +588,7 @@ mutation BrandsRemove($ids: [String!]) {
 
 ## organization:read
 
-### structures - Organization Structure
+### structures — Байгууллагын бүтэц
 
 ```graphql
 query Structures {
@@ -605,7 +605,7 @@ query Structures {
 
 ## organization:manage
 
-### departmentsAdd - Create Department
+### departmentsAdd — Хэлтэс үүсгэх
 
 ```graphql
 mutation DepartmentsAdd($title: String!, $description: String, $parentId: String) {
@@ -616,7 +616,7 @@ mutation DepartmentsAdd($title: String!, $description: String, $parentId: String
 }
 ```
 
-### branchesAdd - Create Branch
+### branchesAdd — Салбар үүсгэх
 
 ```graphql
 mutation BranchesAdd($title: String!, $address: String, $parentId: String) {
@@ -631,7 +631,7 @@ mutation BranchesAdd($title: String!, $address: String, $parentId: String) {
 
 ## teamMembers:read
 
-### users - Team Member List
+### users — Гишүүдийн жагсаалт
 
 ```graphql
 query Users($page: Int, $perPage: Int, $searchValue: String) {
@@ -652,7 +652,7 @@ query Users($page: Int, $perPage: Int, $searchValue: String) {
 
 ## teamMembers:create
 
-### usersInvite - Invite New Member
+### usersInvite — Шинэ гишүүн урих
 
 ```graphql
 mutation UsersInvite($entries: [InvitationEntry]) {
@@ -675,7 +675,7 @@ mutation UsersInvite($entries: [InvitationEntry]) {
 
 ## teamMembers:update
 
-### usersEdit - Edit Member
+### usersEdit — Гишүүн засах
 
 ```graphql
 mutation UsersEdit($_id: String!, $details: UserDetails, $groupIds: [String]) {
@@ -694,7 +694,7 @@ mutation UsersEdit($_id: String!, $details: UserDetails, $groupIds: [String]) {
 
 ## teamMembers:remove
 
-### usersSetActiveStatus - Deactivate
+### usersSetActiveStatus — Идэвхгүй болгох
 
 ```graphql
 mutation UsersSetActiveStatus($_id: String!) {
@@ -709,7 +709,7 @@ mutation UsersSetActiveStatus($_id: String!) {
 
 ## automations:read
 
-### automations - List
+### automations — Жагсаалт
 
 ```graphql
 query Automations($page: Int, $perPage: Int) {
@@ -727,7 +727,7 @@ query Automations($page: Int, $perPage: Int) {
 
 ## automations:create
 
-### automationsAdd - Create Automation
+### automationsAdd — Автоматжуулалт үүсгэх
 
 ```graphql
 mutation AutomationsAdd($name: String!, $status: String) {
@@ -743,7 +743,7 @@ mutation AutomationsAdd($name: String!, $status: String) {
 {
   "query": "mutation AutomationsAdd($name: String!, $status: String) { automationsAdd(name: $name, status: $status) { _id name status } }",
   "variables": {
-    "name": "Greet new customer",
+    "name": "Шинэ customer мэнд хэлэх",
     "status": "draft"
   }
 }
@@ -753,7 +753,7 @@ mutation AutomationsAdd($name: String!, $status: String) {
 
 ## automations:update
 
-### automationsEdit - Edit
+### automationsEdit — Засах
 
 ```graphql
 mutation AutomationsEdit($_id: String, $name: String, $status: String) {
@@ -769,7 +769,7 @@ mutation AutomationsEdit($_id: String, $name: String, $status: String) {
 
 ## automations:delete
 
-### automationsRemove - Remove
+### automationsRemove — Устгах
 
 ```graphql
 mutation AutomationsRemove($automationIds: [String]) {
@@ -793,13 +793,13 @@ mutation AutomationsRemove($automationIds: [String]) {
 }
 ```
 
-| Error | Cause | Action |
+| Алдаа | Шалтгаан | Үйлдэл |
 |-------|---------|--------|
-| `Permission denied` | Live API access rejection | Check whether this is an owner session and whether runtime access is enabled for the environment |
-| `Unauthorized` | `accessToken` is expired or invalid | Refresh the token |
-| `Not authenticated` | Missing `Authorization` header | Add the header |
+| `Permission denied` | Live API access rejection | Owner session эсэх болон тухайн орчны runtime access-ийг шалгана |
+| `Unauthorized` | `accessToken` дууссан эсвэл буруу | Token refresh хийнэ |
+| `Not authenticated` | `Authorization` header байхгүй | Header нэмнэ |
 
-> If `Unauthorized` occurs, follow **Step 4** in `erxes-app-token-auth.md`.
+> `Unauthorized` гарвал `erxes-app-token-auth.md`-ийн **Алхам 4**-ийг дагана.
 
 ---
 
