@@ -25,7 +25,7 @@ fi
 # Extract subdomain from a gateway URL like https://demo.next.erxes.io/gateway -> demo
 SUB=$(echo "$BASE" | sed -E 's|https?://([^./]+).*|\1|')
 
-AUTH_HEADERS=(-H "Content-Type: application/json" -H "erxes-subdomain: $SUB")
+AUTH_HEADERS=(-H "Content-Type: application/json")
 CLIENT_AUTH_BODY="\"client_id\":\"$CLIENT\",\"client_secret\":\"$SECRET\""
 
 RESP=$(curl -sS -X POST "$BASE/oauth/device/code" \

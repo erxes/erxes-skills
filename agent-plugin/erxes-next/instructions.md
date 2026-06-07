@@ -45,6 +45,7 @@ ERXES_BASE_URL=<url> ERXES_CLIENT_ID=<client-id> ERXES_CLIENT_SECRET=<client-sec
 - `ERXES_BASE_URL` is required.
 - `ERXES_CLIENT_ID` is required. Do not use a default client id.
 - `ERXES_CLIENT_SECRET` is required. erxes uses confidential OAuth only and helpers send it as `client_secret` in the OAuth JSON body.
+- OAuth endpoints must not send the `erxes-subdomain` header. Let the gateway infer the tenant from the host, then use the returned `subdomain` only for GraphQL calls.
 - Accept the URL in whatever form the user gives and normalize it to `ERXES_BASE_URL=<url>`.
 - Do not explain OAuth internals unless the user asks.
 - Do not ask the user to copy tokens manually.
@@ -63,12 +64,14 @@ After login, use the returned session payload directly.
 
 - Read `accessToken` from the login JSON response.
 - Send `Authorization: Bearer <accessToken>` and `erxes-subdomain: <subdomain>` headers on GraphQL calls.
+- Reuse the active in-memory session for every erxes request in the same conversation. Do not start the device login flow again for each user question.
 - If the access token expires during the current task, refresh with `grant_type=refresh_token`.
 - Refresh tokens rotate. After a successful refresh, replace both the in-memory `accessToken` and `refreshToken`; never reuse the old refresh token.
 - Do not write tokens to `.auth.json` or any other project file.
 - Use [erxes-graphql-api.md](./erxes-graphql-api.md) only when you need query or mutation examples.
 - Assume OpenClaw is operating as the erxes owner unless the live API proves otherwise.
 - Do not stop a normal workflow just because the backend source defines permission names. Treat those as implementation detail, not a user-facing blocker.
+- If GraphQL rejects a call because a scope or permission is missing, report the missing scope and ask the user to update the OAuth client. Do not rerun OAuth until the user confirms the client scopes changed.
 
 Refresh command shape:
 
@@ -82,6 +85,7 @@ On `Unauthorized`, `invalid_grant`, expired token, or a GraphQL auth error:
 2. Retry the exact failed read request once.
 3. For writes, do not silently retry if the mutation may have side effects. Check whether the write happened first or ask the user.
 4. If refresh fails, run the device login flow again.
+5. If scopes were changed in erxes Settings > OAuth Clients, run the device login flow once to grant the new scopes.
 
 ---
 

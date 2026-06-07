@@ -3,7 +3,7 @@
   "slug": "erxes-next-plugin",
   "name": "erxes-next-plugin",
   "type": "agent-plugin",
-  "version": "1.0.16",
+  "version": "1.0.17",
   "entry": "instructions.md",
   "publishedAt": 1776750733646,
   "description": "Confidential OAuth plugin for operating erxes data through GraphQL with strict anti-hallucination rules.",

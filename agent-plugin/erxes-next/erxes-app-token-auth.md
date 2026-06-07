@@ -41,6 +41,7 @@ Do not walk the user through OAuth internals unless they explicitly ask. Do not 
 - Device code approval expires after 10 minutes.
 - Confidential OAuth clients should return `expiresIn: 28800` seconds, about 8 hours.
 - `ERXES_CLIENT_SECRET` is required; helpers send it as `client_secret` in the OAuth JSON body.
+- OAuth login and refresh requests do not send `erxes-subdomain`; GraphQL calls still use the returned `subdomain` header.
 - Refresh tokens rotate on every refresh. Replace the in-memory refresh token after each successful refresh.
 - If `expiresIn` is lower than 28800, treat fast expiry as a backend/client configuration mismatch, not a hallucinated platform outage.
 
@@ -76,5 +77,5 @@ Use this after an auth failure or before a long task when the token is close to 
 ## When to run it
 
 - Before the first authenticated API call
-- Again only if the current session is unavailable or refresh fails
+- Again only if the current session is unavailable, refresh fails, or the OAuth client scopes changed and the user needs to approve the new scopes
 - Do not rerun login just because the access token expired; refresh once first
