@@ -78,6 +78,7 @@ These names are useful only as backend reference. In normal OpenClaw usage, proc
 
 - What the user can ask:
 - List tasks, find overdue tasks, find tasks with no assignee, group tasks by status, or inspect one task.
+- Ask "what are my tasks?", "show my tasks", "what is assigned to me?", or equivalent owner/current-user task summaries.
 - Create, update, or remove a task.
 - What OpenClaw needs:
 - Task `_id` for detail, update, or remove.
@@ -102,6 +103,32 @@ These names are useful only as backend reference. In normal OpenClaw usage, proc
 - Safe confirmation rules:
 - Grouping happens after `getTasks`.
 - Remove must always ask for confirmation first.
+
+#### My Tasks Guide
+
+Use this flow when the user asks for "my tasks", "what's my tasks", "tasks assigned to me", or similar:
+
+1. Reuse the active in-memory OAuth session. Do not run `scripts/login.sh` again just because the user asks another operation question.
+2. If the current erxes user `_id` is already known from the approved session or a prior `currentUser`/profile query, use it as `assigneeId`.
+3. If the current user `_id` is not known, first fetch the current user with the existing session using the smallest available user/profile query from the live schema. Do not guess the user ID from email, name, or old logs.
+4. Fetch tasks with `getTasks(filter: { assigneeId: "<currentUserId>" })`.
+5. If the user asks for open tasks, exclude completed/done statuses after fetching unless the live schema exposes a reliable status filter for open work.
+6. Present a concise list with task name, status, priority, target date, project/cycle if returned, and `_id` only when useful for follow-up actions.
+
+If the API rejects `getTasks` with a permission or scope error:
+
+- Report that the current OAuth token is missing operation task scope such as `taskRead`.
+- Do not rerun OAuth immediately. Reauth will return the same scopes until the OAuth client is updated in erxes settings.
+- Ask the user to add operation scopes to the OAuth client, then run the device login flow once after the user confirms the scopes were changed.
+
+Useful operation scopes for task questions:
+
+- `taskRead`
+- `teamRead`
+- `projectRead`
+- `cycleRead`
+- `milestoneRead`
+- `statusRead`
 
 ### Triage
 
