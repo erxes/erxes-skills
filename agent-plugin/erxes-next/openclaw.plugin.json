@@ -3,7 +3,7 @@
   "kind": "agent-plugin",
   "slug": "erxes-next-plugin",
   "name": "erxes-next-plugin",
-  "version": "1.0.15",
+  "version": "1.0.16",
   "entry": "instructions.md",
   "description": "Confidential OAuth plugin for operating erxes data through GraphQL with strict anti-hallucination rules.",
   "requiredEnv": [
@@ -61,7 +61,7 @@
     "baseUrlEnv": "ERXES_BASE_URL",
     "clientIdEnv": "ERXES_CLIENT_ID",
     "clientSecretEnv": "ERXES_CLIENT_SECRET",
-    "clientSecretBodyField": "client_secret",
+    "clientSecretHeader": "oauth_secret",
     "expectedAccessTokenExpiresIn": 28800
   },
   "files": {
