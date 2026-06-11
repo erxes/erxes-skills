@@ -40,7 +40,7 @@ ERXES_BASE_URL=http://localhost:4000 ERXES_CLIENT_ID=my-client ERXES_CLIENT_SECR
 
 ## What the script does
 
-1. Opens the browser approval page.
+1. Prints the browser approval URL (the user opens it in their browser).
 2. Waits until the user approves access.
 3. Persists the session in the OpenClaw runtime state directory (dir 700 / file 600, outside the plugin source tree).
 4. Prints only a safe status JSON to stdout — never tokens.

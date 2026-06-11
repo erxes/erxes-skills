@@ -61,7 +61,7 @@ ERXES_BASE_URL=<url> ERXES_CLIENT_ID=<client-id> ERXES_CLIENT_SECRET=<client-sec
 - Do not explain OAuth internals unless the user asks.
 - Do not ask the user to copy tokens manually.
 - Do not store tokens in project files.
-- The script opens the browser, waits for approval, then persists the session in the OpenClaw runtime state directory (outside the plugin source tree, dir mode 700 / file mode 600) and prints only a safe status JSON. Tokens are never printed.
+- The script prints the browser approval URL (show it to the user to open), waits for approval, then persists the session in the OpenClaw runtime state directory (outside the plugin source tree, dir mode 700 / file mode 600) and prints only a safe status JSON. Tokens are never printed.
 - After a successful login the session is reused automatically for every future erxes request — in this conversation and after runtime restarts — until it expires or the user logs out.
 - Device codes expire after 10 minutes.
 - Confidential OAuth clients should return `expiresIn: 28800` seconds, about 8 hours.

@@ -44,7 +44,7 @@ First-time login (only when `status` reports `authenticated: false`):
 ERXES_BASE_URL=<url> ERXES_CLIENT_ID=<client-id> ERXES_CLIENT_SECRET=<client-secret> bash scripts/login.sh
 ```
 
-The helper opens the browser for approval, persists the session in the OpenClaw runtime state directory (`~/.openclaw/erxes-next-plugin` by default; directory mode 700, file mode 600, outside the git repo), and prints only a safe status JSON. Tokens and secrets are never printed, logged, or committed.
+The helper prints the browser approval URL, waits for approval, persists the session in the OpenClaw runtime state directory (`~/.openclaw/erxes-next-plugin` by default; directory mode 700, file mode 600, outside the git repo), and prints only a safe status JSON. Tokens and secrets are never printed, logged, or committed.
 
 GraphQL calls go through the session manager, which attaches auth headers itself and refreshes expired access tokens silently with the saved rotating refresh token:
 

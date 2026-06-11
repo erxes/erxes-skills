@@ -17,7 +17,6 @@
 // Exit codes: 0 ok, 2 login required, 3 missing config, 1 other errors.
 // Secrets are never written to stdout/stderr.
 
-import { spawn } from 'node:child_process';
 import fs from 'node:fs';
 import { AuthError, createAuthManager } from '../lib/auth.mjs';
 import { collectSecrets, redactText } from '../lib/redact.mjs';
@@ -39,19 +38,6 @@ function parseArgs(argv) {
     }
   }
   return args;
-}
-
-function openBrowser(url) {
-  for (const cmd of ['xdg-open', 'open']) {
-    try {
-      const child = spawn(cmd, [url], { stdio: 'ignore', detached: true });
-      child.on('error', () => {});
-      child.unref();
-      return;
-    } catch {
-      // try the next opener
-    }
-  }
 }
 
 async function readStdin() {
@@ -100,7 +86,9 @@ async function main() {
 
   switch (command) {
     case 'login': {
-      const result = await manager.login({ openUrl: args['no-browser'] ? null : openBrowser });
+      // The approval URL is printed for the user to open; the CLI never
+      // spawns a browser itself (keeps the plugin free of exec patterns).
+      const result = await manager.login();
       console.log(JSON.stringify(result, null, 2));
       return;
     }
