@@ -1,6 +1,6 @@
 {
   "name": "erxes-next-plugin",
-  "version": "1.0.19",
+  "version": "1.0.20",
   "private": false,
   "description": "Confidential OAuth plugin for operating erxes data through GraphQL with strict anti-hallucination rules.",
   "displayName": "erxes-plugin",

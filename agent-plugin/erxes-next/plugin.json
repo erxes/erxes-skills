@@ -3,7 +3,7 @@
   "kind": "agent-plugin",
   "slug": "erxes-next-plugin",
   "name": "erxes-next-plugin",
-  "version": "1.0.19",
+  "version": "1.0.20",
   "entry": "instructions.md",
   "description": "Confidential OAuth plugin for operating erxes data through GraphQL with strict anti-hallucination rules.",
   "requiredEnv": [
@@ -120,11 +120,6 @@
         "default": "6m",
         "description": "How long the persisted OAuth session stays valid before the user must OAuth again."
       }
-    },
-    "required": [
-      "erxesBaseUrl",
-      "clientId",
-      "clientSecret"
-    ]
+    }
   }
 }
