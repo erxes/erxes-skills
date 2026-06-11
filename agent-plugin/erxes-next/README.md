@@ -30,19 +30,42 @@ ERXES_BASE_URL=http://localhost:4000
 
 ## Authentication
 
-Use the login helper:
+OAuth sessions are persisted at runtime, so the user OAuths once and later requests (including after runtime restarts) reuse the saved session automatically.
+
+Check the saved session first:
+
+```bash
+ERXES_BASE_URL=<url> ERXES_CLIENT_ID=<client-id> ERXES_CLIENT_SECRET=<client-secret> node scripts/erxes-auth.mjs status
+```
+
+First-time login (only when `status` reports `authenticated: false`):
 
 ```bash
 ERXES_BASE_URL=<url> ERXES_CLIENT_ID=<client-id> ERXES_CLIENT_SECRET=<client-secret> bash scripts/login.sh
 ```
 
-The helper opens the browser for approval and prints the session JSON to stdout. Do not commit tokens, `.env` files, raw session JSON, auth headers, cookies, or secrets.
+The helper opens the browser for approval, persists the session in the OpenClaw runtime state directory (`~/.openclaw/erxes-next-plugin` by default; directory mode 700, file mode 600, outside the git repo), and prints only a safe status JSON. Tokens and secrets are never printed, logged, or committed.
 
-If an access token expires during a task, refresh it with:
+GraphQL calls go through the session manager, which attaches auth headers itself and refreshes expired access tokens silently with the saved rotating refresh token:
 
 ```bash
-ERXES_BASE_URL=<url> ERXES_CLIENT_ID=<client-id> ERXES_CLIENT_SECRET=<client-secret> ERXES_REFRESH_TOKEN=<refresh-token> bash scripts/refresh-token.sh
+node scripts/erxes-auth.mjs graphql --query '<graphql>' --variables '<json>'
 ```
+
+### Session persistence controls
+
+- Duration before re-login is required: `3m`, `6m` (default), or `1y` — `node scripts/erxes-auth.mjs set-duration <value>` (or the `ERXES_AUTH_DURATION` env/config value, which takes precedence).
+- `node scripts/erxes-auth.mjs logout [--all]` deletes saved session(s); the next erxes request requires OAuth again. Users can say "logout erxes" or "reset erxes auth".
+- Sessions are keyed by base URL + client id + client secret; changing any of them requires a fresh login and never reuses an old session.
+- Re-login is only needed when: no saved session exists, refresh fails, the session is older than the configured duration, the client config changed, or the user explicitly logs out.
+
+## Testing
+
+```bash
+npm test
+```
+
+Runs the auth/session manager suite (persistence, silent refresh, duration expiry, logout, session separation, and no-secret-leak checks) with `node --test`.
 
 ## Plugin Files
 
@@ -52,8 +75,11 @@ ERXES_BASE_URL=<url> ERXES_CLIENT_ID=<client-id> ERXES_CLIENT_SECRET=<client-sec
 - `erxes-graphql-api.md` - core erxes GraphQL operation reference.
 - `block-api.md` - block plugin workflows and exact GraphQL operations.
 - `operation-api.md` - operation plugin workflows and exact GraphQL operations.
-- `scripts/login.sh` - browser login helper.
-- `scripts/refresh-token.sh` - token refresh helper.
+- `lib/` - auth/session manager modules (store, auth, redaction).
+- `scripts/erxes-auth.mjs` - persistent auth/session manager CLI (status, login, graphql, refresh, logout, set-duration).
+- `scripts/login.sh` - browser login helper (persists the session; prints no tokens).
+- `scripts/refresh-token.sh` - silent token refresh helper (uses the saved refresh token).
+- `test/auth-session.test.mjs` - auth persistence test suite.
 
 ## Updating the Plugin on Clawhub
 

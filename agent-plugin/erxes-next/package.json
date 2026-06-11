@@ -1,10 +1,13 @@
 {
   "name": "erxes-next-plugin",
-  "version": "1.0.17",
+  "version": "1.0.18",
   "private": false,
   "description": "Confidential OAuth plugin for operating erxes data through GraphQL with strict anti-hallucination rules.",
   "displayName": "erxes-plugin",
   "type": "module",
+  "scripts": {
+    "test": "node --test test/*.test.mjs"
+  },
   "files": [
     "index.js",
     "openclaw.plugin.json",
@@ -15,6 +18,7 @@
     "erxes-graphql-api.md",
     "block-api.md",
     "operation-api.md",
+    "lib/",
     "scripts/"
   ],
   "openclaw": {

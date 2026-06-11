@@ -16,6 +16,17 @@ This plugin is for OpenClaw/Clawhub agents operating erxes through the live Grap
 
 ## Required First Step
 
+Before any erxes work, check the persisted runtime session first. Do NOT ask the user to OAuth/login if a saved session already exists:
+
+```bash
+ERXES_BASE_URL=<url> ERXES_CLIENT_ID=<client-id> ERXES_CLIENT_SECRET=<client-secret> node scripts/erxes-auth.mjs status
+```
+
+- If `authenticated: true` → proceed directly with the user's request. Never ask the user to login again.
+- If `authenticated: false` → run the login flow once (see Login below), then continue.
+- Expired access tokens are refreshed silently by the session manager; that is never a reason to ask the user to OAuth.
+- Only ask the user to OAuth again when: no saved session exists, refresh fails, the saved session is older than the configured persistence duration, the base URL / client id / client secret changed, or the user explicitly asks to logout/reset auth.
+
 When this plugin is installed or used for a new conversation, collect these facts before doing erxes work:
 
 - `ERXES_BASE_URL`: gateway URL, usually `https://<subdomain>.next.erxes.io/gateway` or `http://localhost:4000`.
@@ -36,7 +47,7 @@ If the user only says "fix OAuth", "session expires", or "bot working bad", ask 
 
 ## Login
 
-Use `scripts/login.sh` for authentication.
+Use `scripts/login.sh` for first-time authentication only — and only after `node scripts/erxes-auth.mjs status` reported `authenticated: false`.
 
 ```bash
 ERXES_BASE_URL=<url> ERXES_CLIENT_ID=<client-id> ERXES_CLIENT_SECRET=<client-secret> bash scripts/login.sh
@@ -50,7 +61,8 @@ ERXES_BASE_URL=<url> ERXES_CLIENT_ID=<client-id> ERXES_CLIENT_SECRET=<client-sec
 - Do not explain OAuth internals unless the user asks.
 - Do not ask the user to copy tokens manually.
 - Do not store tokens in project files.
-- The script opens the browser, waits for approval, and prints a session JSON payload to stdout.
+- The script opens the browser, waits for approval, then persists the session in the OpenClaw runtime state directory (outside the plugin source tree, dir mode 700 / file mode 600) and prints only a safe status JSON. Tokens are never printed.
+- After a successful login the session is reused automatically for every future erxes request — in this conversation and after runtime restarts — until it expires or the user logs out.
 - Device codes expire after 10 minutes.
 - Confidential OAuth clients should return `expiresIn: 28800` seconds, about 8 hours.
 - Missing or wrong `ERXES_CLIENT_SECRET` produces `invalid_client`.
@@ -60,32 +72,39 @@ Use [erxes-app-token-auth.md](./erxes-app-token-auth.md) only when you need the 
 
 ## API calls
 
-After login, use the returned session payload directly.
+Make every erxes GraphQL call through the session manager. Never handle, read, or print raw tokens yourself.
 
-- Read `accessToken` from the login JSON response.
-- Send `Authorization: Bearer <accessToken>` and `erxes-subdomain: <subdomain>` headers on GraphQL calls.
-- Reuse the active in-memory session for every erxes request in the same conversation. Do not start the device login flow again for each user question.
-- If the access token expires during the current task, refresh with `grant_type=refresh_token`.
-- Refresh tokens rotate. After a successful refresh, replace both the in-memory `accessToken` and `refreshToken`; never reuse the old refresh token.
-- Do not write tokens to `.auth.json` or any other project file.
+```bash
+ERXES_BASE_URL=<url> ERXES_CLIENT_ID=<client-id> ERXES_CLIENT_SECRET=<client-secret> \
+node scripts/erxes-auth.mjs graphql \
+  --query 'query Customers($page: Int) { customers(page: $page) { _id firstName } }' \
+  --variables '{"page": 1}'
+```
+
+- The manager loads the saved session, adds `Authorization: Bearer ...` and `erxes-subdomain` headers itself, and prints only the GraphQL response JSON.
+- If the access token is expired, the manager refreshes it silently with the saved rotating refresh token and persists the new tokens. Never ask the user to OAuth for an expired access token.
+- Exit code 2 means OAuth login is genuinely required (no session, refresh failed, or session older than the configured duration). Only then run the login flow.
+- Long queries can be passed with `--query-file <path>` or piped on stdin.
 - Use [erxes-graphql-api.md](./erxes-graphql-api.md) only when you need query or mutation examples.
 - Assume OpenClaw is operating as the erxes owner unless the live API proves otherwise.
 - Do not stop a normal workflow just because the backend source defines permission names. Treat those as implementation detail, not a user-facing blocker.
 - If GraphQL rejects a call because a scope or permission is missing, report the missing scope and ask the user to update the OAuth client. Do not rerun OAuth until the user confirms the client scopes changed.
 
-Refresh command shape:
-
-```bash
-ERXES_BASE_URL=<url> ERXES_CLIENT_ID=<client-id> ERXES_CLIENT_SECRET=<client-secret> ERXES_REFRESH_TOKEN=<refresh-token> bash scripts/refresh-token.sh
-```
-
 On `Unauthorized`, `invalid_grant`, expired token, or a GraphQL auth error:
 
-1. Refresh once using the in-memory refresh token.
-2. Retry the exact failed read request once.
-3. For writes, do not silently retry if the mutation may have side effects. Check whether the write happened first or ask the user.
-4. If refresh fails, run the device login flow again.
-5. If scopes were changed in erxes Settings > OAuth Clients, run the device login flow once to grant the new scopes.
+1. The session manager already refreshes once and retries automatically; a request that was rejected for auth never executed, so the retry is safe for reads and writes.
+2. If the command exits with code 2, the refresh failed or the session expired — run the device login flow again.
+3. If scopes were changed in erxes Settings > OAuth Clients, run the device login flow once to grant the new scopes.
+
+## Auth Session Persistence
+
+The plugin persists OAuth sessions at runtime so the user does not OAuth again for every request.
+
+- `node scripts/erxes-auth.mjs status` — safe auth status: `authenticated`, base URL, subdomain, client id, session/access-token expiry dates, configured duration. Never tokens. Run this before asking the user to login.
+- `node scripts/erxes-auth.mjs logout` — delete the saved session for the current base URL/client (`--all` clears every saved session). Run this when the user says "logout erxes", "reset erxes auth", or similar. The next erxes request will require OAuth again.
+- `node scripts/erxes-auth.mjs set-duration <3m|6m|1y>` — set how long a saved session stays valid before re-login is required. Default is `6m`. Run this when the user asks to change the auth duration; `get-duration` shows the current value. The `ERXES_AUTH_DURATION` env/config value overrides the stored setting.
+- Sessions are keyed by base URL + client id + client secret. Changing any of them never reuses an old session.
+- Tell the user about logout/reset and the 3m/6m/1y duration choice if they ask how auth persistence works.
 
 ---
 
@@ -96,7 +115,7 @@ On `Unauthorized`, `invalid_grant`, expired token, or a GraphQL auth error:
 - For create or update, if the target record or required fields are unclear, summarize the planned change and ask only for the missing information.
 - For delete, remove, deactivate, publish, unpublish, end, transfer, or convert actions, always identify the exact record and ask for explicit confirmation before sending the mutation.
 - Never print `accessToken`, `refreshToken`, raw session JSON, or auth headers.
-- Keep the auth session in memory only for the current task.
+- Leave token handling to `scripts/erxes-auth.mjs`; the persisted session file lives outside the plugin/source tree and must never be read back into chat.
 - Assume owner-mode access for discovered workflows. Only mention access problems if the live API actually rejects the request.
 
 ## Follow-Up Rules
@@ -190,6 +209,7 @@ On `Unauthorized`, `invalid_grant`, expired token, or a GraphQL auth error:
 - Delete, end-cycle, remove-member, and status-removal actions must always ask for confirmation first.
 
 ## Plugin Files
+- scripts/erxes-auth.mjs — Persistent auth/session manager and GraphQL runner (status / login / graphql / refresh / logout / set-duration)
 - scripts/login.sh — Browser login helper
 - erxes-app-token-auth.md — Confidential OAuth login reference
 - erxes-graphql-api.md — Үйлдлүүдийн техникийн лавлах
