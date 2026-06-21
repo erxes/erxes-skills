@@ -130,57 +130,57 @@ The plugin persists OAuth sessions at runtime so the user does not OAuth again f
 - `blockOpptyConvertToContract` needs both a target unit and a payment plan.
 - `operationConvertTriageToTask` may need a valid team-specific status type.
 
-## Харилцагч
+## Customers
 
-- Бүх харилцагчийн жагсаалт харах
-- Нэр, имэйл, утсаар хайх
-- Харилцагчийн дэлгэрэнгүй мэдээлэл харах
-- Төрлөөр нь бүлэглэх (үйлчлүүлэгч / боломжит / зочин)
-- Шинэ харилцагч нэмэх
-- Харилцагчийн мэдээлэл засах
-- Харилцагч устгах
-- Давхардсан харилцагчийг нэгтгэх
+- View the full customer list
+- Search by name, email, or phone
+- View customer details
+- Group by type (customer / lead / visitor)
+- Add a new customer
+- Edit customer information
+- Delete a customer
+- Merge duplicate customers
 
-## Бүтээгдэхүүн
+## Products
 
-- Бүтээгдэхүүний жагсаалт харах
-- Нэг бүтээгдэхүүний дэлгэрэнгүй харах
-- Шинэ бүтээгдэхүүн нэмэх
-- Бүтээгдэхүүн засах, устгах, нэгтгэх
-- Ангилал болон хэмжих нэгж удирдах
+- View the product list
+- View a single product's details
+- Add a new product
+- Edit, delete, or merge products
+- Manage categories and units of measure
 
-## Шошго
+## Tags
 
-- Бүх шошго харах
-- Шошго нэмэх, засах, устгах
-- Харилцагч эсвэл бүтээгдэхүүнд шошго хавсаргах
+- View all tags
+- Add, edit, or delete tags
+- Attach tags to a customer or product
 
-## Баримт бичиг
+## Documents
 
-- Баримт бичгийн жагсаалт харах
-- Баримт бичиг нэмэх, засах, устгах
+- View the document list
+- Add, edit, or delete documents
 
-## Брэнд
+## Brands
 
-- Брэндийн жагсаалт харах
-- Брэнд нэмэх, засах, устгах
+- View the brand list
+- Add, edit, or delete brands
 
-## Автоматжуулалт
+## Automations
 
-- Бүх автоматжуулалтын жагсаалт харах
-- Автоматжуулалт нэмэх, засах, идэвхжүүлэх, устгах
+- View all automations
+- Add, edit, enable, or delete automations
 
-## Байгууллагын бүтэц
+## Organization Structure
 
-- Хэлтэс, салбар, нэгж, албан тушаалын бүтэц харах
-- Хэлтэс, салбар, нэгж, тушаал нэмэх, засах, устгах
+- View the structure of departments, branches, units, and positions
+- Add, edit, or delete departments, branches, units, and positions
 
-## Багийн гишүүд
+## Team Members
 
-- Гишүүдийн жагсаалт харах
-- Шинэ гишүүн урих
-- Гишүүний мэдээлэл засах
-- Гишүүнийг идэвхгүй болгох
+- View the member list
+- Invite a new member
+- Edit member information
+- Deactivate a member
 
 ## Block Plugin
 
@@ -212,6 +212,6 @@ The plugin persists OAuth sessions at runtime so the user does not OAuth again f
 - scripts/erxes-auth.mjs — Persistent auth/session manager and GraphQL runner (status / login / graphql / refresh / logout / set-duration)
 - scripts/login.sh — Browser login helper
 - erxes-app-token-auth.md — Confidential OAuth login reference
-- erxes-graphql-api.md — Үйлдлүүдийн техникийн лавлах
-- block-api.md — block_api SaaS workflow болон exact GraphQL ops
-- operation-api.md — operation_api SaaS workflow болон exact GraphQL ops
+- erxes-graphql-api.md — Technical reference for operations
+- block-api.md — block_api SaaS workflows and exact GraphQL ops
+- operation-api.md — operation_api SaaS workflows and exact GraphQL ops

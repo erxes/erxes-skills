@@ -182,6 +182,41 @@ test('refresh rotates and persists both tokens', async () => {
   assert.equal(saved.refreshToken, 'refresh-2');
 });
 
+test('concurrent refresh rotation is recovered without forcing re-login', async () => {
+  const server = makeMockServer();
+  const stateDir = fs.mkdtempSync(path.join(os.tmpdir(), 'erxes-auth-test-'));
+  const clock = { now: 1_750_000_000_000 };
+  const env = { ...BASE_ENV, ERXES_AUTH_STATE_DIR: stateDir };
+  const base = { now: () => clock.now, sleep: async () => {}, log: () => {} };
+
+  const seed = createAuthManager({ env, fetchImpl: server.fetchImpl, ...base });
+  await seed.login(); // refresh-1 / access-1
+  clock.now += 9 * 60 * 60 * 1000; // access-1 is now expired
+
+  // On this manager's refresh attempt, simulate a parallel erxes call that
+  // already rotated the token (refresh-1 -> refresh-2) and persisted a newer
+  // session, so our refresh-1 is rejected as invalid_grant.
+  let raced = false;
+  const racingFetch = async (url, opts) => {
+    const body = JSON.parse(opts.body);
+    if (
+      url.endsWith('/oauth/token') &&
+      body.grant_type === 'refresh_token' &&
+      !raced
+    ) {
+      raced = true;
+      const other = createAuthManager({ env, fetchImpl: server.fetchImpl, ...base });
+      await other.ensureSession(); // performs the rotation + persists newer session
+    }
+    return server.fetchImpl(url, opts);
+  };
+
+  const manager = createAuthManager({ env, fetchImpl: racingFetch, ...base });
+  const result = await manager.graphql({ query: 'query { customers { _id } }' });
+  assert.equal(result.data.customers[0]._id, 'c1');
+  assert.equal(server.state.calls.deviceCode, 1, 'must not re-run oauth on a rotation race');
+});
+
 test('session older than the configured duration requires oauth again', async () => {
   const { manager, clock } = makeHarness({ env: { ERXES_AUTH_DURATION: '3m' } });
   await manager.login();

@@ -191,25 +191,57 @@ export function createAuthManager(options = {}) {
     throw new AuthError('oauth device flow timed out after 10 minutes; run login again', 'OAUTH_ERROR');
   }
 
-  async function refreshSession(cfg, session) {
+  async function postRefresh(cfg, refreshToken) {
     const res = await postJson(`${cfg.baseUrl}/oauth/token`, {
       grant_type: 'refresh_token',
-      refresh_token: session.refreshToken,
+      refresh_token: refreshToken,
       client_id: cfg.clientId,
       client_secret: cfg.clientSecret,
     });
-    const token = pickToken(res.json);
-    if (!token) {
-      log('oauth refresh failed');
-      throw new AuthError(
-        'erxes oauth refresh failed; re-login required (run scripts/login.sh)',
-        'LOGIN_REQUIRED',
-      );
+    return pickToken(res.json);
+  }
+
+  async function refreshSession(cfg, session) {
+    const token = await postRefresh(cfg, session.refreshToken);
+    if (token) {
+      const updated = buildSession(cfg, token, session);
+      writeSession(stateDir, updated.fingerprint, updated);
+      log('oauth refresh succeeded');
+      return updated;
     }
-    const updated = buildSession(cfg, token, session);
-    writeSession(stateDir, updated.fingerprint, updated);
-    log('oauth refresh succeeded');
-    return updated;
+
+    // The refresh token may have just been rotated by a concurrent erxes call in
+    // the same runtime (the agent can fire tool invocations in parallel). Reload
+    // the persisted session: if another process already refreshed, reuse its
+    // newer session or retry with its token instead of forcing the user to OAuth
+    // again — re-login should only happen when the session is genuinely gone.
+    const latest = readSession(stateDir, fingerprintFor(cfg));
+    if (
+      latest &&
+      latest.refreshToken &&
+      latest.refreshToken !== session.refreshToken
+    ) {
+      if (
+        latest.accessToken &&
+        now() < latest.accessTokenExpiresAt - ACCESS_TOKEN_SKEW_MS
+      ) {
+        log('oauth refresh superseded by concurrent refresh; reusing session');
+        return latest;
+      }
+      const retryToken = await postRefresh(cfg, latest.refreshToken);
+      if (retryToken) {
+        const updated = buildSession(cfg, retryToken, latest);
+        writeSession(stateDir, updated.fingerprint, updated);
+        log('oauth refresh succeeded on retry');
+        return updated;
+      }
+    }
+
+    log('oauth refresh failed');
+    throw new AuthError(
+      'erxes oauth refresh failed; re-login required (run scripts/login.sh)',
+      'LOGIN_REQUIRED',
+    );
   }
 
   // Load the saved session, enforce the configured duration, refresh silently
