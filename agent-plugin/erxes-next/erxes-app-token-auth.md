@@ -9,13 +9,14 @@ Use this when the plugin needs to authenticate before a GraphQL call.
 
 ## Check the saved session first
 
-Always check the persisted session before starting a login:
+Always check the persisted session before starting a login. After the first
+login this needs no environment variables:
 
 ```bash
-ERXES_BASE_URL=<gateway-url> ERXES_CLIENT_ID=<client-id> ERXES_CLIENT_SECRET=<client-secret> node scripts/erxes-auth.mjs status
+node scripts/erxes-auth.mjs status
 ```
 
-If `authenticated: true`, skip login entirely — the saved session is reused automatically.
+If `authenticated: true`, skip login entirely — the saved session is reused automatically and there is no need to re-ask for the gateway URL, client id, or secret.
 
 ## Required input
 
@@ -42,7 +43,7 @@ ERXES_BASE_URL=http://localhost:4000 ERXES_CLIENT_ID=my-client ERXES_CLIENT_SECR
 
 1. Prints the browser approval URL (the user opens it in their browser).
 2. Waits until the user approves access.
-3. Persists the session in the OpenClaw runtime state directory (dir 700 / file 600, outside the plugin source tree).
+3. Persists the session in a durable, home-based state directory (dir 700 / file 600, outside the plugin source tree), including the credentials needed for silent refresh.
 4. Prints only a safe status JSON to stdout — never tokens.
 
 Do not walk the user through OAuth internals unless they explicitly ask. Do not print tokens in chat.
@@ -74,22 +75,22 @@ Login and status print a safe JSON like this (never tokens):
 }
 ```
 
-Tokens stay inside the persisted session store; GraphQL calls go through `node scripts/erxes-auth.mjs graphql ...`, which attaches `Authorization: Bearer ...` and `erxes-subdomain` itself.
+Tokens stay inside the persisted session store; GraphQL calls go through `node scripts/erxes-auth.mjs graphql ...` (no env vars needed once a session is saved), which attaches `Authorization: Bearer ...` and `erxes-subdomain` itself.
 
 ## Refresh command
 
 ```bash
-ERXES_BASE_URL=<gateway-url> ERXES_CLIENT_ID=<client-id> ERXES_CLIENT_SECRET=<client-secret> bash scripts/refresh-token.sh
+node scripts/erxes-auth.mjs refresh
 ```
 
-Refresh is normally automatic inside the `graphql` command. This manual form uses the saved rotating refresh token (no `ERXES_REFRESH_TOKEN` needed) and prints the safe status JSON.
+Refresh is normally automatic inside the `graphql` command. This manual form uses the saved rotating refresh token and the secret stored at login (no env vars or `ERXES_REFRESH_TOKEN` needed) and prints the safe status JSON.
 
 ## Session persistence
 
-- Sessions persist across conversations and runtime restarts in the OpenClaw state directory.
+- Sessions persist across conversations and runtime restarts in a durable, home-based state directory, so the same login is reused with no env vars.
 - Persistence duration is configurable: `3m`, `6m` (default), or `1y` via `node scripts/erxes-auth.mjs set-duration <value>` or the `ERXES_AUTH_DURATION` env/config value.
 - `node scripts/erxes-auth.mjs logout` deletes the saved session ("logout erxes" / "reset erxes auth").
-- Changing base URL, client id, or client secret never reuses an old session.
+- Changing base URL or client id never reuses an old session; rotating only the client secret keeps the session and is adopted automatically.
 
 ## When to run login
 

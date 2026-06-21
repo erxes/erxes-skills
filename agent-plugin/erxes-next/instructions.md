@@ -16,18 +16,23 @@ This plugin is for OpenClaw/Clawhub agents operating erxes through the live Grap
 
 ## Required First Step
 
-Before any erxes work, check the persisted runtime session first. Do NOT ask the user to OAuth/login if a saved session already exists:
+Before any erxes work, check the persisted runtime session first. After the very
+first login the session is saved on disk, so this check needs NO environment
+variables — the saved base URL, client id, and the credentials needed to refresh
+are all read from the protected session store:
 
 ```bash
-ERXES_BASE_URL=<url> ERXES_CLIENT_ID=<client-id> ERXES_CLIENT_SECRET=<client-secret> node scripts/erxes-auth.mjs status
+node scripts/erxes-auth.mjs status
 ```
 
-- If `authenticated: true` → proceed directly with the user's request. Never ask the user to login again.
+- If `authenticated: true` → proceed directly with the user's request. Never ask the user to login again, and do not re-ask for the gateway URL, client id, or secret.
 - If `authenticated: false` → run the login flow once (see Login below), then continue.
-- Expired access tokens are refreshed silently by the session manager; that is never a reason to ask the user to OAuth.
-- Only ask the user to OAuth again when: no saved session exists, refresh fails, the saved session is older than the configured persistence duration, the base URL / client id / client secret changed, or the user explicitly asks to logout/reset auth.
+- Expired access tokens are refreshed silently by the session manager (it stores everything it needs at login); that is never a reason to ask the user to OAuth.
+- Only ask the user to OAuth again when: no saved session exists, refresh genuinely fails, the saved session is older than the configured persistence duration, the base URL or client id changed, or the user explicitly asks to logout/reset auth.
 
-When this plugin is installed or used for a new conversation, collect these facts before doing erxes work:
+You only need the connection facts below for the FIRST login. Once a session is
+saved they are remembered and reused automatically in this and every later
+conversation until the session expires or the user logs out.
 
 - `ERXES_BASE_URL`: gateway URL, usually `https://<subdomain>.next.erxes.io/gateway` or `http://localhost:4000`.
 - `ERXES_CLIENT_ID`: required confidential OAuth client id.
@@ -47,7 +52,7 @@ If the user only says "fix OAuth", "session expires", or "bot working bad", ask 
 
 ## Login
 
-Use `scripts/login.sh` for first-time authentication only — and only after `node scripts/erxes-auth.mjs status` reported `authenticated: false`.
+Use `scripts/login.sh` for first-time authentication only — and only after `node scripts/erxes-auth.mjs status` reported `authenticated: false`. The three env vars are required ONLY for this first login; afterwards they are saved and reused.
 
 ```bash
 ERXES_BASE_URL=<url> ERXES_CLIENT_ID=<client-id> ERXES_CLIENT_SECRET=<client-secret> bash scripts/login.sh
@@ -61,8 +66,9 @@ ERXES_BASE_URL=<url> ERXES_CLIENT_ID=<client-id> ERXES_CLIENT_SECRET=<client-sec
 - Do not explain OAuth internals unless the user asks.
 - Do not ask the user to copy tokens manually.
 - Do not store tokens in project files.
-- The script prints the browser approval URL (show it to the user to open), waits for approval, then persists the session in the OpenClaw runtime state directory (outside the plugin source tree, dir mode 700 / file mode 600) and prints only a safe status JSON. Tokens are never printed.
-- After a successful login the session is reused automatically for every future erxes request — in this conversation and after runtime restarts — until it expires or the user logs out.
+- The script prints the browser approval URL (show it to the user to open), waits for approval, then persists the session in a durable, home-based state directory (outside the plugin source tree, dir mode 700 / file mode 600) and prints only a safe status JSON. Tokens are never printed.
+- The saved session keeps the base URL, client id, and the confidential credentials needed to refresh, so later requests work with no environment variables at all and the access token is refreshed silently in the background.
+- After a successful login the session is reused automatically for every future erxes request — in this conversation, in new conversations, and after runtime restarts — until it expires or the user logs out.
 - Device codes expire after 10 minutes.
 - Confidential OAuth clients should return `expiresIn: 28800` seconds, about 8 hours.
 - Missing or wrong `ERXES_CLIENT_SECRET` produces `invalid_client`.
@@ -72,10 +78,9 @@ Use [erxes-app-token-auth.md](./erxes-app-token-auth.md) only when you need the 
 
 ## API calls
 
-Make every erxes GraphQL call through the session manager. Never handle, read, or print raw tokens yourself.
+Make every erxes GraphQL call through the session manager. Never handle, read, or print raw tokens yourself. Once a session is saved, no env vars are needed:
 
 ```bash
-ERXES_BASE_URL=<url> ERXES_CLIENT_ID=<client-id> ERXES_CLIENT_SECRET=<client-secret> \
 node scripts/erxes-auth.mjs graphql \
   --query 'query Customers($page: Int) { customers(page: $page) { _id firstName } }' \
   --variables '{"page": 1}'
@@ -103,7 +108,7 @@ The plugin persists OAuth sessions at runtime so the user does not OAuth again f
 - `node scripts/erxes-auth.mjs status` — safe auth status: `authenticated`, base URL, subdomain, client id, session/access-token expiry dates, configured duration. Never tokens. Run this before asking the user to login.
 - `node scripts/erxes-auth.mjs logout` — delete the saved session for the current base URL/client (`--all` clears every saved session). Run this when the user says "logout erxes", "reset erxes auth", or similar. The next erxes request will require OAuth again.
 - `node scripts/erxes-auth.mjs set-duration <3m|6m|1y>` — set how long a saved session stays valid before re-login is required. Default is `6m`. Run this when the user asks to change the auth duration; `get-duration` shows the current value. The `ERXES_AUTH_DURATION` env/config value overrides the stored setting.
-- Sessions are keyed by base URL + client id + client secret. Changing any of them never reuses an old session.
+- Sessions are keyed by base URL + client id. Changing either never reuses an old session. Rotating the client secret keeps the same session and is adopted automatically for the next refresh.
 - Tell the user about logout/reset and the 3m/6m/1y duration choice if they ask how auth persistence works.
 
 ---

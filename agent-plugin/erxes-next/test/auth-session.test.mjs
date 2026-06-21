@@ -8,7 +8,13 @@ import { fileURLToPath } from 'node:url';
 
 import { AuthError, createAuthManager } from '../lib/auth.mjs';
 import { redactObject, redactText } from '../lib/redact.mjs';
-import { DURATION_CHOICES, fingerprint, resolveStateDir } from '../lib/store.mjs';
+import {
+  DURATION_CHOICES,
+  fingerprint,
+  resolveStateDir,
+  secretFingerprint,
+  stateDirCandidates,
+} from '../lib/store.mjs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const CLI = path.join(__dirname, '..', 'scripts', 'erxes-auth.mjs');
@@ -129,8 +135,11 @@ test('successful oauth login persists the session with strict permissions', asyn
   const saved = JSON.parse(fs.readFileSync(path.join(stateDir, files[0]), 'utf8'));
   assert.equal(saved.accessToken, 'access-1');
   assert.equal(saved.refreshToken, 'refresh-1');
-  // The client secret itself must never be persisted.
-  assert.ok(!JSON.stringify(saved).includes(BASE_ENV.ERXES_CLIENT_SECRET));
+  // The client secret is persisted (in the mode-600 file, outside the source
+  // tree) so the access token can be refreshed silently in later turns without
+  // the user re-supplying it — this is what prevents repeated OAuth prompts.
+  assert.equal(saved.clientSecret, BASE_ENV.ERXES_CLIENT_SECRET);
+  assert.equal(saved.secretHash, secretFingerprint(BASE_ENV.ERXES_CLIENT_SECRET));
 });
 
 test('subsequent requests reuse the saved session without re-running oauth', async () => {
@@ -263,7 +272,7 @@ test('logout deletes the persisted session and the next request requires oauth',
   );
 });
 
-test('changing base URL, clientId, or clientSecret separates sessions safely', async () => {
+test('changing base URL or client id separates sessions safely', async () => {
   const server = makeMockServer();
   const { manager, stateDir, clock } = makeHarness({ server });
   await manager.login();
@@ -271,7 +280,6 @@ test('changing base URL, clientId, or clientSecret separates sessions safely', a
   for (const change of [
     { ERXES_BASE_URL: 'https://other.next.erxes.io/gateway' },
     { ERXES_CLIENT_ID: 'another-client' },
-    { ERXES_CLIENT_SECRET: 'rotated-secret' },
   ]) {
     const changed = createAuthManager({
       env: { ...BASE_ENV, ERXES_AUTH_STATE_DIR: stateDir, ...change },
@@ -289,6 +297,28 @@ test('changing base URL, clientId, or clientSecret separates sessions safely', a
   // The original session is untouched and still works.
   const original = await manager.graphql({ query: 'query { customers { _id } }' });
   assert.equal(original.data.customers[0]._id, 'c1');
+});
+
+test('a rotated client secret reuses the session and is adopted for refresh', async () => {
+  const { manager, stateDir, clock, server } = makeHarness();
+  await manager.login();
+  clock.now += 9 * 60 * 60 * 1000; // access token now stale
+
+  // Same base URL + client id, but the confidential secret was rotated.
+  const rotated = createAuthManager({
+    env: { ...BASE_ENV, ERXES_AUTH_STATE_DIR: stateDir, ERXES_CLIENT_SECRET: 'rotated-secret' },
+    fetchImpl: server.fetchImpl,
+    now: () => clock.now,
+    sleep: async () => {},
+    log: () => {},
+  });
+  const result = await rotated.graphql({ query: 'query { customers { _id } }' });
+  assert.equal(result.data.customers[0]._id, 'c1');
+  assert.equal(server.state.calls.deviceCode, 1, 'a rotated secret must not force a new OAuth');
+
+  const file = fs.readdirSync(stateDir).find((f) => f.startsWith('session-'));
+  const saved = JSON.parse(fs.readFileSync(path.join(stateDir, file), 'utf8'));
+  assert.equal(saved.clientSecret, 'rotated-secret');
 });
 
 test('graphql sends the saved bearer token and subdomain header', async () => {
@@ -367,15 +397,103 @@ test('redaction helpers scrub keys, values, and bearer headers', () => {
   );
 });
 
-test('state dir resolution prefers explicit env, then openclaw home', () => {
+test('state dir resolution prefers explicit env, then a durable home path', () => {
   assert.equal(resolveStateDir({ ERXES_AUTH_STATE_DIR: '/tmp/x' }), '/tmp/x');
+  // The primary (write) dir is home-based and durable, independent of the
+  // possibly-ephemeral runtime state dir.
   assert.equal(
-    resolveStateDir({ OPENCLAW_STATE_DIR: '/srv/openclaw' }),
-    path.join('/srv/openclaw', 'erxes-next-plugin'),
+    resolveStateDir({ HOME: '/home/u', OPENCLAW_STATE_DIR: '/srv/run-123' }),
+    path.join('/home/u', '.openclaw', 'erxes-next-plugin'),
   );
-  const fp = fingerprint('https://a/gateway', 'c1', 's1');
-  assert.notEqual(fp, fingerprint('https://a/gateway', 'c1', 's2'));
-  assert.notEqual(fp, fingerprint('https://b/gateway', 'c1', 's1'));
+  // ...but the runtime state dir is still searched on read for migration.
+  const candidates = stateDirCandidates({ HOME: '/home/u', OPENCLAW_STATE_DIR: '/srv/run-123' });
+  assert.deepEqual(candidates.slice(0, 2), [
+    path.join('/home/u', '.openclaw', 'erxes-next-plugin'),
+    path.join('/srv/run-123', 'erxes-next-plugin'),
+  ]);
+});
+
+test('session key ignores the client secret; base URL and client id separate it', () => {
+  const fp = fingerprint('https://a/gateway', 'c1');
+  assert.equal(fp, fingerprint('https://a/gateway', 'c1'), 'secret is not part of the key');
+  assert.notEqual(fp, fingerprint('https://a/gateway', 'c2'));
+  assert.notEqual(fp, fingerprint('https://b/gateway', 'c1'));
+  assert.notEqual(
+    secretFingerprint('s1'),
+    secretFingerprint('s2'),
+    'secret fingerprints differ so rotation is detectable',
+  );
+});
+
+test('saved session is reused with no environment variables at all', async () => {
+  const { manager, stateDir, clock, server } = makeHarness();
+  await manager.login();
+
+  // A later turn with NO erxes env vars — only the state dir location is known.
+  // The base URL / client id come from the remembered config, and the access
+  // token is still fresh, so this must not trigger OAuth or a refresh.
+  const bare = createAuthManager({
+    env: { ERXES_AUTH_STATE_DIR: stateDir },
+    fetchImpl: server.fetchImpl,
+    now: () => clock.now,
+    sleep: async () => {},
+    log: () => {},
+  });
+  const status = bare.status();
+  assert.equal(status.authenticated, true);
+  const result = await bare.graphql({ query: 'query { customers { _id } }' });
+  assert.equal(result.data.customers[0]._id, 'c1');
+  assert.equal(server.state.calls.deviceCode, 1);
+  assert.equal(server.state.calls.refreshGrant, 0);
+});
+
+test('expired access token refreshes with no env using the secret saved at login', async () => {
+  const { manager, stateDir, clock, server } = makeHarness();
+  await manager.login();
+  clock.now += 9 * 60 * 60 * 1000; // access token expired
+
+  const bare = createAuthManager({
+    env: { ERXES_AUTH_STATE_DIR: stateDir },
+    fetchImpl: server.fetchImpl,
+    now: () => clock.now,
+    sleep: async () => {},
+    log: () => {},
+  });
+  const result = await bare.graphql({ query: 'query { customers { _id } }' });
+  assert.equal(result.data.customers[0]._id, 'c1');
+  assert.equal(server.state.calls.refreshGrant, 1, 'silent refresh used the stored secret');
+  assert.equal(server.state.calls.deviceCode, 1, 'no new OAuth prompt');
+});
+
+test('session survives an ephemeral runtime state dir (durable home storage)', async () => {
+  const home = fs.mkdtempSync(path.join(os.tmpdir(), 'erxes-home-'));
+  const server = makeMockServer();
+  const clock = { now: 1_750_000_000_000 };
+  const base = {
+    fetchImpl: server.fetchImpl,
+    now: () => clock.now,
+    sleep: async () => {},
+    log: () => {},
+    printUrl: () => {},
+  };
+
+  const firstRun = createAuthManager({
+    env: { ...BASE_ENV, HOME: home, OPENCLAW_STATE_DIR: '/tmp/openclaw-run-A' },
+    ...base,
+  });
+  await firstRun.login();
+
+  // Next run: the runtime hands the plugin a different OPENCLAW_STATE_DIR, but
+  // HOME is stable, so the durable home-based session is still found.
+  const secondRun = createAuthManager({
+    env: { ...BASE_ENV, HOME: home, OPENCLAW_STATE_DIR: '/tmp/openclaw-run-B' },
+    ...base,
+  });
+  const result = await secondRun.graphql({ query: 'query { customers { _id } }' });
+  assert.equal(result.data.customers[0]._id, 'c1');
+  assert.equal(server.state.calls.deviceCode, 1, 'must not OAuth again after the state dir moves');
+
+  fs.rmSync(home, { recursive: true, force: true });
 });
 
 test('CLI: status without a session exits 0 and reports unauthenticated', () => {

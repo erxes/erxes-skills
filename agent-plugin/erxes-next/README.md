@@ -30,12 +30,12 @@ ERXES_BASE_URL=http://localhost:4000
 
 ## Authentication
 
-OAuth sessions are persisted at runtime, so the user OAuths once and later requests (including after runtime restarts) reuse the saved session automatically.
+OAuth sessions are persisted at runtime, so the user OAuths once and later requests (including new conversations and after runtime restarts) reuse the saved session automatically. The three values above are needed only for the first login; afterwards they are saved and reused with no env vars.
 
-Check the saved session first:
+Check the saved session first (no env vars needed once a session exists):
 
 ```bash
-ERXES_BASE_URL=<url> ERXES_CLIENT_ID=<client-id> ERXES_CLIENT_SECRET=<client-secret> node scripts/erxes-auth.mjs status
+node scripts/erxes-auth.mjs status
 ```
 
 First-time login (only when `status` reports `authenticated: false`):
@@ -44,7 +44,7 @@ First-time login (only when `status` reports `authenticated: false`):
 ERXES_BASE_URL=<url> ERXES_CLIENT_ID=<client-id> ERXES_CLIENT_SECRET=<client-secret> bash scripts/login.sh
 ```
 
-The helper prints the browser approval URL, waits for approval, persists the session in the OpenClaw runtime state directory (`~/.openclaw/erxes-next-plugin` by default; directory mode 700, file mode 600, outside the git repo), and prints only a safe status JSON. Tokens and secrets are never printed, logged, or committed.
+The helper prints the browser approval URL, waits for approval, persists the session in a durable, home-based state directory (`~/.openclaw/erxes-next-plugin` by default; directory mode 700, file mode 600, outside the git repo) — including the credentials needed for silent refresh — and prints only a safe status JSON. Tokens and secrets are never printed, logged, or committed.
 
 GraphQL calls go through the session manager, which attaches auth headers itself and refreshes expired access tokens silently with the saved rotating refresh token:
 
@@ -56,8 +56,8 @@ node scripts/erxes-auth.mjs graphql --query '<graphql>' --variables '<json>'
 
 - Duration before re-login is required: `3m`, `6m` (default), or `1y` — `node scripts/erxes-auth.mjs set-duration <value>` (or the `ERXES_AUTH_DURATION` env/config value, which takes precedence).
 - `node scripts/erxes-auth.mjs logout [--all]` deletes saved session(s); the next erxes request requires OAuth again. Users can say "logout erxes" or "reset erxes auth".
-- Sessions are keyed by base URL + client id + client secret; changing any of them requires a fresh login and never reuses an old session.
-- Re-login is only needed when: no saved session exists, refresh fails, the session is older than the configured duration, the client config changed, or the user explicitly logs out.
+- Sessions are keyed by base URL + client id; changing either requires a fresh login. Rotating only the client secret keeps the session and is adopted automatically on the next refresh.
+- Re-login is only needed when: no saved session exists, refresh fails, the session is older than the configured duration, the base URL or client id changed, or the user explicitly logs out.
 
 ## Testing
 
@@ -100,15 +100,21 @@ After editing plugin files:
    git push origin main
    ```
 
-3. In Clawhub, open the `erxes-plugin` plugin page.
+3. Publish the new version to ClawHub with the CLI (auth via `clawhub login`, or the saved token in `~/.config/clawhub/config.json`):
 
-4. Use the Clawhub update or publish action for the plugin slug:
-
-   ```txt
-   erxes-plugin
+   ```bash
+   npm i -g clawhub
+   clawhub whoami
+   clawhub publish ./agent-plugin/erxes-next \
+     --slug erxes-next-plugin \
+     --name "erxes-next-plugin" \
+     --version 1.0.22 \
+     --changelog "Persist OAuth session + secret for silent refresh; durable storage; never re-OAuth mid-session"
    ```
 
-5. Verify the installed plugin version or updated contents in a fresh Clawhub agent chat.
+4. Update an installed copy with `openclaw plugins update erxes-next-plugin` (or `clawhub update erxes-next-plugin`).
+
+5. Verify the installed plugin version in a fresh agent chat: `openclaw plugins inspect erxes-next-plugin`.
 
 6. Test a read-only GraphQL workflow first, then test any write workflow only with explicit confirmation and known record IDs.
 

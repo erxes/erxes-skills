@@ -35,6 +35,7 @@ export function redactText(text, secrets = []) {
 export function collectSecrets(env = {}, session = null) {
   const secrets = [];
   if (env.ERXES_CLIENT_SECRET) secrets.push(env.ERXES_CLIENT_SECRET);
+  if (session?.clientSecret) secrets.push(session.clientSecret);
   if (session?.accessToken) secrets.push(session.accessToken);
   if (session?.refreshToken) secrets.push(session.refreshToken);
   return secrets;
