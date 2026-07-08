@@ -28,9 +28,8 @@ localStorage.setItem("token", token);
 
 ```typescript
 const authLink = setContext((_, { headers }) => {
-  const token = typeof window !== "undefined"
-    ? sessionStorage.getItem("token") || ""
-    : "";
+  const token =
+    typeof window !== "undefined" ? sessionStorage.getItem("token") || "" : "";
   return {
     headers: {
       ...headers,
@@ -48,11 +47,11 @@ const authLink = setContext((_, { headers }) => {
 
 ## 3. Token Types
 
-| Token | Env Var | Header | Source |
-|-------|---------|--------|--------|
-| CP Token | `NEXT_PUBLIC_ERXES_CP_TOKEN` | `x-app-token` | Client Portal ID |
-| Auth Token | — | `client-auth-token` | sessionStorage (login response) |
-| POS Token | `NEXT_PUBLIC_POS_TOKEN` | `erxes-pos-token` | POS settings |
+| Token      | Env Var                      | Header              | Source                          |
+| ---------- | ---------------------------- | ------------------- | ------------------------------- |
+| CP Token   | `NEXT_PUBLIC_ERXES_CP_TOKEN` | `x-app-token`       | Client Portal ID                |
+| Auth Token | —                            | `client-auth-token` | sessionStorage (login response) |
+| POS Token  | `NEXT_PUBLIC_POS_TOKEN`      | `erxes-pos-token`   | POS settings                    |
 
 ---
 
@@ -100,13 +99,13 @@ import Link from "next/link";
 
 ## 7. Server vs Client Components
 
-| Component | Type | Why |
-|-----------|------|-----|
-| Header | Server | Categories from `getClient()` |
-| Footer | Server | Menus from `getClient()` |
-| CartDrawer | Client | Jotai state |
-| ProductCard | Client | Add to cart interaction |
-| Checkout | Client | Forms, payment state |
+| Component   | Type   | Why                           |
+| ----------- | ------ | ----------------------------- |
+| Header      | Server | Categories from `getClient()` |
+| Footer      | Server | Menus from `getClient()`      |
+| CartDrawer  | Client | Jotai state                   |
+| ProductCard | Client | Add to cart interaction       |
+| Checkout    | Client | Forms, payment state          |
 
 ---
 
