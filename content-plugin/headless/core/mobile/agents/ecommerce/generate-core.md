@@ -5,7 +5,7 @@
 ### `lib/apollo/client.ts`
 
 `sessionStorage` → `SecureStore` (async), `NEXT_PUBLIC_*` → `EXPO_PUBLIC_*`.
-`setContext` callback нь `async` байх ёстой — `SecureStore.getItemAsync` нь Promise буцаана.
+`setContext` callback нь **`async` байх ёстой** — `SecureStore.getItemAsync` нь Promise буцаана. Заавал доорх бүрэн, ажиллах хувилбарыг **verbatim** ашигла — уг syntax алдаатай хувилбарыг дахин үүсгэж болохгүй.
 
 ```typescript
 import {
@@ -17,17 +17,26 @@ import { setContext } from "@apollo/client/link/context";
 import * as SecureStore from "expo-secure-store";
 
 const httpLink = createHttpLink({
-  uri:
-    process.env.EXPO_PUBLIC_ERXES_ENDPOINT || "http://localhost:4000/graphql",
+  uri: process.env.EXPO_PUBLIC_ERXES_API_URL || "https://localhost:4000",
 });
 
+// MUST be async — SecureStore.getItemAsync returns a Promise, and the
+// session token must be read fresh on every request (not captured once
+// at module load), otherwise login/logout will not update the header.
 const authLink = setContext(async (_, { headers }) => {
-  const token = await SecureStore.getItemAsync("token");
+  const sessionToken = await SecureStore.getItemAsync("token");
+
   return {
     headers: {
       ...headers,
-      "client-auth-token": token || "",
-      "x-app-token": process.env.EXPO_PUBLIC_ERXES_CP_TOKEN || "",
+      // Static client-portal token — identifies the app/portal, not the user.
+      // This is the header confirmed working against the live gateway:
+      // curl -H "x-app-token: <token>" https://.../gateway/graphql
+      "x-app-token": process.env.EXPO_PUBLIC_CLIENT_PORTAL_TOKEN || "",
+      // Per-user session token, set after login (has_auth = true). Empty
+      // string for guest/unauthenticated requests — never send `undefined`.
+      "client-auth-token": sessionToken || "",
+      // POS integration token, collected as `pos_token` during setup.
       "erxes-pos-token": process.env.EXPO_PUBLIC_POS_TOKEN || "",
     },
   };
@@ -45,6 +54,12 @@ export function getApolloClient(): ApolloClient<unknown> {
   return instance;
 }
 ```
+
+> **Do NOT** also export a top-level `client` constant alongside
+> `getApolloClient()` — that creates a second, separate `ApolloClient`
+> instance with its own cache, which silently diverges from the one the
+> provider actually uses. `getApolloClient()` is the only client the app
+> should ever import.
 
 > **`lib/apollo/server-client.ts` үүсгэхгүй** — Expo-д Server Components байхгүй.
 
@@ -243,3 +258,26 @@ export default function RootLayout() {
 > ```
 
 > `NextIntlClientProvider`, `getMessages()`, `html`/`body` tag — **байхгүй**.
+
+---
+
+## Agent Rules — Apollo Client
+
+1. Copy the `lib/apollo/client.ts` block above **verbatim** — do not re-derive the
+   `createHttpLink` call or the header object from memory; a missing comma or
+   closing brace here breaks bundling with obscure Metro errors, not a clear
+   syntax error message.
+2. `setContext` **must** be declared `async` — a non-async callback will not
+   correctly await `SecureStore.getItemAsync`, silently sending a stale or
+   empty session token.
+3. Export **only** `getApolloClient()` from `lib/apollo/client.ts`. Never add a
+   second top-level `ApolloClient` instance in the same file.
+4. All three headers are required and each serves a different purpose — do not
+   drop any of them and do not conflate them:
+   - `x-app-token` — static client-portal token, identifies the app/portal
+   - `client-auth-token` — per-user session token from `SecureStore`, present only after login
+   - `erxes-pos-token` — POS integration token from `pos_token` (Step 0 setup)
+5. `EXPO_PUBLIC_ERXES_API_URL`, `EXPO_PUBLIC_CLIENT_PORTAL_TOKEN`, and
+   `EXPO_PUBLIC_POS_TOKEN` must all be present in `.env.local` before this file
+   is generated — verify against `store.config.json` / `reference.md` env var
+   list rather than leaving any of them to silently resolve to `""`.

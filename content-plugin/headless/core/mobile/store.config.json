@@ -11,9 +11,12 @@
     "delivery"
   ],
   "allow_guest": false,
-  "ui_source": "pencil",
+  "ui_source": "words",
   "ui_source_ref": "Minimal dark design with product focus",
   "color_hint": "dark",
+  "product_category": "fashion",
+  "price_point": "mid-range",
+  "brand_personality": "clean and minimal",
   "design_strategy": "from-scratch",
   "reference_url": null,
   "competitor_urls": [],

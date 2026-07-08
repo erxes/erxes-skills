@@ -1,16 +1,96 @@
 # erxes Ecommerce + CMS — Mobile Agent Instructions (Expo)
 
-You build and deploy **Expo (React Native)** ecommerce apps that are fully connected to both erxes POS (products, cart, payment) and erxes CMS (pages, blog, navigation).
+You build and deploy **Expo (React Native)** ecommerce apps that are fully connected to both erxes POS (products, cart, payment), erxes CMS (pages, blog, navigation), and — optionally — erxes Messenger (real-time chat) and Firebase Cloud Messaging (push notifications).
 
 Read these files as needed — do not skip them:
 
-| File                               | Read when                                      |
-| ---------------------------------- | ---------------------------------------------- |
-| [`setup.md`](setup.md)             | Start of every new build                       |
-| [`conventions.md`](conventions.md) | Before writing any code                        |
-| [`generate.md`](generate.md)       | Step 4 — code generation                       |
-| [`reference.md`](reference.md)     | GraphQL queries/mutations, env vars, checklist |
-| [`payment.md`](payment.md)         | Checkout and payment implementation            |
+| File                                           | Read when                                                                                                                                                                                                                   |
+| ---------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| [`setup.md`](setup.md)                         | Start of every new build                                                                                                                                                                                                    |
+| [`conventions.md`](conventions.md)             | Before writing any code                                                                                                                                                                                                     |
+| [`generate.md`](generate.md)                   | Step 4 — code generation                                                                                                                                                                                                    |
+| [`reference.md`](reference.md)                 | GraphQL queries/mutations, env vars, checklist                                                                                                                                                                              |
+| [`payment.md`](payment.md)                     | Checkout and payment implementation                                                                                                                                                                                         |
+| [`connect-messenger.md`](connect-messenger.md) | Step 4.5 — connecting erxes Messenger (live chat) to the generated Expo app, or any time the user asks to "connect messenger", "add live chat", "connect erxes messenger", "add messenger SDK", or "set up erxes messenger" |
+| [`notification.md`](notification.md)           | Step 4.6 — wiring up Firebase Cloud Messaging (push notifications), or any time the user asks to "add push notifications", "set up FCM", "connect firebase notifications", or "add notification.md"                         |
+
+---
+
+## Hard Gate
+
+Do not run any shell commands (including environment checks like `node -v` /
+`npm -v`), explore the repo, clone/init the Expo project, or write any file
+until Step 0 is complete.
+
+Do not generate any design directions, visual concepts, or frontend ideas
+until Step 0 is complete.
+
+Do not enter Step 3.5 design work until Step 0.5 (when the user requested UX
+research) is complete and user-approved.
+
+Do not enter Step 4 frontend/code generation until Step 3.5 is fully complete.
+
+Do not enter Step 4.5 (Connect Messenger) or Step 4.6 (Connect Push
+Notifications) until Step 4 is complete and the user has explicitly asked for
+that integration.
+
+Do not enter Step 5 (Seed CMS content) until Step 4 — and Step 4.5 / 4.6 if
+triggered — are complete.
+
+Do not enter Step 7 (Deploy) until Step 6 (Verify) passes with 0 errors.
+
+**Step 0 is complete only when:**
+
+- `store.config.json` exists
+- `name`, `template_type`, `languages`, `tone` are collected (generic fields via `agents/setup.md`)
+- `delivery_types`, `allow_guest`, `pos_token` are collected (`agents/ecommerce/setup.md`)
+- `client_portal_id` is collected
+- `design_strategy` is collected
+- `ui_source` is collected
+- `ui_source_ref` is collected
+- `reference_url` is collected when `design_strategy` is `copy-site` or `improve-site`
+- `competitor_urls` is collected when `design_strategy` is `beat-competitors`
+- `enable_messenger` and `messenger_brand_code` are collected when the user has already asked for live chat
+- `enable_push_notifications` and the required Firebase values are collected when the user has already asked for push notifications
+- `.env` has the required erxes, CMS, and deployment values
+- the CMS is created via `tsx scripts/erxes-cms.ts` (when `has_cms`) and the returned `_id` is saved into `store.config.json` and `.env` as `ERXES_CMS_ID`
+
+A vague or generic trigger like "create me a mobile app" is not sufficient
+input to proceed — it only starts Step 0. If any required field above is
+missing:
+
+- stop the conversation
+- ask the user directly for the missing fields
+- do not infer, default, guess, or silently continue past this point
+- do not run shell commands, explore the repo, or write any file before the user has answered
+
+**Step 0.5 is complete only when** (skip entirely if the user did not request UX research):
+
+- `output/<slug>/ux-research.md` exists
+- the UX research covers the required sections from `agents/ux-ui-researcher.md`
+- the user explicitly approved the research or gave a direct instruction to proceed
+
+**Step 3.5 is complete only when:**
+
+- 2 to 3 home-screen-only direction previews were created in Pencil at mobile viewport (390×844)
+- each preview includes the full home screen with all selected or detected homepage sections in order
+- preview exports were shown to the user
+- the user selected one home screen option
+- the selected option was expanded into the full Pencil design package (`design.pen`, `design.png`, `design-tokens.json`, `ui-libraries.json`, `HANDOFF.md`)
+- the user was asked exactly: `do you wanna edit design before build frontend?`
+- any requested design edits were applied and re-approved
+- the user explicitly approved the final design package for build
+- the design artifacts are real Pencil outputs, not placeholders or stub files
+- all Pencil work stayed inside the exact approved `.pen` file path for this app
+
+**Step 4 is complete only when:**
+
+- all 17 files listed in Step 4's "Read these files IN ORDER" were read, including `generate-screens.md` and `generate-checkout.md` (never skipped)
+- all files were written in the specified order, ending with `.env.local`
+- `babel-preset-expo` and `babel.config.js` exist before any bundling is attempted
+- env var names in `lib/apollo/client.ts` and `.env.local` match exactly (no silently-empty auth headers)
+
+If any of those are missing, stop and complete them before moving to Step 4.5, 4.6, or Step 5.
 
 ---
 
@@ -38,6 +118,13 @@ The ecommerce pipeline REUSES modules from the generic `agents/` folder. Do not 
 | `agents/ecommerce/generate.md`    | Step 4                           | Ecommerce code generation — types, GraphQL, hooks, components, screens                   |
 | `agents/ecommerce/reference.md`   | Step 4 + Step 5                  | GraphQL queries/mutations, env vars, payment flow checklist                              |
 | `agents/ecommerce/payment.md`     | Step 4 (checkout implementation) | Payment implementation details                                                           |
+
+### Optional Mobile Integration Files (read only when triggered)
+
+| File                                    | When to Read                                                                                                        | Purpose                                                                                                                                                                                                                                                                                                                  |
+| --------------------------------------- | ------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `agents/ecommerce/connect-messenger.md` | Step 4.5, after the Expo frontend project exists in `output/<slug>/`, and the user has asked to connect live chat   | Connects the generated Expo app to erxes Messenger — own Apollo client (HTTP + WebSocket), hooks, GraphQL layer, chat UI components, storage, and the public `<ErxesMessenger>` entry point                                                                                                                              |
+| `agents/ecommerce/notification.md`      | Step 4.6, after the Expo frontend project exists in `output/<slug>/`, and the user has asked for push notifications | Wires up Firebase Cloud Messaging (FCM) end to end — Firebase config files, `app.json` plugins, iOS/Android prebuild config, `usePushNotifications` hook, `registerFcmToken` mutation, token refresh, and foreground/background/terminated notification handling, plus the client-portal backend token-registration flow |
 
 ### Routing from Generic Pipeline
 
@@ -69,6 +156,10 @@ Step 4:  agents/ecommerce/generate.md (ecommerce code generation)
          agents/ecommerce/reference.md (GraphQL reference)
          agents/ecommerce/payment.md (payment flow)
          |
+Step 4.5: [OPTIONAL] agents/ecommerce/connect-messenger.md (only if user asked for live chat / erxes Messenger)
+         |
+Step 4.6: [OPTIONAL] agents/ecommerce/notification.md (only if user asked for push notifications / FCM)
+         |
 Step 5:  agents/ecommerce/reference.md (CMS seeding, env vars)
          |
 Step 6-7: agents/ecommerce/reference.md (verify + deploy)
@@ -80,6 +171,8 @@ Step 6-7: agents/ecommerce/reference.md (verify + deploy)
 
 ### Step 0 — Setup
 
+See **Hard Gate** above — do not proceed past this step until every required field is collected and `store.config.json` is written.
+
 **If coming from generic pipeline (`agents/setup.md`):**
 
 - Generic fields already collected in `site.config.json`
@@ -88,6 +181,8 @@ Step 6-7: agents/ecommerce/reference.md (verify + deploy)
   - `delivery_types`
   - `allow_guest`
   - `pos_token`
+- If the user has already mentioned wanting live chat / erxes Messenger, also record `enable_messenger: true` and ask for `messenger_brand_code` (erxes Admin → Settings → Brands → code)
+- If the user has already mentioned wanting push notifications, also record `enable_push_notifications: true` and ask for the required Firebase values: app name, iOS bundle identifier, Android package name, Firebase project ID, iOS target name, and backend GraphQL endpoint (see `notification.md` → "Required Values To Fill")
 
 **If starting fresh:**
 
@@ -112,6 +207,8 @@ Read `store.config.json`. Derive:
 - `has_cms` = `cms_sections` is non-empty and not `["none"]`
 - `has_blog` = `cms_sections` includes `"blog"`
 - `has_contact` = `sections` includes `"contact"` or `cms_sections` includes `"contact"`
+- `has_messenger` = `enable_messenger` is true, OR the user has separately asked to "connect messenger" / "add live chat" / "connect erxes messenger" / "add messenger SDK" / "set up erxes messenger"
+- `has_push_notifications` = `enable_push_notifications` is true, OR the user has separately asked to "add push notifications" / "set up FCM" / "connect firebase notifications"
 
 **Section-to-screen rule:**
 
@@ -159,6 +256,19 @@ cd output/<slug>
 npx expo install expo-router apollo-client @apollo/client graphql jotai nativewind tailwindcss
 npx expo install expo-secure-store expo-constants expo-linking expo-status-bar
 npx expo install react-native-safe-area-context react-native-screens
+npx expo install babel-preset-expo
+```
+
+**CRITICAL — `babel.config.js` must always be created at this step, before any bundling is attempted.** Metro fails with `Cannot find module 'babel-preset-expo'` if this file is missing or the package above was skipped. Create it immediately after the installs above (do not defer this to a later step or leave it to be added only if bundling fails):
+
+```javascript
+// output/<slug>/babel.config.js
+module.exports = function (api) {
+  api.cache(true);
+  return {
+    presets: ["babel-preset-expo"],
+  };
+};
 ```
 
 Before running, ensure `.env` has the correct configuration for Expo.
@@ -176,7 +286,7 @@ Before running, ensure `.env` has the correct configuration for Expo.
 
 Read `ui_source`, `ui_source_ref`, `design_strategy`, `reference_url`, and `competitor_urls` from `store.config.json`.
 
-**Hard Gate:** Do not generate any design directions until `store.config.json` exists and `design_strategy` is set.
+See **Hard Gate** above — do not enter this step until Step 0 (and Step 0.5, if triggered) is complete.
 
 **Design strategy controls the approach:**
 
@@ -220,7 +330,7 @@ Read [`agents/pencil-design.md`](../pencil-design.md). Use `ui_source_ref` as th
 
 ### Step 4 — Generate code
 
-**Hard Gate:** Do not enter Step 4 until Step 3.5 is fully complete.
+See **Hard Gate** above — do not enter Step 4 until Step 3.5 is fully complete.
 
 **CRITICAL: Read these files IN ORDER before writing code:**
 
@@ -269,6 +379,98 @@ Read [`agents/pencil-design.md`](../pencil-design.md). Use `ui_source_ref` as th
 - Use `expo-router` `<Link>` and `useRouter()` for navigation
 - All touch targets minimum 44×44pt
 - Handle keyboard avoiding with `KeyboardAvoidingView`
+
+### Step 4.5 — Connect Messenger (optional, live chat)
+
+**Skip this step if `has_messenger` is false.**
+
+Run this step only after the Expo frontend project exists in `output/<slug>/` (i.e., after Step 4). Trigger it whenever the user says any of:
+
+- "connect messenger to mobile app"
+- "connect erxes messenger"
+- "add live chat to expo app"
+- "set up erxes messenger"
+- "add messenger SDK"
+
+Read [`agents/ecommerce/connect-messenger.md`](connect-messenger.md) in full and run its pipeline without waiting for step-by-step instructions:
+
+1. Scan the generated Expo project tree under `src/messenger/` before generating any file.
+2. Set up the **Messenger's own Apollo client** — always separate from the CMS Apollo client (`lib/apollo-client.ts`). Messenger uses `credentials: 'include'` (cookie session) plus a `graphql-ws` split link for subscriptions; the CMS client uses the `erxes-app-token` header over HTTP only. Never merge the two clients and never pass the host app's bearer token to the Messenger client.
+3. Add required env vars to `.env.local`:
+   ```env
+   EXPO_PUBLIC_ERXES_API_URL=<erxes gateway URL>
+   EXPO_PUBLIC_ERXES_BRAND_CODE=<erxes brand/integration code>
+   ```
+4. Install dependencies:
+   ```bash
+   npx expo install @apollo/client graphql graphql-ws
+   npx expo install @react-native-async-storage/async-storage
+   npx expo install react-native-svg
+   npx expo install react-native-get-random-values
+   npx expo install react-native-render-html
+   # Optional — attach button hides automatically when neither is installed
+   npx expo install expo-image-picker
+   ```
+5. Generate the full `src/messenger/` tree exactly as specified in `connect-messenger.md` §17 (Apollo client/container, GraphQL mutations/queries/subscriptions, 7 hooks, 9 UI components, upload service, storage keys, public/internal types, utils, context, theme, `Widget.tsx`, `ErxesMessenger.tsx`, `index.ts`) plus `src/messengerConfig.ts` at the host level.
+6. Mount `<ErxesMessenger>` (the only component host code should import) from wherever the store wants live chat exposed — typically the home screen or a persistent floating launcher (`showWidget`) — using `config.apiUrl` and `config.brandId` from `messengerConfig.ts` / `.env.local`.
+7. Apply all messenger agent rules from `connect-messenger.md` §20, in particular:
+   - `credentials: 'include'` on both the HTTP link and the upload fetch — never remove
+   - `react-native-get-random-values` must be the first import in `ErxesMessenger.tsx`
+   - Gate all hooks on `identity.ready`; never call `useConnect` or `useConversationsList` before identity resolves
+   - Pass `visitorId` only when `customerId` is null — never send both
+   - Host code imports only from `src/messenger/types/public.ts`, never `types/internal.ts`
+   - Call `clearMessengerStorage` on logout — never clear only one key
+8. Verify against `connect-messenger.md` §19 (Connection, Identity, Chat, UI, Environment checklists) before moving on.
+
+### Step 4.6 — Connect Push Notifications (optional, Firebase/FCM)
+
+**Skip this step if `has_push_notifications` is false.**
+
+Run this step only after the Expo frontend project exists in `output/<slug>/` (i.e., after Step 4). Trigger it whenever the user says any of:
+
+- "add push notifications"
+- "set up FCM"
+- "connect firebase notifications"
+- "add notification.md"
+
+Read [`agents/ecommerce/notification.md`](notification.md) in full and follow its pipeline exactly, substituting the project's own values for every placeholder:
+
+| Placeholder              | Fill from                                                     |
+| ------------------------ | ------------------------------------------------------------- |
+| `<APP_NAME>`             | `store.config.json` → `name`                                  |
+| `<IOS_BUNDLE_ID>`        | collected in Step 0 (or `app.json` → `ios.bundleIdentifier`)  |
+| `<ANDROID_PACKAGE_NAME>` | collected in Step 0 (or `app.json` → `android.package`)       |
+| `<FIREBASE_PROJECT_ID>`  | collected in Step 0                                           |
+| `<IOS_TARGET_NAME>`      | collected in Step 0 (usually equals `<APP_NAME>`)             |
+| `<BACKEND_GRAPHQL_URL>`  | `store.config.json` / `.env` → erxes gateway GraphQL endpoint |
+
+1. **Firebase config files** — obtain `GoogleService-Info.plist` and `google-services.json` for `<FIREBASE_PROJECT_ID>` from the Firebase Console and commit both at the repo root (`output/<slug>/GoogleService-Info.plist`, `output/<slug>/google-services.json`). These are the source of truth; native `ios/` and `android/` files are generated from them via `expo prebuild` and must never be hand-edited directly.
+2. **`app.json` wiring** — set `ios.bundleIdentifier`, `ios.googleServicesFile`, `android.package`, `android.googleServicesFile`, `ios.entitlements` (`aps-environment`), `ios.infoPlist.UIBackgroundModes: ["remote-notification"]`, and `android.permissions` (`POST_NOTIFICATIONS`), per `notification.md` → "Firebase Configuration".
+3. **Install dependencies:**
+   ```bash
+   npx expo install @react-native-firebase/app @react-native-firebase/messaging expo-build-properties
+   ```
+   Add the three plugins to `app.json` → `plugins`: `@react-native-firebase/app`, `@react-native-firebase/messaging`, and `["expo-build-properties", { "ios": { "useFrameworks": "static" } }]`.
+4. **Generate the committed application files** exactly as specified in `notification.md` → "Files Modified → React Native Application":
+   - `src/constants/config.ts` — add the `deviceId` storage key
+   - `src/utils/deviceId.ts` — **new**, `getOrCreateDeviceId()`
+   - `src/graphql/notificationsQL.ts` — **new**, `clientPortalUserAddFcmToken` mutation against `<BACKEND_GRAPHQL_URL>`
+   - `src/lib/push.ts` — **new**, module-scope background handler, `ensureNotificationPermission()`, `getFcmToken()`, `registerFcmToken()`
+   - `src/hooks/usePushNotifications.ts` — **new**, foreground/background/terminated listeners, `onTokenRefresh`, permission + token registration, keyed on the auth session token
+   - `app/_layout.tsx` — mount `usePushNotifications(token)` in the root layout so it runs on both first login and session-restore/app-startup for already-authenticated users
+5. **Run prebuild** after `app.json` and the Firebase config files are in place:
+   ```bash
+   npx expo prebuild --platform ios
+   npx expo prebuild --platform android
+   npx pod-install
+   ```
+6. Apply the key behavioral rules from `notification.md`, in particular:
+   - Registration is **best-effort and non-blocking** — permission denial or a failed mutation must never block login or crash the app; wrap in `try/catch`
+   - Existing (already logged-in) users register their token on **app startup / session restore**, not only on the login event — do not gate registration on a login-only trigger
+   - Send the same persisted `deviceId` on every call so the backend can dedupe per device
+   - Never log the FCM token or any Firebase config values — only log failure counts/messages
+   - `resolveRoute()` reads `data.route ?? data.url` and falls back to `/notification` when tapping a push
+7. Verify against `notification.md` → "Verification Checklist" (Firebase initialization, permission prompts, token generation, backend registration, push delivery in foreground/background/terminated states, token refresh on reinstall, Android 13+ permission handling) before moving on.
 
 ### Step 5 — Seed CMS content
 
@@ -365,6 +567,8 @@ tsx scripts/erxes-menu.ts output/menu.json
 
 ### Step 6 — Verify
 
+Before bundling, confirm `babel.config.js` exists and `babel-preset-expo` is in `package.json` dependencies (added in Step 3) — a missing preset causes `Cannot find module 'babel-preset-expo'` at bundle time and must be fixed at Step 3, not patched here.
+
 ```bash
 cd output/<slug> && npx expo export
 ```
@@ -376,6 +580,19 @@ npx expo-doctor
 ```
 
 Build must succeed with 0 errors before deploying.
+
+**If `has_messenger` is true**, additionally confirm the messenger checklist from `connect-messenger.md` §19 before considering Step 6 complete:
+
+- Messenger connect mutation succeeds and returns `customerId`
+- WebSocket connection established (no `[messenger] network error` logs)
+- `widgetsConversations` / `widgetsConversationDetail` return data and `conversationMessageInserted` fires on a new message
+
+**If `has_push_notifications` is true**, additionally confirm the checklist from `notification.md` → "Verification Checklist" before considering Step 6 complete:
+
+- App launches with no `No Firebase App '[DEFAULT]'` crash
+- `messaging().getToken()` resolves a token and `clientPortalUserAddFcmToken` registers it with `{ deviceId, token, platform }`
+- A test push from the Firebase Console is received in foreground (in-app toast), background (system tray), and terminated (tray + correct route on tap) states
+- Android 13+ shows the `POST_NOTIFICATIONS` prompt; no prompt on Android ≤12
 
 ### Step 7 — Deploy
 
@@ -412,5 +629,8 @@ tsx scripts/github-push.ts "<store-name>"
 
 1. Read `store.config.json`
 2. Read relevant files in `output/<slug>/`
-3. Make only the targeted changes
+3. Make only the targeted changes:
+   - "connect messenger" / "add live chat" → jump directly to Step 4.5 and `agents/ecommerce/connect-messenger.md`
+   - "add push notifications" / "set up FCM" → jump directly to Step 4.6 and `agents/ecommerce/notification.md`
+     rather than re-running the full pipeline
 4. Redeploy: `eas build --platform all`

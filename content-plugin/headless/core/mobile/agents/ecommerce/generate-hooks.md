@@ -275,8 +275,6 @@ export function useOrderCUD() {
 
 ## `hooks/payment.ts`
 
-Өөрчлөлт байхгүй — logic бүрэн ижил.
-
 ```typescript
 import { useMutation, useQuery } from "@apollo/client";
 import { useAtom } from "jotai";
@@ -345,7 +343,6 @@ export function useCreateInvoice() {
   return { createInvoice, loading, error };
 }
 
-// invoicesCheck — useMutation (Query биш!), parameter нэр: `id`
 export function useCheckInvoice() {
   const [checkMutation, { loading, error }] = useMutation(CHECK_INVOICE);
 
