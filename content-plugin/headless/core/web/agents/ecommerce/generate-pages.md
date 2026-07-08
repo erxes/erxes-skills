@@ -21,17 +21,17 @@
 
 Before writing each page, check `HANDOFF.md` section **1. Frontend Build Map** for that page's layout notes. If HANDOFF.md has specific guidance for a page (e.g. hero layout, product grid columns, checkout panel split), follow it exactly.
 
-| Page | Check HANDOFF.md for |
-|---|---|
-| Homepage | hero layout, section order, featured grid columns |
-| Products | filter sidebar position, grid columns, card style |
-| Product detail | image gallery layout, info panel layout, review section |
-| Cart | line item layout, summary panel position |
-| Checkout | form/summary split, delivery fields order, payment selector style |
-| Login / Register | form card width, centered vs split layout |
-| Profile | sidebar nav style, content panel layout |
-| Orders | list item style, status badge colors |
-| Wishlist | grid columns, card remove action placement |
+| Page             | Check HANDOFF.md for                                              |
+| ---------------- | ----------------------------------------------------------------- |
+| Homepage         | hero layout, section order, featured grid columns                 |
+| Products         | filter sidebar position, grid columns, card style                 |
+| Product detail   | image gallery layout, info panel layout, review section           |
+| Cart             | line item layout, summary panel position                          |
+| Checkout         | form/summary split, delivery fields order, payment selector style |
+| Login / Register | form card width, centered vs split layout                         |
+| Profile          | sidebar nav style, content panel layout                           |
+| Orders           | list item style, status badge colors                              |
+| Wishlist         | grid columns, card remove action placement                        |
 
 ---
 
@@ -150,6 +150,7 @@ export default function ProductsPage() {
 Complex page: product detail + add-to-cart + wishlist toggle + review CRUD.
 
 Key patterns:
+
 - `params` is `Promise<{ id: string }>` in Next.js 15 — resolve with `useEffect`
 - `addToCart`: upserts count in `cartItemsAtom`
 - `addToWishlist`: calls `CP_WISHLIST_ADD` if logged in, always updates `wishlistItemsAtom`

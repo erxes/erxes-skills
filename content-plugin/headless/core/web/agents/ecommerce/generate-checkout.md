@@ -9,6 +9,7 @@
 Flow: fill delivery info → select payment method (PaymentType component) → submit → `createOrder` → redirect to `/verify`.
 
 Key invariants:
+
 - `deliveryInfo` must include all 6 fields: `firstName`, `lastName`, `email`, `phone`, `address`, `description`
 - Pre-populate from `currentUser` on mount
 - `type: "delivery"` always passed to `createOrder`
@@ -177,6 +178,7 @@ export default function CheckoutPage() {
 Payment verification page. Reads order from `activeOrderAtom` (no route ID).
 
 Key invariants:
+
 - `handleCreateInvoice`: calls `createInvoice` then immediately `addTransaction` in one handler
 - QR: `txResult.transaction?.response?.qrData` → `txResult.transaction?.details?.qrData` fallback
 - `redirectUrl`: if present on invoice → `window.location.href = invoice.redirectUrl`

@@ -14,8 +14,7 @@ import { setContext } from "@apollo/client/link/context";
 
 const httpLink = createHttpLink({
   uri:
-    process.env.NEXT_PUBLIC_ERXES_ENDPOINT ||
-    "http://localhost:4000/graphql",
+    process.env.NEXT_PUBLIC_ERXES_ENDPOINT || "http://localhost:4000/graphql",
 });
 
 const authLink = setContext((_, { headers }) => {
@@ -212,8 +211,12 @@ export const wishlistCountAtom = atom((get) => get(wishlistItemsAtom).length);
 }
 
 @layer base {
-  * { @apply border-border; }
-  body { @apply bg-background text-foreground; }
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
 }
 ```
 
