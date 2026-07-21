@@ -85,7 +85,7 @@ missing:
 
 **Step 4 is complete only when:**
 
-- all 17 files listed in Step 4's "Read these files IN ORDER" were read, including `generate-screens.md` and `generate-checkout.md` (never skipped)
+- all 17 files listed in Step 4's "Read these files IN ORDER" were read, including `generate-pages.md` and `generate-checkout.md` (never skipped)
 - all files were written in the specified order, ending with `.env.local`
 - `babel-preset-expo` and `babel.config.js` exist before any bundling is attempted
 - env var names in `lib/apollo/client.ts` and `.env.local` match exactly (no silently-empty auth headers)
@@ -115,7 +115,7 @@ The ecommerce pipeline REUSES modules from the generic `agents/` folder. Do not 
 | --------------------------------- | -------------------------------- | ---------------------------------------------------------------------------------------- |
 | `agents/ecommerce/setup.md`       | Step 0                           | Ecommerce-specific fields (delivery_types, allow_guest, pos_token)                       |
 | `agents/ecommerce/conventions.md` | Before writing ANY code          | Ecommerce-specific conventions — auth tokens, Apollo headers, Jotai stores, payment flow |
-| `agents/ecommerce/generate.md`    | Step 4                           | Ecommerce code generation — types, GraphQL, hooks, components, screens                   |
+| `agents/ecommerce/generate.md`    | Step 4                           | Ecommerce code generation — types, GraphQL, hooks, components, pages                     |
 | `agents/ecommerce/reference.md`   | Step 4 + Step 5                  | GraphQL queries/mutations, env vars, payment flow checklist                              |
 | `agents/ecommerce/payment.md`     | Step 4 (checkout implementation) | Payment implementation details                                                           |
 
@@ -146,7 +146,7 @@ Step 0:  agents/setup.md (generic fields)
          |
 Step 0.5: [OPTIONAL] agents/ux-ui-researcher.md (if user wants UX research)
          |
-Step 3.5: agents/pencil-design.md (design directions in Pencil)
+Step 3.5: agents/ecommerce/pencil-design.md (design directions in Pencil)
          |
 Step 4:  agents/ecommerce/generate.md (ecommerce code generation)
          agents/ecommerce/conventions.md (ecommerce conventions)
@@ -156,7 +156,7 @@ Step 4:  agents/ecommerce/generate.md (ecommerce code generation)
          agents/ecommerce/reference.md (GraphQL reference)
          agents/ecommerce/payment.md (payment flow)
          |
-Step 4.5: [OPTIONAL] agents/ecommerce/connect-messenger.md (only if user asked for live chat / erxes Messenger)
+Step 4.5: [OPTIONAL] agents/connect-messenger.md (only if user asked for live chat / erxes Messenger)
          |
 Step 4.6: [OPTIONAL] agents/ecommerce/notification.md (only if user asked for push notifications / FCM)
          |
@@ -214,7 +214,7 @@ Read `store.config.json`. Derive:
 
 - The home screen should include the selected sections as landing sections
 - Every selected section should also become a standalone screen/route unless purely decorative
-- Use the same section names and slugs consistently across home screen composition, CMS screens, and bottom tab / drawer navigation
+- Use the same section names and slugs consistently across home screen composition, CMS pages, and bottom tab / drawer navigation
 
 ### Step 2 — Create CMS
 
@@ -342,9 +342,9 @@ See **Hard Gate** above — do not enter Step 4 until Step 3.5 is fully complete
 6. `agents/ecommerce/generate-graphql.md` — GraphQL file map (do NOT recreate starter files)
 7. `agents/ecommerce/generate-hooks.md` — auth, order, payment, query hooks
 8. `agents/ecommerce/generate-components.md` — layout + product components (React Native)
-9. `agents/ecommerce/generate-screens.md` — home, products, **login**, **register**, **profile**, **orders**, **wishlist**, cart
-10. `agents/ecommerce/generate-checkout.md` — **checkout** + **verify** screens
-11. `agents/ecommerce/generate-cms.md` — review system, CMS screens (about, blog) — read when `has_cms` is true
+9. `agents/ecommerce/generate-pages.md` — home, products, **login**, **register**, **profile**, **orders**, **wishlist**, cart
+10. `agents/ecommerce/generate-checkout.md` — **checkout** + **verify** pages
+11. `agents/ecommerce/generate-cms.md` — review system, CMS pages (about, blog) — read when `has_cms` is true
 12. `agents/ecommerce/conventions.md` — ecommerce conventions (auth tokens, Apollo headers, Jotai stores, payment flow)
 13. `agents/conventions.md` — generic conventions (React Native patterns)
 14. `agents/frontend.md` — frontend architecture, token system, build phases
@@ -352,7 +352,7 @@ See **Hard Gate** above — do not enter Step 4 until Step 3.5 is fully complete
 16. `agents/ecommerce/reference.md` — GraphQL queries/mutations
 17. `agents/ecommerce/payment.md` — payment flow implementation
 
-**Do NOT skip generate-screens.md or generate-checkout.md.** These files define the auth, profile, orders, wishlist, checkout, and verify screens. Skipping them produces a static app without the ecommerce flow.
+**Do NOT skip generate-pages.md or generate-checkout.md.** These files define the auth, profile, orders, wishlist, checkout, and verify pages. Skipping them produces a static app without the ecommerce flow.
 
 **Then write files in this order:**
 
@@ -363,11 +363,11 @@ See **Hard Gate** above — do not enter Step 4 until Step 3.5 is fully complete
 5. GraphQL (`graphql/`)
 6. Root layout: `app/_layout.tsx` + Providers
 7. Tab/Stack navigation: `app/(tabs)/_layout.tsx` or drawer layout
-8. Auth screens: `app/(auth)/login.tsx`, `app/(auth)/register.tsx`, `app/(auth)/forgot-password.tsx`
-9. Ecommerce screens: `app/(tabs)/index.tsx` (home), `app/(tabs)/products/index.tsx`, `app/(tabs)/products/[id].tsx`, `app/cart.tsx`
-10. Profile + account screens: `app/(tabs)/profile/index.tsx`, `app/orders/index.tsx`, `app/orders/[id].tsx`, `app/wishlist.tsx`
+8. Auth pages: `app/(auth)/login.tsx`, `app/(auth)/register.tsx`, `app/(auth)/forgot-password.tsx`
+9. Ecommerce pages: `app/(tabs)/index.tsx` (home), `app/(tabs)/products/index.tsx`, `app/(tabs)/products/[id].tsx`, `app/cart.tsx`
+10. Profile + account pages: `app/(tabs)/profile/index.tsx`, `app/orders/index.tsx`, `app/orders/[id].tsx`, `app/wishlist.tsx`
 11. Checkout + payment: `app/checkout.tsx`, `app/verify.tsx`
-12. CMS screens: `app/about.tsx`, `app/contact.tsx`, `app/blog/index.tsx`, `app/faq.tsx` — only sections listed in `cms_sections`
+12. CMS pages: `app/about.tsx`, `app/contact.tsx`, `app/blog/index.tsx`, `app/faq.tsx` — only sections listed in `cms_sections`
 13. Navigation components: `components/layout/TabBar.tsx`, `components/layout/Header.tsx`
 14. `.env.local`
 
@@ -559,7 +559,7 @@ Generate two menus — `Main Navigation` (bottom tabs / drawer) and `Footer` —
 ]
 ```
 
-Only include links for screens that exist in `cms_sections`.
+Only include links for pages that exist in `cms_sections`.
 
 ```bash
 tsx scripts/erxes-menu.ts output/menu.json
@@ -630,7 +630,7 @@ tsx scripts/github-push.ts "<store-name>"
 1. Read `store.config.json`
 2. Read relevant files in `output/<slug>/`
 3. Make only the targeted changes:
-   - "connect messenger" / "add live chat" → jump directly to Step 4.5 and `agents/ecommerce/connect-messenger.md`
+   - "connect messenger" / "add live chat" → jump directly to Step 4.5 and `agents/connect-messenger.md`
    - "add push notifications" / "set up FCM" → jump directly to Step 4.6 and `agents/ecommerce/notification.md`
      rather than re-running the full pipeline
 4. Redeploy: `eas build --platform all`

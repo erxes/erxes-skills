@@ -237,19 +237,22 @@ export default function ProductsScreen() {
 
 ## Product Detail Screen (`app/product/[id].tsx`)
 
-Complex screen: product image + add-to-cart + wishlist toggle + review CRUD. Uses `useLocalSearchParams` for route params.
+Complex screen: image carousel + size/color selection + add-to-cart + wishlist toggle + review CRUD. Uses `useLocalSearchParams` for route params.
 
 Key patterns:
 
 - `useLocalSearchParams` replaces `params: Promise<{ id }>` — no async unwrap needed
-- `addToCart`: upserts count in cart store
+- **Image carousel**: `FlatList horizontal pagingEnabled` over `product.attachmentMore` (fallback to single `product.attachment`)
+- **Size/color selection**: required before add-to-cart. Use `product.sizes`/`product.colors` from CP_PRODUCT_DETAIL if present, otherwise fall back to a dummy set (`38–41` / Brown, Black, White) so the UI is never blocked by missing product-level variant data
+- `addToCart`: validates size + color are selected, then upserts `{ selectedSize, selectedColor }` into the cart item
 - `addToWishlist`: calls `CP_WISHLIST_ADD` if logged in
 - Reviews: `CP_PRODUCT_REVIEWS` query + add/update/remove mutations
 - `Alert.alert` replaces `confirm()`
 - `react-native-render-html` renders HTML description
+- **Agent rule:** never reference `tokens.*` without importing it — import from `@/lib/design-tokens` (or the project's token file) at the top of the file. Missing this import is a silent `ReferenceError` at render time that only appears in Metro logs, not TypeScript.
 
 ```typescript
-import { View, Text, ScrollView, Image, TouchableOpacity, TextInput, Alert, ActivityIndicator } from 'react-native';
+import { View, Text, ScrollView, Image, TouchableOpacity, TextInput, Alert, ActivityIndicator, FlatList, Dimensions } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useState, useEffect } from 'react';
 import { useQuery, useMutation } from '@apollo/client/react';
@@ -258,16 +261,27 @@ import { useCartStore } from '@/stores/cart';
 import { useAuthStore } from '@/stores/auth';
 import { useProductDetail } from '@/lib/products';
 import { formatPriceMnt, formatPriceUsd } from '@/lib/utils';
+import { tokens } from '@/lib/design-tokens';
 import { CP_WISHLIST_ADD } from '@/graphql/mutations/wishlist';
 import { CP_PRODUCT_REVIEW_ADD, PRODUCT_REVIEW_UPDATE, PRODUCT_REVIEW_REMOVE } from '@/graphql/mutations/productReview';
 import { CP_PRODUCT_REVIEWS } from '@/graphql/queries/productReview';
 import StarRating from '@/components/StarRating';
+
+const { width: SCREEN_WIDTH } = Dimensions.get('window');
+const DEFAULT_SIZES = ['38', '39', '40', '41'];
+const DEFAULT_COLORS = [
+  { label: 'Brown', value: 'brown', hex: '#8B5E3C' },
+  { label: 'Black', value: 'black', hex: '#1A1A1A' },
+  { label: 'White', value: 'white', hex: '#F5F5F5' },
+];
 
 export default function ProductDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const { t } = useTranslation();
   const [quantity, setQuantity] = useState(1);
+  const [selectedSize, setSelectedSize] = useState<string | null>(null);
+  const [selectedColor, setSelectedColor] = useState<string | null>(null);
   const [reviewRating, setReviewRating] = useState(0);
   const [reviewText, setReviewText] = useState('');
   const [editingReviewId, setEditingReviewId] = useState<string | null>(null);
@@ -293,6 +307,17 @@ export default function ProductDetailScreen() {
     ? reviews.reduce((sum: number, r: any) => sum + (r.review || 0), 0) / reviews.length
     : 0;
 
+  // Product images for carousel — falls back to a single-image "carousel" when
+  // attachmentMore is empty, so the FlatList logic never has to special-case length 1
+  const images = product?.attachmentMore?.length
+    ? product.attachmentMore
+    : product?.attachment
+    ? [product.attachment]
+    : [];
+
+  const sizes: string[] = product?.sizes?.length ? product.sizes : DEFAULT_SIZES;
+  const colors = product?.colors?.length ? product.colors : DEFAULT_COLORS;
+
   useEffect(() => {
     if (myReview) {
       setReviewRating(myReview.review || 0);
@@ -307,12 +332,18 @@ export default function ProductDetailScreen() {
 
   const handleAddToCart = () => {
     if (!product) return;
+    if (!selectedSize || !selectedColor) {
+      Alert.alert(t('product.selectionRequired'), t('product.selectSizeAndColor'));
+      return;
+    }
     addItem({
       productId: product._id,
       count: quantity,
       unitPrice: product.unitPrice || 0,
       productName: product.name,
-      productImgUrl: product.attachment?.url,
+      productImgUrl: images[0]?.url,
+      selectedSize,
+      selectedColor,
     });
   };
 
@@ -375,12 +406,21 @@ export default function ProductDetailScreen() {
 
   return (
     <ScrollView className="flex-1 bg-background" showsVerticalScrollIndicator={false}>
-      {/* Product image */}
-      {product.attachment?.url ? (
-        <Image
-          source={{ uri: product.attachment.url }}
-          className="w-full aspect-square"
-          resizeMode="cover"
+      {/* Image carousel */}
+      {images.length > 0 ? (
+        <FlatList
+          data={images}
+          horizontal
+          pagingEnabled
+          showsHorizontalScrollIndicator={false}
+          keyExtractor={(item, idx) => item.url || String(idx)}
+          renderItem={({ item }) => (
+            <Image
+              source={{ uri: item.url }}
+              style={{ width: SCREEN_WIDTH, aspectRatio: 1 }}
+              resizeMode="cover"
+            />
+          )}
         />
       ) : (
         <View className="w-full aspect-square bg-surface items-center justify-center">
@@ -404,6 +444,46 @@ export default function ProductDetailScreen() {
           </View>
         </View>
 
+        {/* Stock */}
+        {typeof product.remainder === 'number' && (
+          <Text className="text-muted text-sm mb-4">
+            {t('product.stock')}: {product.remainder}
+          </Text>
+        )}
+
+        {/* Size selection */}
+        <Text className="text-foreground font-semibold mb-2">{t('product.selectSize')}</Text>
+        <View className="flex-row flex-wrap gap-2 mb-5">
+          {sizes.map((size) => (
+            <TouchableOpacity
+              key={size}
+              onPress={() => setSelectedSize(size)}
+              className={`w-12 h-12 rounded-full items-center justify-center border ${
+                selectedSize === size ? 'bg-primary border-primary' : 'bg-surface border-border'
+              }`}
+            >
+              <Text className={selectedSize === size ? 'text-primary-foreground font-semibold' : 'text-foreground'}>
+                {size}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+
+        {/* Color selection */}
+        <Text className="text-foreground font-semibold mb-2">{t('product.selectColor')}</Text>
+        <View className="flex-row gap-3 mb-5">
+          {colors.map((color: any) => (
+            <TouchableOpacity
+              key={color.value}
+              onPress={() => setSelectedColor(color.value)}
+              className={`w-10 h-10 rounded-full items-center justify-center border-2 ${
+                selectedColor === color.value ? 'border-primary' : 'border-transparent'
+              }`}
+              style={{ backgroundColor: color.hex }}
+            />
+          ))}
+        </View>
+
         {/* Quantity stepper */}
         <View className="flex-row items-center gap-4 mb-5">
           <TouchableOpacity
@@ -423,10 +503,10 @@ export default function ProductDetailScreen() {
 
         {/* CTA buttons */}
         <TouchableOpacity
-          className="bg-primary rounded-xl py-4 items-center mb-3"
+          className={`rounded-xl py-4 items-center mb-3 ${selectedSize && selectedColor ? 'bg-primary' : 'bg-surface border border-border'}`}
           onPress={handleAddToCart}
         >
-          <Text className="text-primary-foreground font-bold text-base">
+          <Text className={selectedSize && selectedColor ? 'text-primary-foreground font-bold text-base' : 'text-muted font-bold text-base'}>
             {t('product.addToCart')} ({quantity})
           </Text>
         </TouchableOpacity>
@@ -518,6 +598,8 @@ export default function ProductDetailScreen() {
   );
 }
 ```
+
+**Agent rule:** `messages/en.json` and `messages/mn.json` must include `product.selectSize`, `product.selectColor`, `product.stock`, `product.selectionRequired`, `product.selectSizeAndColor` before this screen is generated — do not leave `t(...)` calls resolving to missing-key fallbacks.
 
 ---
 
