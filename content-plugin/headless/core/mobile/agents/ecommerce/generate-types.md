@@ -129,8 +129,14 @@ export interface ICartItem {
   unitPrice: number;
   productName?: string;
   productImgUrl?: string;
+  selectedSize?: string;
+  selectedColor?: string;
 }
 ```
+
+**Agent rule:** `selectedSize` болон `selectedColor` нь **optional** боловч цаг ямагт `ICartItem`-ийн default хэлбэрт орсон байх ёстой. Cart type, cart context (`store/cart.ts`), эсвэл AsyncStorage/SecureStore cart persistence-ийг үүсгэдэг ямар ч generator эдгээр 2 field-ийг эхнээсээ агуулна — `generate-pages.md`-ийн Product Detail screen feature-ийг хүлээж дараа нь retrofit хийхгүй.
+
+> Хэрэв product-д size/color байхгүй бол эдгээр field `undefined` хэвээр үлдэнэ — cart дэх бусад item-үүдэд алдаа үүсгэхгүй тул optional байдал зөв шийдэл.
 
 ---
 

@@ -52,6 +52,14 @@ These should already exist in `site.config.json`. Do NOT re-ask if they exist:
     - erxes admin → `POS` → select your POS → copy the token
     - Goes into `EXPO_PUBLIC_POS_TOKEN` in `.env.local`
 
+18. **Messenger brand ID** _(required — every ecommerce app ships with in-app chat)_
+
+    > "What is your erxes Messenger brand ID? (erxes admin → Settings → Brands → copy the Brand ID)"
+    - This is the `_id` of the Brand connected to the Messenger widget — a MongoDB ObjectId string (e.g. `64f8a2c1e5b3a90012345678`)
+    - Goes into `store.config.json` as `messenger_brand_id`
+    - **Do not proceed to Step 3.7 (`connect-messenger.md`) without this value** — if the user doesn't have one yet, tell them to create a Brand in erxes admin first, then return
+    - Used as the `x-messenger-brand-id` header shared across Apollo client, Messenger SDK, and notification routing
+
 ---
 
 ## After collecting all answers

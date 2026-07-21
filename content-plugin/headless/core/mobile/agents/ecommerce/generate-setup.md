@@ -153,13 +153,7 @@ export const PAYMENT_KINDS = {
 # Erxes API gateway (GraphQL endpoint)
 EXPO_PUBLIC_ERXES_API_URL=http://localhost:4000/graphql
 
-# Client Portal app token — a JWT issued for this client portal, used as the
-# "x-app-token" header on every gateway request (see lib/apollo/client.ts).
-# This is NOT the raw clientPortalId — it is the full JWT that has the
-# clientPortalId encoded inside it, e.g.:
-#   eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJjbGllbnRQb3J0YWxJZCI6Ii4uLiJ9....
-# Obtain it from the erxes Admin panel for the client portal created in
-# Step 2 (erxes-cms.ts), or from the client-portal token generation script.
+# Client Portal app token
 EXPO_PUBLIC_CLIENT_PORTAL_TOKEN=your_client_portal_jwt_here
 
 # POS integration token — collected as `pos_token` during Step 0 setup.
@@ -205,6 +199,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     },
   },
   plugins: ["expo-router", "expo-secure-store", "expo-font"],
+  web: { bundler: "metro" },
   experiments: { typedRoutes: true },
 });
 ```
@@ -231,10 +226,31 @@ module.exports = {
 module.exports = function (api) {
   api.cache(true);
   return {
-    presets: ["babel-preset-expo"],
-    plugins: ["nativewind/babel"],
+    presets: [
+      ["babel-preset-expo", { jsxImportSource: "nativewind" }],
+      "nativewind/babel",
+    ],
   };
 };
+```
+
+### `metro.config.js`
+
+```js
+const { getDefaultConfig } = require("expo/metro-config");
+const { withNativeWind } = require("nativewind/metro");
+
+const config = getDefaultConfig(__dirname);
+
+module.exports = withNativeWind(config, { input: "./global.css" });
+```
+
+### `global.css`
+
+```css
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 ```
 
 **Agent rule:** this file must not be generated until `babel-preset-expo` has

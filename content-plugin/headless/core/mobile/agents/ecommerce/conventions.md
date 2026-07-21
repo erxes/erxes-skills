@@ -11,14 +11,9 @@ Follow these rules in every file.
 ```typescript
 import * as SecureStore from "expo-secure-store";
 
-// ЗӨВ
 await SecureStore.setItemAsync("token", token);
 const token = await SecureStore.getItemAsync("token");
 await SecureStore.deleteItemAsync("token");
-
-// БУРУУ
-sessionStorage.setItem("token", token); // web-д л ажиллана
-localStorage.setItem("token", token); // web-д л ажиллана
 ```
 
 - `expo-secure-store` — iOS Keychain / Android Keystore ашиглан аюулгүй хадгална
@@ -78,10 +73,6 @@ const authLink = setContext(async (_, { headers }) => {
 ```typescript
 // ЗӨВ
 import { GET_PRODUCTS } from "@/graphql/products";
-
-// БУРУУ
-import { GET_PRODUCTS } from "@/lib/graphql/products";
-import { GET_PRODUCTS } from "@/src/graphql/products";
 ```
 
 ---
@@ -91,8 +82,11 @@ import { GET_PRODUCTS } from "@/src/graphql/products";
 **Circular dependency байхгүй байх — web-тэй ижил дүрэм.**
 
 ```typescript
-// ЗӨВ: cart.store → order.store (нэг чиглэл)
-// БУРУУ: order.store.ts дотор cart.store-аас import хийж болохгүй
+// ЗӨВ: order.store → cart.store (order.store нь cart.store-аас import хийхгүй)
+// cart.store.ts
+import { itemsAtom, cartTotalAtom } from "@/store/order.store";
+
+// БУРУУ: order.store.ts дотор `import { something } from "./cart.store"` байж болохгүй
 ```
 
 ---
