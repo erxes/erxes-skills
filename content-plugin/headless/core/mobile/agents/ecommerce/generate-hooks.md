@@ -10,7 +10,7 @@
 `sessionStorage` → `SecureStore` (async), `window.location.href` → `router.replace()`, `NEXT_PUBLIC_*` → `EXPO_PUBLIC_*`.
 
 ```typescript
-import { useMutation, useQuery } from "@apollo/client";
+import { useMutation, useQuery } from "@apollo/client/react";
 import { useAtom } from "jotai";
 import { useCallback } from "react";
 import { useRouter } from "expo-router";
@@ -166,7 +166,7 @@ export function useResetPassword() {
 ## `hooks/order.ts`
 
 ```typescript
-import { useMutation, useQuery } from "@apollo/client";
+import { useMutation, useQuery } from "@apollo/client/react";
 import { useAtom } from "jotai";
 import { useCallback } from "react";
 import { ORDERS_ADD, ORDERS_REMOVE } from "@/graphql/ecommerce/mutations/order";
@@ -276,7 +276,7 @@ export function useOrderCUD() {
 ## `hooks/payment.ts`
 
 ```typescript
-import { useMutation, useQuery } from "@apollo/client";
+import { useMutation, useQuery } from "@apollo/client/react";
 import { useAtom } from "jotai";
 import { useCallback } from "react";
 import { PAYMENTS } from "@/graphql/ecommerce/queries/payment";
@@ -394,46 +394,67 @@ export function useAddPaymentTransaction() {
 
 ---
 
-## `hooks/queries.ts`
-
-Өөрчлөлт байхгүй — logic бүрэн ижил.
+## `features/products/hooks/useProductFilters.ts`
 
 ```typescript
-import { useQuery } from "@apollo/client";
-import {
-  POSC_PRODUCTS as PRODUCTS,
-  POSC_PRODUCT_DETAIL as PRODUCT_DETAIL,
-  POSC_PRODUCT_CATEGORIES as PRODUCT_CATEGORIES,
-} from "@/graphql/ecommerce/queries/product";
+import { atom, useAtom } from "jotai";
+import { useQuery } from "@apollo/client/react";
 import { CP_PAGES } from "@/graphql/cms/queries/page";
-import { CP_POST, CP_POSTS } from "@/graphql/cms/queries/post";
+import { CP_POSTS, CP_POST } from "@/graphql/cms/queries/post";
+import { ICategory } from "../types";
+import { useAtomValue } from "jotai";
+import { useQuery } from "@apollo/client/react";
+import { POSC_PRODUCTS, POSC_PRODUCT_CATEGORIES } from "../graphql/queries";
+import { Product } from "../types";
+import { activeCategoryIdAtom } from "./useProductFilters";
 
-export function useProducts(variables?: {
-  categoryId?: string;
-  page?: number;
-  perPage?: number;
-  searchValue?: string;
-}) {
-  const { data, loading, error, fetchMore } = useQuery(PRODUCTS, {
-    variables: { page: 1, perPage: 20, ...variables },
-    fetchPolicy: "cache-and-network",
-  });
+// undefined = "Бүгд" (бүх category)
+export const activeCategoryIdAtom = atom<string | undefined>(undefined);
+
+export function useProductCategories() {
+  const [activeCategoryId, setActiveCategoryId] = useAtom(activeCategoryIdAtom);
+
+  const { data, loading } = useQuery<{ poscProductCategories: ICategory[] }>(
+    POSC_PRODUCT_CATEGORIES,
+    {
+      variables: { excludeEmpty: true },
+      fetchPolicy: "cache-and-network",
+    },
+  );
 
   return {
-    products: (data as any)?.poscProducts || [],
+    categories: data?.poscProductCategories ?? [],
+    categoriesLoading: loading,
+    activeCategoryId,
+    setActiveCategoryId,
+  };
+}
+
+export function useProducts(perPage = 20, page = 1) {
+  const activeCategoryId = useAtomValue(activeCategoryIdAtom);
+
+  const { data, loading, fetchMore } = useQuery<{ cpPoscProducts: Product[] }>(
+    POSC_PRODUCTS,
+    {
+      variables: { categoryId: activeCategoryId, perPage, page },
+      fetchPolicy: "cache-and-network",
+    },
+  );
+
+  return {
+    products: data?.cpPoscProducts ?? [],
     loading,
-    error,
     fetchMore,
+    activeCategoryId,
   };
 }
 
 export function useProductDetail(productId: string) {
-  const { data, loading, error } = useQuery(PRODUCT_DETAIL, {
+  const { data, loading, error } = useQuery(POSC_PRODUCT_DETAIL, {
     variables: { _id: productId },
     skip: !productId,
     fetchPolicy: "cache-and-network",
   });
-
   return {
     product: (data as any)?.poscProductDetail || null,
     loading,
@@ -441,16 +462,19 @@ export function useProductDetail(productId: string) {
   };
 }
 
-export function useProductCategories(parentId?: string) {
-  const { data, loading, error } = useQuery(PRODUCT_CATEGORIES, {
-    variables: { parentId },
+export function useFilteredProducts(categoryId?: string, perPage = 20) {
+  const { data, loading, error, fetchMore } = useQuery<{
+    cpPoscProducts: IProduct[];
+  }>(PRODUCTS, {
+    variables: { categoryId, perPage },
     fetchPolicy: "cache-and-network",
   });
 
   return {
-    categories: (data as any)?.poscProductCategories || [],
+    products: data?.cpPoscProducts ?? [],
     loading,
     error,
+    fetchMore,
   };
 }
 

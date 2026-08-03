@@ -16,17 +16,17 @@
 
 ---
 
-## Ecommerce GraphQL (`src/graphql/ecommerce/`)
+## Ecommerce GraphQL (`features/products/graphql/queries.ts`)
 
 ### Queries
 
-| File                       | Exports                                                                  | Notes                                                                             |
-| -------------------------- | ------------------------------------------------------------------------ | --------------------------------------------------------------------------------- |
-| `queries/product.ts`       | `POSC_PRODUCTS`, `POSC_PRODUCT_DETAIL`, `POSC_PRODUCT_CATEGORIES`        | Types: `Product`, `ProductCategory`, `Attachment`                                 |
-| `queries/wishlist.ts`      | `CP_WISH`, `CP_WISHLIST`                                                 | `CP_WISH` filters by productIds; `CP_WISHLIST` returns full list + product detail |
-| `queries/order.ts`         | `FULL_ORDERS` (alias `ORDERS`), `CP_ORDER_DETAIL` (alias `ORDER_DETAIL`) | Data fields: `cpFullOrders`, `cpOrderDetail`                                      |
-| `queries/payment.ts`       | `CP_PAYMENTS` (aliases: `PAYMENTS`, `PAYMENT_DETAIL`)                    | Data field: `cpPayments`                                                          |
-| `queries/productReview.ts` | `CP_PRODUCT_REVIEWS`                                                     | Types: `ProductReview`, `CpProductReviewsData`, `CpProductReviewsVariables`       |
+| File                       | Exports                                                                  | Notes                                                                                                                                                                                                                                                                                                                                                                                 |
+| -------------------------- | ------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `queries/product.ts`       | `POSC_PRODUCTS`, `POSC_PRODUCT_DETAIL`, `POSC_PRODUCT_CATEGORIES`        | Types: `Product`, `ProductCategory`, `Attachment`. `POSC_PRODUCTS` variables include `categoryId` for dynamic category filtering — pass `undefined` for all products, or a category `_id` to filter. `POSC_PRODUCT_CATEGORIES` accepts `excludeEmpty: true` to hide categories with zero products; new categories auto-appear once a product is assigned, no frontend changes needed. |
+| `queries/wishlist.ts`      | `CP_WISH`, `CP_WISHLIST`                                                 | `CP_WISH` filters by productIds; `CP_WISHLIST` returns full list + product detail                                                                                                                                                                                                                                                                                                     |
+| `queries/order.ts`         | `FULL_ORDERS` (alias `ORDERS`), `CP_ORDER_DETAIL` (alias `ORDER_DETAIL`) | Data fields: `cpFullOrders`, `cpOrderDetail`                                                                                                                                                                                                                                                                                                                                          |
+| `queries/payment.ts`       | `CP_PAYMENTS` (aliases: `PAYMENTS`, `PAYMENT_DETAIL`)                    | Data field: `cpPayments`                                                                                                                                                                                                                                                                                                                                                              |
+| `queries/productReview.ts` | `CP_PRODUCT_REVIEWS`                                                     | Types: `ProductReview`, `CpProductReviewsData`, `CpProductReviewsVariables`                                                                                                                                                                                                                                                                                                           |
 
 ### Mutations
 
@@ -36,6 +36,12 @@
 | `mutations/order.ts`         | `CP_ORDERS_ADD` (alias `ORDERS_ADD`), `CP_ORDERS_CANCEL` (alias `ORDERS_REMOVE`)                                |                                                                                           |
 | `mutations/payment.ts`       | `INVOICE_CREATE` (alias `CREATE_INVOICE`), `INVOICES_CHECK` (alias `CHECK_INVOICE`), `PAYMENT_TRANSACTIONS_ADD` | `invoicesCheck` uses **`useMutation`** NOT `useQuery`; parameter name is `id` (not `_id`) |
 | `mutations/productReview.ts` | `CP_PRODUCT_REVIEW_ADD`, `PRODUCT_REVIEW_UPDATE`, `PRODUCT_REVIEW_REMOVE`                                       |                                                                                           |
+
+> **Dynamic category filtering:** `POSC_PRODUCT_CATEGORIES` (`excludeEmpty: true`) болон
+> `POSC_PRODUCTS` (`categoryId` variable) хоёрыг хослуулан ашиглавал шинэ category болон
+> product админ талаас нэмэгдэх бүрд frontend код өөрчлөлтгүйгээр автоматаар filter bar
+> болон product list-д тусгагдана. Дэлгэрэнгүй hook implementation — `generate-hooks.md`
+> `useProductCategories()` / `useFilteredProducts()`.
 
 ---
 

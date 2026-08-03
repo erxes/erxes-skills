@@ -1,0 +1,23 @@
+{
+  "name": "erxesweb",
+  "template_type": "ecommerce",
+  "tone": "modern",
+  "language": "mn",
+  "languages": ["mn", "en"],
+  "sections": ["about"],
+  "client_portal_id": "OYfHeIWvTCPCa4J0KR8F2",
+  "erxes_endpoint": "https://dent.next.erxes.io/gateway/graphql",
+  "erxes_app_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJjbGllbnRQb3J0YWxJZCI6Ik9ZZkhlSVd2VENQQ2E0SjBLUjhGMiIsImlhdCI6MTc4MDk3ODU0N30.TW1umhOGO3I92uyedmMfUOpUh4cNmOStegz6ng3yUAg",
+  "erxes_cms_id": "6a61c17ac725cc448711d1fb",
+  "color_hint": null,
+  "extra_notes": null,
+  "deploy_target": null,
+  "ui_source": "website",
+  "ui_source_ref": "https://zayabilgee.mn/",
+  "design_strategy": "from-scratch",
+  "reference_url": null,
+  "competitor_urls": [],
+  "delivery_types": ["delivery", "pickup"],
+  "allow_guest": true,
+  "pos_token": "dFhsNNfym9wDdoKIHU7s3b8Ip3iNhjQG"
+}

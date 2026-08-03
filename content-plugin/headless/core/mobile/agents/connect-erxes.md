@@ -54,19 +54,19 @@ find . -type f \( -name "*.tsx" -o -name "*.ts" -o -name "*.json" -o -name "*.md
 
 ### 1.2 Project Type Decision Table
 
-| Signal found in project                                 | Detected project type                                | Primary content model                                               |
-| ------------------------------------------------------- | ---------------------------------------------------- | ------------------------------------------------------------------- |
-| `portfolio`, `projects[]`, `case-study` screens or data | Portfolio                                            | CustomPostType `project` + Pages: Home, About, Contact              |
-| `products[]`, `price`, `cart`, `shop` screens or data   | E-commerce / Product app                             | CustomPostType `product` + Pages: Home, Shop, About, Contact        |
-| `jobs[]`, `careers`, `apply` screens or data            | Careers / Job board                                  | CustomPostType `job` + Pages: Home, Careers, About, Contact         |
-| `events[]`, `schedule`, `speakers` screens or data      | Events app                                           | CustomPostType `event` + Pages: Home, Events, About, Contact        |
-| `team[]`, `members[]`, `bios` screens or data           | Agency / Team app                                    | CustomPostType `teamMember` + Pages: Home, About, Team, Contact     |
-| `blog`, `posts[]`, `articles[]` screens or data         | Blog / News                                          | Posts + Category `Blog` + Pages: Home, Blog, About, Contact         |
-| `docs`, `guides[]`, `tutorials[]` screens or data       | Documentation app                                    | Posts + Category `Docs` + Pages: Home, Docs, About                  |
-| `news`, `press`, `releases[]` screens or data           | News / Media                                         | Posts + Categories: News, Press + Pages: Home, News, About, Contact |
-| General marketing, no repeatable content                | Branding / Marketing                                 | Pages only: Home, About, Services, Pricing, Contact                 |
-| `testimonials[]`, `reviews[]` screens or data           | Add CustomPostType `testimonial` to any of the above |                                                                     |
-| `faq[]`, `accordion` data                               | Add Page `FAQ` to any of the above                   |                                                                     |
+| Signal found in project                                 | Detected project type                                | Primary content model                                                                                       |
+| ------------------------------------------------------- | ---------------------------------------------------- | ----------------------------------------------------------------------------------------------------------- |
+| `portfolio`, `projects[]`, `case-study` screens or data | Portfolio                                            | CustomPostType `project` + Pages: Home, About, Contact                                                      |
+| `products[]`, `price`, `cart`, `shop`                   | E-commerce / Product app                             | CustomPostType `product` + Category `Shop` (эсвэл product category-ууд) + Pages: Home, Shop, About, Contact |
+| `jobs[]`, `careers`, `apply` screens or data            | Careers / Job board                                  | CustomPostType `job` + Pages: Home, Careers, About, Contact                                                 |
+| `events[]`, `schedule`, `speakers` screens or data      | Events app                                           | CustomPostType `event` + Pages: Home, Events, About, Contact                                                |
+| `team[]`, `members[]`, `bios` screens or data           | Agency / Team app                                    | CustomPostType `teamMember` + Pages: Home, About, Team, Contact                                             |
+| `blog`, `posts[]`, `articles[]` screens or data         | Blog / News                                          | Posts + Category `Blog` + Pages: Home, Blog, About, Contact                                                 |
+| `docs`, `guides[]`, `tutorials[]` screens or data       | Documentation app                                    | Posts + Category `Docs` + Pages: Home, Docs, About                                                          |
+| `news`, `press`, `releases[]` screens or data           | News / Media                                         | Posts + Categories: News, Press + Pages: Home, News, About, Contact                                         |
+| General marketing, no repeatable content                | Branding / Marketing                                 | Pages only: Home, About, Services, Pricing, Contact                                                         |
+| `testimonials[]`, `reviews[]` screens or data           | Add CustomPostType `testimonial` to any of the above |                                                                                                             |
+| `faq[]`, `accordion` data                               | Add Page `FAQ` to any of the above                   |                                                                                                             |
 
 Pick one primary type and stack any extra types from the last two rows when those signals also exist.
 
@@ -532,7 +532,7 @@ export const GET_HEADER_MENU = gql`
 
 ```tsx
 import { useLocalSearchParams } from "expo-router";
-import { useQuery } from "@apollo/client";
+import { useQuery } from "@apollo/client/react";
 import { View, Text, ScrollView, ActivityIndicator } from "react-native";
 import { GET_POST_BY_SLUG } from "@/lib/graphql/queries/cms";
 

@@ -254,7 +254,7 @@ export function ReviewList({
 ```typescript
 import { ScrollView, Text, ActivityIndicator, View } from "react-native";
 import { useWindowDimensions } from "react-native";
-import { useQuery } from "@apollo/client";
+import { useQuery } from "@apollo/client/react";
 import RenderHtml from "react-native-render-html";
 import { CP_PAGES } from "@/graphql/cms/queries/page";
 import { i18n } from "@/lib/i18n";
@@ -292,7 +292,7 @@ export default function AboutScreen() {
 ```typescript
 import { FlatList, Text, Pressable, View, ActivityIndicator } from "react-native";
 import { Image } from "expo-image";
-import { useQuery } from "@apollo/client";
+import { useQuery } from "@apollo/client/react";
 import { useRouter } from "expo-router";
 import { CP_POSTS } from "@/graphql/cms/queries/post";
 import { i18n } from "@/lib/i18n";
@@ -355,7 +355,7 @@ export default function BlogScreen() {
 import { ScrollView, Text, View, ActivityIndicator } from "react-native";
 import { Image } from "expo-image";
 import { useWindowDimensions } from "react-native";
-import { useQuery } from "@apollo/client";
+import { useQuery } from "@apollo/client/react";
 import { useLocalSearchParams } from "expo-router";
 import RenderHtml from "react-native-render-html";
 import { CP_POST } from "@/graphql/cms/queries/post";

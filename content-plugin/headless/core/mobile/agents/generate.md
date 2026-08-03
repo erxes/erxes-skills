@@ -146,7 +146,7 @@ export function getApolloClient() {
     link: new HttpLink({
       uri: process.env.EXPO_PUBLIC_ERXES_ENDPOINT,
       headers: {
-        "erxes-app-token": process.env.EXPO_PUBLIC_ERXES_APP_TOKEN ?? "",
+        "x-app-token": process.env.EXPO_PUBLIC_ERXES_APP_TOKEN ?? "",
       },
     }),
   });
@@ -255,7 +255,7 @@ Every screen receives params via `useLocalSearchParams` — never function param
 
 ```tsx
 import { ScrollView } from "react-native";
-import { useQuery } from "@apollo/client";
+import { useQuery } from "@apollo/client/react";
 import { GET_PAGES } from "@/graphql/cms/queries/page";
 import HeroSection from "@/components/sections/Hero";
 import AboutSection from "@/components/sections/About";
@@ -285,7 +285,7 @@ export default function HomeScreen() {
 
 ```tsx
 import { useLocalSearchParams } from "expo-router";
-import { useQuery } from "@apollo/client";
+import { useQuery } from "@apollo/client/react";
 import { ScrollView, Text, ActivityIndicator } from "react-native";
 import RenderHtml from "react-native-render-html";
 import { useWindowDimensions } from "react-native";
@@ -396,7 +396,7 @@ export default function ContactScreen() {
 
 ```tsx
 import { FlatList, Text, Pressable, View } from "react-native";
-import { useQuery } from "@apollo/client";
+import { useQuery } from "@apollo/client/react";
 import { useRouter } from "expo-router";
 import { GET_POSTS } from "@/graphql/cms/queries/post";
 import { i18n } from "@/lib/i18n";
@@ -432,7 +432,7 @@ export default function BlogScreen() {
 
 ```tsx
 import { useLocalSearchParams } from "expo-router";
-import { useQuery } from "@apollo/client";
+import { useQuery } from "@apollo/client/react";
 import { ScrollView, Text, ActivityIndicator } from "react-native";
 import { useWindowDimensions } from "react-native";
 import RenderHtml from "react-native-render-html";

@@ -64,7 +64,7 @@ import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator, Image } fr
 import { useRouter } from 'expo-router';
 import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useProducts, setProductsCache } from '@/lib/products';
+import { useProducts, setProductsCache } from '@/features/products/hooks/useProducts';
 import ProductCard from '@/components/ProductCard';
 
 export default function HomeScreen() {
@@ -139,7 +139,7 @@ import { View, Text, ScrollView, TextInput, TouchableOpacity, ActivityIndicator,
 import { useState } from 'react';
 import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
-import { useProducts, useProductCategories } from '@/lib/products';
+import { useProducts, useProductCategories } from '@/features/products/hooks/useProducts';
 import ProductCard from '@/components/ProductCard';
 
 export default function ProductsScreen() {
@@ -259,7 +259,7 @@ import { useQuery, useMutation } from '@apollo/client/react';
 import { useTranslation } from 'react-i18next';
 import { useCartStore } from '@/stores/cart';
 import { useAuthStore } from '@/stores/auth';
-import { useProductDetail } from '@/lib/products';
+import { useProductDetail } from '@/features/products/hooks/useProductDetail';
 import { formatPriceMnt, formatPriceUsd } from '@/lib/utils';
 import { tokens } from '@/lib/design-tokens';
 import { CP_WISHLIST_ADD } from '@/graphql/mutations/wishlist';
