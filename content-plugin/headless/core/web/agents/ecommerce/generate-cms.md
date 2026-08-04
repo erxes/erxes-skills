@@ -36,14 +36,24 @@ export function useProductReviews(productId: string) {
 }
 
 export function useReviewCUD(productId: string) {
-  const [addMutation, { loading: addLoading }] = useMutation(CP_PRODUCT_REVIEW_ADD);
-  const [updateMutation, { loading: updateLoading }] = useMutation(PRODUCT_REVIEW_UPDATE);
-  const [removeMutation, { loading: removeLoading }] = useMutation(PRODUCT_REVIEW_REMOVE);
+  const [addMutation, { loading: addLoading }] = useMutation(
+    CP_PRODUCT_REVIEW_ADD,
+  );
+  const [updateMutation, { loading: updateLoading }] = useMutation(
+    PRODUCT_REVIEW_UPDATE,
+  );
+  const [removeMutation, { loading: removeLoading }] = useMutation(
+    PRODUCT_REVIEW_REMOVE,
+  );
 
   const addReview = useCallback(
     async (params: { rating: number; content?: string }) => {
       const { data } = await addMutation({
-        variables: { productId, rating: params.rating, content: params.content || "" },
+        variables: {
+          productId,
+          rating: params.rating,
+          content: params.content || "",
+        },
       });
       return { success: !!(data as any)?.cpProductReviewAdd };
     },

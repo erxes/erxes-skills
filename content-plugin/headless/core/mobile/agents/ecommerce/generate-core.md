@@ -169,44 +169,62 @@ export const wishlistCountAtom = atom((get) => get(wishlistItemsAtom).length);
 
 Expo-д `globals.css` байхгүй — NativeWind `tailwind.config.js`-д CSS variables-ийн оронд token утгуудыг шууд бичнэ.
 
-```js
+​`js
 module.exports = {
-  content: ["./app/**/*.{js,jsx,ts,tsx}", "./components/**/*.{js,jsx,ts,tsx}"],
+  content: ["./app/**/*.{js,jsx,ts,tsx}", "./components/**/*.{js,jsx,ts,tsx}", "./src/**/*.{js,jsx,ts,tsx}"],
   presets: [require("nativewind/preset")],
   theme: {
     extend: {
-      // Replace values with project design-tokens.json
       colors: {
-        background: "hsl(0, 0%, 100%)",
-        foreground: "hsl(222.2, 84%, 4.9%)",
-        card: "hsl(0, 0%, 100%)",
+        background: "<from design-tokens.json colors.semantic.background>",
+        foreground: "<from design-tokens.json colors.semantic.foreground>",
+        card: "<from design-tokens.json colors.semantic.card>",
         primary: {
-          DEFAULT: "hsl(222.2, 47.4%, 11.2%)",
-          foreground: "hsl(210, 40%, 98%)",
+          DEFAULT: "<from colors.semantic.primary>",
+          foreground: "<from colors.semantic.primaryForeground>",
         },
         secondary: {
-          DEFAULT: "hsl(210, 40%, 96.1%)",
-          foreground: "hsl(222.2, 47.4%, 11.2%)",
+          DEFAULT: "<from colors.semantic.secondary>",
+          foreground: "<from colors.semantic.secondaryForeground>",
         },
         muted: {
-          DEFAULT: "hsl(210, 40%, 96.1%)",
-          foreground: "hsl(215.4, 16.3%, 46.9%)",
+          DEFAULT: "<from colors.semantic.muted>",
+          foreground: "<from colors.semantic.mutedForeground>",
         },
-        destructive: "hsl(0, 84.2%, 60.2%)",
-        border: "hsl(214.3, 31.8%, 91.4%)",
+        accent: {
+          DEFAULT: "<from colors.semantic.accent>",
+          foreground: "<from colors.semantic.accentForeground>",
+        },
+        destructive: "<from colors.semantic.destructive>",
+        border: "<from colors.semantic.border>",
       },
       borderRadius: {
-        sm: "4px",
-        md: "8px",
-        lg: "12px",
-        xl: "16px",
-        "2xl": "24px",
+        sm: "<from radius.sm>px",
+        md: "<from radius.md>px",
+        lg: "<from radius.lg>px",
+        xl: "<from radius.xl>px",
+        "2xl": "<from radius['2xl']>px",
+      },
+      fontFamily: {
+        display: ["<from typography.families.display>"],
+        body: ["<from typography.families.body>"],
       },
     },
   },
   plugins: [],
 };
-```
+​`
+
+**Generation-ий дараа заавал хийх шалгалт (post-generation gate):**
+
+Файл бичиж дуусаад, `output/<slug>/tailwind.config.js` дээр дараах шалгалтыг ажиллуул:
+
+​`bash
+grep -E "222\.2, 84%|222\.2, 47\.4%|hsl\(0, 0%, 100%\)|<from " output/<slug>/tailwind.config.js
+​`
+
+- Match олдвол → placeholder эсвэл `<from ...>` тэмдэглэгээ хэвээр үлдсэн гэсэн үг. Файл **дутуу бичигдсэн, INVALID**. `output/<slug>/design-tokens.json`-г дахин уншиж, бүх утгыг бодит утгаар нөхөж дуусга.
+- Мөн `colors.*`, `borderRadius.*`, `fontFamily.*`-ийн утга бүрийг `design-tokens.json`-ийн харгалзах key-тэй нэг бүрчлэн харьцуулж баталгаажуул.
 
 ### `app/_layout.tsx` (Root layout)
 

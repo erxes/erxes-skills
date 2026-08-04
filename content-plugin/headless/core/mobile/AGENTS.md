@@ -37,6 +37,9 @@ that integration.
 Do not enter Step 5 (Seed CMS content) until Step 4 — and Step 4.5 / 4.6 if
 triggered — are complete.
 
+Do not enter Step 5 (Seed CMS content) until Step 4.9 (Structural Audit &
+Cleanup) has passed with zero discrepancies.
+
 Do not enter Step 7 (Deploy) until Step 6 (Verify) passes with 0 errors.
 
 **Step 0 is complete only when:**
@@ -273,6 +276,42 @@ module.exports = function (api) {
 
 Before running, ensure `.env` has the correct configuration for Expo.
 
+**CRITICAL — never let two conflicting project structures coexist.**
+
+This project uses the Expo Router `app/` directory as the single source of
+truth for routing and screens. A generic `src/` directory (containing its
+own routes, screens, or app-level structure) must NEVER exist alongside
+`app/` in the same project. The only permitted `src/` subtree is
+`src/messenger/` (and only when Messenger is connected, per
+`connect-messenger.md`) — nothing else belongs under `src/`.
+
+If `clone.ts` or any starter template produces a `src/` directory with
+anything beyond `src/messenger/`, treat this as a structural conflict:
+stop, inspect both trees, and either merge the needed content into `app/`
+and delete the rest of `src/`, or ask the user which structure to keep.
+Never leave both trees populated "just in case."
+
+**CRITICAL — never copy agent/tooling files into the generated app.**
+
+The following must NEVER appear inside `output/<slug>/`:
+
+- `AGENTS.md`, `CLAUDE.md`, or any other agent-instruction file
+- `.claude/` or any other agent-config directory
+- `scripts/` (the `tsx scripts/*.ts` tooling used in Steps 2, 5, 7 lives at
+  the project root — e.g. `mobile/scripts/` — and is invoked FROM there
+  against `output/<slug>/`; it is never copied into the output app itself)
+
+If `clone.ts` or any copy step pulls these in from the working directory,
+delete them immediately after cloning, before any other Step 3 work.
+
+**CRITICAL — verify no duplicated/nested output path.**
+
+After `tsx scripts/clone.ts "<store-name>"`, confirm the project lives at
+exactly `output/<slug>/` — not `output/<slug>/<slug>/`. If clone.ts (or
+`create-expo-app`) creates a nested duplicate folder with the same name,
+flatten it immediately: move the inner folder's contents up one level and
+delete the empty wrapper, before proceeding to Step 3.5.
+
 > **Web → Mobile mapping:**
 >
 > - `next/navigation` → `expo-router` (`useRouter`, `useLocalSearchParams`, `Link`)
@@ -392,7 +431,7 @@ Run this step only after the Expo frontend project exists in `output/<slug>/` (i
 - "set up erxes messenger"
 - "add messenger SDK"
 
-Read [`agents/ecommerce/connect-messenger.md`](connect-messenger.md) in full and run its pipeline without waiting for step-by-step instructions:
+Read [`agents/connect-messenger.md`](connect-messenger.md) in full and run its pipeline without waiting for step-by-step instructions:
 
 1. Scan the generated Expo project tree under `src/messenger/` before generating any file.
 2. Set up the **Messenger's own Apollo client** — always separate from the CMS Apollo client (`lib/apollo-client.ts`). Messenger uses `credentials: 'include'` (cookie session) plus a `graphql-ws` split link for subscriptions; the CMS client uses the `erxes-app-token` header over HTTP only. Never merge the two clients and never pass the host app's bearer token to the Messenger client.

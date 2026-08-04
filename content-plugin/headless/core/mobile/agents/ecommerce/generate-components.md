@@ -389,20 +389,18 @@ export function Footer() {
 
 ## Product Components
 
-### `components/product/ProductCard.tsx`
+### `src/features/products/components/ProductCard.tsx`
 
 ```typescript
 import { useAtom } from "jotai";
 import { View, Text, Pressable } from "react-native";
 import { Image } from "expo-image";
 import { useRouter } from "expo-router";
-import { useMutation } from "@apollo/client";
-import { cartItemsAtom } from "@/store/cart.store";
-import { currentUserAtom } from "@/store/auth.store";
-import { wishlistItemsAtom } from "@/store/wishlist.store";
+import { useMutation } from "@apollo/client/react";
+import { cartItemsAtom, wishlistItemsAtom, CP_WISHLIST_ADD } from "@/src/features/cart";
+import { currentUserAtom } from "@/src/features/auth";
 import { formatPrice, isValidUrl } from "@/lib/utils";
-import { Product } from "@/graphql/ecommerce/queries/product";
-import { CP_WISHLIST_ADD } from "@/graphql/ecommerce/mutations/wishlist";
+import { Product } from "../types";
 
 interface ProductCardProps { product: Product; }
 
@@ -461,7 +459,6 @@ export function ProductCard({ product }: ProductCardProps) {
         </View>
       </Pressable>
 
-      {/* Wishlist button — absolute over image */}
       <Pressable
         onPress={toggleWishlist}
         className="absolute top-3 right-3 min-h-[44px] min-w-[44px] items-center justify-center"
@@ -491,7 +488,120 @@ export function ProductCard({ product }: ProductCardProps) {
 }
 ```
 
-### `components/payment/PaymentType.tsx`
+---
+
+### `src/features/products/components/ProductFilterBar.tsx`
+
+```typescript
+import { ScrollView, Pressable, Text } from "react-native";
+import { useProductFilters } from "../hooks/useProductFilters";
+
+
+export function ProductFilterBar() {
+  const { categories, categoriesLoading, activeCategoryId, setActiveCategoryId } =
+    useProductFilters();
+
+  if (categoriesLoading && categories.length === 0) return null;
+
+  return (
+    <ScrollView
+      horizontal
+      showsHorizontalScrollIndicator={false}
+      className="px-4 py-2"
+      contentContainerStyle={{ gap: 8 }}
+    >
+      <Pressable
+        onPress={() => setActiveCategoryId(undefined)}
+        className={`px-4 py-2 rounded-full min-h-[44px] justify-center ${
+          activeCategoryId === undefined ? "bg-primary" : "bg-muted"
+        }`}
+      >
+        <Text
+          className={
+            activeCategoryId === undefined
+              ? "text-primary-foreground font-semibold"
+              : "text-foreground"
+          }
+        >
+          Бүгд
+        </Text>
+      </Pressable>
+
+      {categories.map((cat) => (
+        <Pressable
+          key={cat._id}
+          onPress={() => setActiveCategoryId(cat._id)}
+          className={`px-4 py-2 rounded-full min-h-[44px] justify-center ${
+            activeCategoryId === cat._id ? "bg-primary" : "bg-muted"
+          }`}
+        >
+          <Text
+            className={
+              activeCategoryId === cat._id
+                ? "text-primary-foreground font-semibold"
+                : "text-foreground"
+            }
+          >
+            {cat.name}
+          </Text>
+        </Pressable>
+      ))}
+    </ScrollView>
+  );
+}
+```
+
+---
+
+### `src/features/products/components/ProductList.tsx`
+
+```typescript
+import { FlatList, ActivityIndicator, View } from "react-native";
+import { useProducts } from "../hooks/useProducts";
+import { ProductCard } from "./ProductCard";
+
+export function ProductList() {
+  const { products, loading, activeCategoryId } = useProducts();
+
+  if (loading && products.length === 0) {
+    return (
+      <View className="py-10 items-center">
+        <ActivityIndicator />
+      </View>
+    );
+  }
+
+  return (
+    <FlatList
+      data={products}
+      key={activeCategoryId ?? "all"}
+      keyExtractor={(item) => item._id}
+      numColumns={2}
+      contentContainerStyle={{ gap: 12, padding: 12 }}
+      columnWrapperStyle={{ gap: 12 }}
+      renderItem={({ item }) => <ProductCard product={item} />}
+    />
+  );
+}
+```
+
+---
+
+> **Ашиглалт:**
+>
+> ```tsx
+> import { ProductFilterBar, ProductList } from "@/features/products";
+>
+> <ProductFilterBar />
+> <ProductList />
+> ```
+>
+> `activeCategoryIdAtom` хоёр component-д хуваалцагдана (`useProductFilters` дотор colocate).
+> Query/hook хэсгийн spec — `generate-graphql.md`, `generate-hooks.md`.
+
+---
+
+### `src/features/components/payment/PaymentType.tsx`
 
 ```typescript
 import { useAtom } from "jotai";
