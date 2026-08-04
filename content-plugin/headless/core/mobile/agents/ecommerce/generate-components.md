@@ -494,12 +494,11 @@ export function ProductCard({ product }: ProductCardProps) {
 
 ```typescript
 import { ScrollView, Pressable, Text } from "react-native";
-import { useProductFilters } from "../hooks/useProductFilters";
-
+import { useProductCategories } from "../hooks/useProductFilters";
 
 export function ProductFilterBar() {
   const { categories, categoriesLoading, activeCategoryId, setActiveCategoryId } =
-    useProductFilters();
+    useProductCategories();
 
   if (categoriesLoading && categories.length === 0) return null;
 

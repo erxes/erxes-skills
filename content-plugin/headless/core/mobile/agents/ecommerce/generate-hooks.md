@@ -399,14 +399,8 @@ export function useAddPaymentTransaction() {
 ```typescript
 import { atom, useAtom } from "jotai";
 import { useQuery } from "@apollo/client/react";
-import { CP_PAGES } from "@/graphql/cms/queries/page";
-import { CP_POSTS, CP_POST } from "@/graphql/cms/queries/post";
+import { POSC_PRODUCT_CATEGORIES } from "../graphql/queries";
 import { ICategory } from "../types";
-import { useAtomValue } from "jotai";
-import { useQuery } from "@apollo/client/react";
-import { POSC_PRODUCTS, POSC_PRODUCT_CATEGORIES } from "../graphql/queries";
-import { Product } from "../types";
-import { activeCategoryIdAtom } from "./useProductFilters";
 
 // undefined = "Бүгд" (бүх category)
 export const activeCategoryIdAtom = atom<string | undefined>(undefined);
@@ -430,6 +424,12 @@ export function useProductCategories() {
   };
 }
 
+import { useAtomValue } from "jotai";
+import { useQuery } from "@apollo/client/react";
+import { POSC_PRODUCTS } from "../graphql/queries";
+import { Product } from "../types";
+import { activeCategoryIdAtom } from "./useProductFilters";
+
 export function useProducts(perPage = 20, page = 1) {
   const activeCategoryId = useAtomValue(activeCategoryIdAtom);
 
@@ -449,14 +449,22 @@ export function useProducts(perPage = 20, page = 1) {
   };
 }
 
+import { useQuery } from "@apollo/client/react";
+import { POSC_PRODUCT_DETAIL } from "../graphql/queries";
+import { Product } from "../types";
+
 export function useProductDetail(productId: string) {
-  const { data, loading, error } = useQuery(POSC_PRODUCT_DETAIL, {
-    variables: { _id: productId },
-    skip: !productId,
-    fetchPolicy: "cache-and-network",
-  });
+  const { data, loading, error } = useQuery<{ poscProductDetail: Product }>(
+    POSC_PRODUCT_DETAIL,
+    {
+      variables: { _id: productId },
+      skip: !productId,
+      fetchPolicy: "cache-and-network",
+    },
+  );
+
   return {
-    product: (data as any)?.poscProductDetail || null,
+    product: data?.poscProductDetail ?? null,
     loading,
     error,
   };
