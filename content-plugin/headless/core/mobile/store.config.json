@@ -1,29 +1,35 @@
 {
-  "name": "test1",
-  "slug": "test1",
+  "name": "apptwo",
   "language": "mn",
   "languages": [
     "mn",
     "en"
   ],
-  "tone": "modern",
+  "tone": "casual",
   "delivery_types": [
     "delivery"
   ],
   "allow_guest": true,
-  "ui_source": "website",
-  "ui_source_ref": "Minimal dark design with product focus",
-  "color_hint": "black",
-  "design_strategy": "copy-site",
-  "reference_url": "https://www.nike.com/jp/en/w/new-mens-3n82yznik1",
+  "ui_source": "words",
+  "ui_source_ref": "ligth theme use icons on footer",
+  "color_hint": "forest green",
+  "design_strategy": "from-scratch",
+  "reference_url": null,
   "competitor_urls": [],
-  "sections": [],
-  "cms_sections": ["none"],
+  "sections": [
+    "about"
+  ],
+  "cms_sections": [
+    "about"
+  ],
   "extra_notes": null,
   "deploy_target": "eas",
   "erxes_api_url": "https://dent.next.erxes.io/gateway/graphql",
-  "erxes_main_domain": "dent.next.erxes.io",
-  "erxes_app_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJjbGllbnRQb3J0YWxJkciI6Ik9ZZkhlSVd2VENQQ2E0SjBLUjhGMiIsImlhdCI6MTc4MDk3ODU0N30.TW1umhOGO3I92uyedmMfUOpUh4cNmOStegz6ng3yUAg",
+  "erxes_main_domain": "https://dent.next.erxes.io",
+  "erxes_app_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJjbGllbnRQb3J0YWxJZCI6Ik9ZZkhlSVd2VENQQ2E0SjBLUjhGMiIsImlhdCI6MTc4MDk3ODU0N30.TW1umhOGO3I92uyedmMfUOpUh4cNmOStegz6ng3yUAg",
   "client_portal_id": "OYfHeIWvTCPCa4J0KR8F2",
-  "pos_token": "dFhsNNfym9wDdoKIHU7s3b8Ip3iNhjQG"
+  "pos_token": "dFhsNNfym9wDdoKIHU7s3b8Ip3iNhjQG",
+  "enable_messenger": true,
+  "messenger_brand_id": "atcPlR0pb3-0urSfff0RH",
+  "erxes_cms_id": "6a63115b9a4d889fc59d0cc7"
 }

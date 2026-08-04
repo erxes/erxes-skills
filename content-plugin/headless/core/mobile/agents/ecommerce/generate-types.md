@@ -48,29 +48,31 @@ export interface IChangePasswordInput {
 
 ---
 
-## `types/product.types.ts`
+## `features/products/types.ts`
 
 ```typescript
 export interface IProduct {
   _id: string;
   name: string;
+  code: string;
   description?: string;
   unitPrice: number;
+  savedRemainder?: number;
+  isCheckRem?: boolean;
   categoryId?: string;
+  tagIds?: string[];
   attachment?: { url: string };
   attachmentMore?: Array<{ url: string }>;
-  code: string;
-  sku?: string;
-  customFieldsData?: Record<string, any>;
-  tagIds?: string[];
+  remainder?: number;
 }
 
 export interface ICategory {
   _id: string;
   name: string;
+  code: string;
   parentId?: string;
   order?: string;
-  metaDescription?: string;
+  attachment?: { url: string };
 }
 
 export interface IWishlistItem {

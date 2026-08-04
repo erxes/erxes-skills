@@ -494,7 +494,7 @@ export const GET_HEADER_MENU = gql`
 
 ```tsx
 import { useLocalSearchParams } from "expo-router";
-import { useQuery } from "@apollo/client";
+import { useQuery } from "@apollo/client/react";
 import { View, Text, ScrollView, ActivityIndicator } from "react-native";
 import { GET_POST_BY_SLUG } from "@/lib/graphql/queries/cms";
 
@@ -683,7 +683,7 @@ Pass criteria:
 4. Never send `clientPortalId` unless the creation endpoint explicitly requires it.
 5. Never hardcode API URLs — always use `EXPO_PUBLIC_*` env vars.
 6. Use `_id`, not `id`.
-7. Use `useQuery` / `useMutation` from `@apollo/client` in screens.
+7. Use `useQuery` / `useMutation` from `@apollo/client/react` in screens.
 8. Merge changes instead of overwriting unrelated frontend code.
 9. Meet the minimum seed content for the detected content model.
 10. Use `react-native-render-html` for CMS HTML content — never `dangerouslySetInnerHTML`.
