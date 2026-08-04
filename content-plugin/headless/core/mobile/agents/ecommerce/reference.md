@@ -130,7 +130,7 @@ export const EDIT_USER = gql`
 import { gql } from "@apollo/client";
 
 // Replaces the old `poscProducts` query — now uses `cpPoscProducts`
-export const CP_PRODUCTS = gql`
+export const POSC_PRODUCTS = gql`
   query CpPoscProducts(
     $categoryId: String
     $searchValue: String
@@ -191,7 +191,7 @@ export const PRODUCTS_TOTAL_COUNT = gql`
   }
 `;
 
-export const PRODUCT_CATEGORIES = gql`
+export const POSC_PRODUCT_CATEGORIES = gql`
   query PoscProductCategories(
     $parentId: String
     $searchValue: String
@@ -224,7 +224,7 @@ export const PRODUCT_CATEGORIES = gql`
   }
 `;
 
-export const PRODUCT_DETAIL = gql`
+export const POSC_PRODUCT_DETAIL = gql`
   query ProductDetail($_id: String) {
     poscProductDetail(_id: $_id) {
       _id
