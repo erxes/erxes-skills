@@ -10,17 +10,17 @@ You build and deploy Next.js websites connected to erxes CMS.
 
 Read the files below as you need them. They are split by concern — do not skip them.
 
-| File | Read when |
-|---|---|
-| [`agents/conventions.md`](agents/conventions.md) | Before writing any code |
-| [`agents/setup.md`](agents/setup.md) | At the start of every new site build |
-| [`agents/business-analyst.md`](agents/business-analyst.md) | During Step 0.5 — business analysis and BRD generation |
-| [`agents/ux-ui-researcher.md`](agents/ux-ui-researcher.md) | During Step 0.75 — UX/UI research generation |
-| [`agents/frontend.md`](agents/frontend.md) | During Step 4 — frontend implementation from approved design |
-| [`agents/generate.md`](agents/generate.md) | During Step 4 — code generation |
-| [`agents/connect-erxes.md`](agents/connect-erxes.md) | After Step 4 — connect the generated frontend to erxes CMS |
-| [`agents/reference.md`](agents/reference.md) | For mutations, env vars, checklist, file ownership |
-| [`agents/pencil-design.md`](agents/pencil-design.md) | During Step 3.5 — full design handoff creation with Pencil |
+| File                                                       | Read when                                                    |
+| ---------------------------------------------------------- | ------------------------------------------------------------ |
+| [`agents/conventions.md`](agents/conventions.md)           | Before writing any code                                      |
+| [`agents/setup.md`](agents/setup.md)                       | At the start of every new site build                         |
+| [`agents/business-analyst.md`](agents/business-analyst.md) | During Step 0.5 — business analysis and BRD generation       |
+| [`agents/ux-ui-researcher.md`](agents/ux-ui-researcher.md) | During Step 0.75 — UX/UI research generation                 |
+| [`agents/frontend.md`](agents/frontend.md)                 | During Step 4 — frontend implementation from approved design |
+| [`agents/generate.md`](agents/generate.md)                 | During Step 4 — code generation                              |
+| [`agents/connect-erxes.md`](agents/connect-erxes.md)       | After Step 4 — connect the generated frontend to erxes CMS   |
+| [`agents/reference.md`](agents/reference.md)               | For mutations, env vars, checklist, file ownership           |
+| [`agents/pencil-design.md`](agents/pencil-design.md)       | During Step 3.5 — full design handoff creation with Pencil   |
 
 ---
 
@@ -33,6 +33,7 @@ Do not generate any design directions, visual concepts, or frontend ideas until 
 Do not enter Step 3.5 design work until both Step 0.5 and Step 0.75 are complete and user-approved.
 
 Step 0 is complete only when:
+
 - `site.config.json` exists
 - `ui_source` is collected
 - `ui_source_ref` is collected
@@ -42,16 +43,19 @@ Step 0 is complete only when:
 - `.env` has the required erxes and deployment values
 
 If any of those are missing:
+
 - stop the design conversation
 - return to setup collection
 - do not present design directions yet
 
 Step 0.5 is complete only when:
+
 - `output/<slug>/business-requirements.md` exists
 - the BRD covers the required sections from `agents/business-analyst.md`
 - the user explicitly approved the BRD or gave a direct instruction to proceed
 
 Step 0.75 is complete only when:
+
 - `output/<slug>/ux-research.md` exists
 - the UX research covers the required sections from `agents/ux-ui-researcher.md`
 - the user explicitly approved the UX research or gave a direct instruction to proceed
@@ -59,6 +63,7 @@ Step 0.75 is complete only when:
 Do not enter Step 4 frontend work until Step 3.5 is fully complete.
 
 Step 3.5 is complete only when:
+
 - 2 to 3 homepage-only direction previews were created in Pencil
 - each homepage preview includes the full homepage with all selected or detected homepage sections in order
 - preview exports were shown to the user
@@ -73,6 +78,7 @@ Step 3.5 is complete only when:
 - all Pencil work stayed inside the exact approved `.pen` file path for this site
 
 ### Step 0 — Setup
+
 Read [`agents/setup.md`](agents/setup.md). Collect all config fields, write `site.config.json` and `.env`, create the CMS with `tsx scripts/erxes-cms.ts`, save the returned `_id` into `site.config.json` and `.env` as `ERXES_CMS_ID`, then wait for confirmation.
 
 **Ecommerce routing:** If `template_type` is `"ecommerce"`, stop this pipeline immediately after Step 0 setup collection and switch to [`agents/ecommerce/AGENTS.md`](agents/ecommerce/AGENTS.md). Do not continue the generic pipeline steps below.
@@ -82,24 +88,31 @@ Read [`agents/setup.md`](agents/setup.md). Collect all config fields, write `sit
 **Tour routing:** If `template_type` is `"tour"`, stop this pipeline immediately after Step 0 setup collection and switch to [`agents/tour/AGENTS.md`](agents/tour/AGENTS.md). Do not continue the generic pipeline steps below.
 
 ### Step 0.5 — Business Analysis
+
 Read [`agents/business-analyst.md`](agents/business-analyst.md). Generate or validate `output/<slug>/business-requirements.md` from `site.config.json`, optional user-provided BRD input, and a plain-chat interview. Do not proceed to UX research or design until the user confirms the BRD is acceptable.
 
 ### Step 0.75 — UX/UI Research
+
 Read [`agents/ux-ui-researcher.md`](agents/ux-ui-researcher.md). Generate or validate `output/<slug>/ux-research.md` from `output/<slug>/business-requirements.md`, `site.config.json`, optional user-provided UX research, and a plain-chat interview. Do not proceed to Step 3.5 until the user confirms the UX research is acceptable.
 
 ### Step 1 — Read config
+
 Read `site.config.json`. Derive:
+
 - `slug` = name lowercased, spaces → hyphens
 - `has_blog` = sections includes `"blog"`
 - `has_contact` = sections includes `"contact"`
 
 ### Step 2 — Clone starter
+
 ```bash
 tsx scripts/clone.ts "<site-name>"
 ```
+
 Clones `erxes-web-starter` into `output/<slug>/`. Skips if already exists.
 
 ### Step 3 — Read starter files
+
 Read `output/<slug>/` — understand `app/`, `components/`, `lib/apollo/`, `tailwind.config.*` before writing anything.
 
 ### Step 3.5 — UI design source + direction
@@ -130,6 +143,7 @@ Apply it like this:
 
 **`words`** — user described the look in text
 Read [`agents/pencil-design.md`](agents/pencil-design.md). Use `ui_source_ref` as the creative brief. Produce the full design package:
+
 - First create 2 to 3 homepage-only direction previews in Pencil using the full selected homepage section sequence
 - Save them as real preview artifacts:
   - `output/<slug>/designs/homepage-directions.pen`
@@ -163,9 +177,11 @@ Read [`agents/pencil-design.md`](agents/pencil-design.md). Read the image files 
 
 **`website`** — user provided an existing site URL
 Read [`agents/pencil-design.md`](agents/pencil-design.md). Fetch the URL in `ui_source_ref`. Discover the main navigation, locale variants, and relevant internal pages first. Run:
+
 ```bash
 pnpm site:audit "<reference-url-or-ui_source_ref>" "output/<slug>/source-audit.json"
 ```
+
 Use that audit JSON as the source-of-truth inventory for both structure and static content, then turn that into full-homepage direction previews in Pencil, export preview images, get a user choice, then expand the selected direction into the full design package listed above.
 
 ---
@@ -174,6 +190,7 @@ Use that audit JSON as the source-of-truth inventory for both structure and stat
 After analyzing the UI source above, identify which sections are present in the design layout. Map them to valid section names (`about`, `services`, `blog`, `contact`, `gallery`, `pricing`, `team`, `testimonials`, `faq`, `menu`, `portfolio`). Write the detected sections back into `site.config.json` as `required_sections` before continuing to Step 4. Show the detected list to the user and ask for confirmation.
 
 Section-to-page rule:
+
 - The homepage should include the selected sections as landing sections
 - Every selected section should also become a standalone page/route unless the section is purely decorative
 - Use the same section names and slugs consistently across homepage composition, CMS pages, and navigation
@@ -183,20 +200,21 @@ Extract the dominant primary color from the design and write it back into `site.
 
 After handling the UI source, lock motion level (0–5) and present 3 visual directions from this table before any full design or frontend work. Do not skip this step unless the user already provided both the motion level and the exact chosen direction in the same request.
 
-| Direction | Concept | Extra libraries |
-|---|---|---|
-| Glass Future | Dark surfaces, translucent panels | framer-motion, Lenis |
-| Neon Brutalist | Raw grid, high-contrast, neon | framer-motion, react-scramble |
-| Editorial Luxury | Magazine hierarchy, whitespace | framer-motion, Lenis |
-| Morphic Soft | Soft gradients, rounded, 3D feel | framer-motion |
-| Data Precision | Info density, monospace accents | framer-motion |
-| Organic Texture | Noise textures, natural palette | framer-motion, Lenis |
-| Mongolian Modern | Ulzii motifs, Cyrillic-first | framer-motion |
-| Midnight Cinema | Full dark, film-poster, immersive | framer-motion, Lenis, GSAP |
-| Swiss Grid | Strict grid, typography as hero | minimal |
-| Aurora Gradient | Iridescent gradients, mesh bg | framer-motion, Lenis |
+| Direction        | Concept                           | Extra libraries               |
+| ---------------- | --------------------------------- | ----------------------------- |
+| Glass Future     | Dark surfaces, translucent panels | framer-motion, Lenis          |
+| Neon Brutalist   | Raw grid, high-contrast, neon     | framer-motion, react-scramble |
+| Editorial Luxury | Magazine hierarchy, whitespace    | framer-motion, Lenis          |
+| Morphic Soft     | Soft gradients, rounded, 3D feel  | framer-motion                 |
+| Data Precision   | Info density, monospace accents   | framer-motion                 |
+| Organic Texture  | Noise textures, natural palette   | framer-motion, Lenis          |
+| Mongolian Modern | Ulzii motifs, Cyrillic-first      | framer-motion                 |
+| Midnight Cinema  | Full dark, film-poster, immersive | framer-motion, Lenis, GSAP    |
+| Swiss Grid       | Strict grid, typography as hero   | minimal                       |
+| Aurora Gradient  | Iridescent gradients, mesh bg     | framer-motion, Lenis          |
 
 Install libraries after direction is chosen:
+
 ```bash
 # Important: keep the cloned starter's existing next/react/react-dom versions.
 # Do not run create-next-app. Do not upgrade the framework stack. Avoid @latest.
@@ -210,9 +228,11 @@ pnpm add three @react-three/fiber @react-three/drei  # motion 4
 ```
 
 ### Step 4 — Generate code
+
 Read [`agents/frontend.md`](agents/frontend.md) and [`agents/generate.md`](agents/generate.md). Use `design-tokens.json`, `ui-libraries.json`, and `HANDOFF.md` from Step 3.5. Write all files into `output/<slug>/`.
 
 Before Step 4 starts, verify all of these:
+
 - homepage preview artifacts exist and are real Pencil exports
 - each preview represents the full homepage section flow, not a partial hero or cropped concept
 - the user already selected one homepage option
@@ -246,11 +266,13 @@ Seed content for **every language** in `languages` from `site.config.json`. Gene
 Use the approved design handoff and CMS field map from `HANDOFF.md` plus the content-model decisions from [`agents/connect-erxes.md`](agents/connect-erxes.md) to shape page, post, menu, category, tag, and optional custom-type content while keeping mutation dependency order intact.
 
 CMS page model:
+
 - Seed content so homepage sections can be rendered on `/`
 - Also create dedicated CMS pages for each selected section slug such as `/about`, `/services`, `/contact`
 - Keep the homepage summary content and standalone page content aligned in tone and structure
 
 Mutation order (always follow this):
+
 ```
 cpContentCreateCMS or reuse existing CMS_ID → cpCmsCustomPostTypesAdd when needed → cpCmsCustomFieldGroupsAdd when needed → cpCmsCategoriesAdd → cpCmsTagsAdd → cpCmsPagesAdd → cpCmsPostsAdd → cpCmsAddTranslation when needed → cpCmsAddMenu
 ```
@@ -305,6 +327,7 @@ tsx scripts/erxes-menu.ts  output/menu.json
 ```
 
 **Content rules:**
+
 - Primary content (`name`/`title`/`content`) — write in the default language (first in `languages`)
 - `translations` array — one entry per additional language with translated text
 - Slugs: **identical across all languages** — `about` stays `about` so `/mn/about` and `/en/about` map to the same page
@@ -317,12 +340,32 @@ Run the verify query from [`agents/connect-erxes.md`](agents/connect-erxes.md) f
 
 ```graphql
 query Verify($language: String) {
-  cpPages(language: $language)                         { _id name slug status }
-  cpPosts(language: $language, status: published)      { _id title slug }
-  header: cpMenus(language: $language, kind: "header") { _id label url order }
-  footer: cpMenus(language: $language, kind: "footer") { _id label url order }
+  cpPages(language: $language) {
+    _id
+    name
+    slug
+    status
+  }
+  cpPosts(language: $language, status: published) {
+    _id
+    title
+    slug
+  }
+  header: cpMenus(language: $language, kind: "header") {
+    _id
+    label
+    url
+    order
+  }
+  footer: cpMenus(language: $language, kind: "footer") {
+    _id
+    label
+    url
+    order
+  }
 }
 ```
+
 Pass per language: pages exist, posts exist (if `has_blog`), header has ≥ 2 items, footer has ≥ 1 item.
 
 ### Step 8 — Deploy
@@ -330,15 +373,19 @@ Pass per language: pages exist, posts exist (if `has_blog`), header has ≥ 2 it
 Read `deploy_target` from `site.config.json`.
 
 **If `deploy_target` is `vercel`:**
+
 ```bash
 tsx scripts/deploy.ts "<site-name>"
 ```
+
 Pushes `output/<slug>/` as a new git repo to **`pages-web/<slug>`** (the `pages-web` GitHub org), then deploys to Vercel. Prints the live URL.
 
 **If `deploy_target` is `github`:**
+
 ```bash
 tsx scripts/github-push.ts "<site-name>"
 ```
+
 Pushes `output/<slug>/` as a new git repo to **`GITHUB_USERNAME/<slug>`** (the user's personal account). Prints the repo URL. Does not deploy to Vercel.
 
 ---
