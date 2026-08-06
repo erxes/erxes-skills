@@ -105,6 +105,8 @@ const { data } = useQuery(GET_POSTS, {
 
 ### Language switcher (only if `languages.length > 1`)
 
+Add a `LanguageSwitcher` component to the Header.
+
 ```typescript
 import { useAtom } from "jotai";
 import { localeAtom } from "@/store/locale";
@@ -157,7 +159,7 @@ export function getApolloClient() {
 **`lib/apollo/provider.tsx`** — wrap the app:
 
 ```typescript
-import { ApolloProvider } from "@apollo/client";
+import { ApolloProvider } from "@apollo/client/react";
 import { getApolloClient } from "./client";
 
 export function ApolloClientProvider({ children }: { children: React.ReactNode }) {
@@ -248,6 +250,8 @@ Every screen receives params via `useLocalSearchParams` — never function param
 | `blog`                                | Listing + detail                    | `app/blog/index.tsx`, `app/blog/[slug].tsx`                     |
 | `products`                            | Listing + detail                    | `app/(tabs)/products/index.tsx`, `app/(tabs)/products/[id].tsx` |
 | Home                                  | Compose selected section components | `app/(tabs)/index.tsx`                                          |
+
+**Rule:** The homepage composes all selected sections as a landing page. Every section also gets its own standalone page route — reuse the same section component, adapt layout depth as needed.
 
 ---
 

@@ -1,35 +1,45 @@
 {
-  "name": "apptwo",
+  "name": "Dent Store",
+  "template_type": "ecommerce",
   "language": "mn",
+  "defaultLanguage": "mn",
   "languages": [
     "mn",
     "en"
   ],
-  "tone": "casual",
-  "delivery_types": [
-    "delivery"
-  ],
-  "allow_guest": true,
-  "ui_source": "words",
-  "ui_source_ref": "ligth theme use icons on footer",
-  "color_hint": "forest green",
-  "design_strategy": "from-scratch",
-  "reference_url": null,
-  "competitor_urls": [],
+  "tone": "friendly, modern",
   "sections": [
+    "hero",
+    "products",
+    "blog",
+    "contact",
     "about"
   ],
   "cms_sections": [
-    "about"
+    "about",
+    "contact",
+    "blog"
   ],
-  "extra_notes": null,
-  "deploy_target": "eas",
+  "delivery_types": [
+    "delivery",
+    "pickup"
+  ],
+  "allow_guest": true,
   "erxes_api_url": "https://dent.next.erxes.io/gateway/graphql",
   "erxes_main_domain": "https://dent.next.erxes.io",
   "erxes_app_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJjbGllbnRQb3J0YWxJZCI6Ik9ZZkhlSVd2VENQQ2E0SjBLUjhGMiIsImlhdCI6MTc4MDk3ODU0N30.TW1umhOGO3I92uyedmMfUOpUh4cNmOStegz6ng3yUAg",
   "client_portal_id": "OYfHeIWvTCPCa4J0KR8F2",
+  "erxes_cms_id": "6a71617766d21006a952cfe6",
   "pos_token": "dFhsNNfym9wDdoKIHU7s3b8Ip3iNhjQG",
-  "enable_messenger": true,
-  "messenger_brand_id": "atcPlR0pb3-0urSfff0RH",
-  "erxes_cms_id": "6a63115b9a4d889fc59d0cc7"
+  "enable_messenger": false,
+  "enable_push_notifications": false,
+  "design_strategy": "from-scratch",
+  "ui_source": "words",
+  "ui_source_ref": "Clean, modern ecommerce app with product grid on home, bottom tab navigation (Home, Products, Cart, Profile), warm and trustworthy color palette suitable for a general retail store, motion level 2 (Morphic Soft direction if it fits).",
+  "motion_level": 2,
+  "reference_url": null,
+  "competitor_urls": [],
+  "color_hint": "warm-terracotta",
+  "extra_notes": null,
+  "deploy_target": "expo-go"
 }

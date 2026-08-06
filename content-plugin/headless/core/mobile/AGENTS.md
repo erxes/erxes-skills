@@ -1,18 +1,24 @@
 # erxes Ecommerce + CMS — Mobile Agent Instructions (Expo)
 
-You build and deploy **Expo (React Native)** ecommerce apps that are fully connected to both erxes POS (products, cart, payment), erxes CMS (pages, blog, navigation), and — optionally — erxes Messenger (real-time chat) and Firebase Cloud Messaging (push notifications).
+**Always respond in plain conversational sentences. Never output structured question formats, option lists, radio buttons, select menus, chips, or progress indicators ("1 of 5 questions"). Ask one question at a time as a plain sentence. Wait for the reply. Then ask the next.**
 
-Read these files as needed — do not skip them:
+You build and deploy **Expo (React Native)** mobile apps connected to erxes CMS.
 
-| File                                           | Read when                                                                                                                                                                                                                   |
-| ---------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| [`setup.md`](setup.md)                         | Start of every new build                                                                                                                                                                                                    |
-| [`conventions.md`](conventions.md)             | Before writing any code                                                                                                                                                                                                     |
-| [`generate.md`](generate.md)                   | Step 4 — code generation                                                                                                                                                                                                    |
-| [`reference.md`](reference.md)                 | GraphQL queries/mutations, env vars, checklist                                                                                                                                                                              |
-| [`payment.md`](payment.md)                     | Checkout and payment implementation                                                                                                                                                                                         |
-| [`connect-messenger.md`](connect-messenger.md) | Step 4.5 — connecting erxes Messenger (live chat) to the generated Expo app, or any time the user asks to "connect messenger", "add live chat", "connect erxes messenger", "add messenger SDK", or "set up erxes messenger" |
-| [`notification.md`](notification.md)           | Step 4.6 — wiring up Firebase Cloud Messaging (push notifications), or any time the user asks to "add push notifications", "set up FCM", "connect firebase notifications", or "add notification.md"                         |
+Read the files below as you need them. They are split by concern — do not skip them.
+
+| File                                                       | Read when                                                                                                                                                                                                                   |
+| ---------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| [`agents/conventions.md`](agents/conventions.md)           | Before writing any code                                                                                                                                                                                                     |
+| [`agents/setup.md`](agents/setup.md)                       | At the start of every new site build                                                                                                                                                                                        |
+| [`agents/business-analyst.md`](agents/business-analyst.md) | During Step 0.5 — business analysis and BRD generation                                                                                                                                                                      |
+| [`agents/ux-ui-researcher.md`](agents/ux-ui-researcher.md) | During Step 0.75 — UX/UI research generation                                                                                                                                                                                |
+| [`agents/frontend.md`](agents/frontend.md)                 | During Step 4 — frontend implementation from approved design                                                                                                                                                                |
+| [`agents/generate.md`](agents/generate.md)                 | During Step 4 — code generation                                                                                                                                                                                             |
+| [`agents/connect-erxes.md`](agents/connect-erxes.md)       | After Step 4 — connect the generated frontend to erxes CMS                                                                                                                                                                  |
+| [`agents/reference.md`](agents/reference.md)               | For mutations, env vars, checklist, file ownership                                                                                                                                                                          |
+| [`agents/pencil-design.md`](agents/pencil-design.md)       | During Step 3.5 — full design handoff creation with Pencil                                                                                                                                                                  |
+| [`connect-messenger.md`](connect-messenger.md)             | Step 4.5 — connecting erxes Messenger (live chat) to the generated Expo app, or any time the user asks to "connect messenger", "add live chat", "connect erxes messenger", "add messenger SDK", or "set up erxes messenger" |
+| [`notification.md`](notification.md)                       | Step 4.6 — wiring up Firebase Cloud Messaging (push notifications), or any time the user asks to "add push notifications", "set up FCM", "connect firebase notifications", or "add notification.md"                         |
 
 ---
 
@@ -37,9 +43,6 @@ that integration.
 Do not enter Step 5 (Seed CMS content) until Step 4 — and Step 4.5 / 4.6 if
 triggered — are complete.
 
-Do not enter Step 5 (Seed CMS content) until Step 4.9 (Structural Audit &
-Cleanup) has passed with zero discrepancies.
-
 Do not enter Step 7 (Deploy) until Step 6 (Verify) passes with 0 errors.
 
 **Step 0 is complete only when:**
@@ -47,6 +50,7 @@ Do not enter Step 7 (Deploy) until Step 6 (Verify) passes with 0 errors.
 - `store.config.json` exists
 - `name`, `template_type`, `languages`, `tone` are collected (generic fields via `agents/setup.md`)
 - `delivery_types`, `allow_guest`, `pos_token` are collected (`agents/ecommerce/setup.md`)
+- the erxes/POS connection is validated via `agents/connect-erxes.md` after `pos_token` is collected
 - `client_portal_id` is collected
 - `design_strategy` is collected
 - `ui_source` is collected
@@ -104,101 +108,29 @@ The ecommerce pipeline REUSES modules from the generic `agents/` folder. Do not 
 ### Shared Files (read at the specified step)
 
 | File                         | When to Read                           | Purpose                                                                                 |
-| ---------------------------- | -------------------------------------- | --------------------------------------------------------------------------------------- |
+| ---------------------------- | -------------------------------------- | --------------------------------------------------------------------------------------- | --- |
 | `agents/setup.md`            | Step 0 (if starting fresh)             | Generic setup collection — ask template type, languages, tone, design strategy, etc.    |
 | `agents/pencil-design.md`    | Step 3.5                               | Pencil design tool usage, direction previews, design tokens                             |
 | `agents/animations.md`       | Step 4 (before writing animation code) | Animation library implementations — Reanimated, Moti, Lottie, etc.                      |
 | `agents/frontend.md`         | Step 4 (before code generation)        | Frontend build phases, token system, component architecture, zero-error build protocol  |
-| `agents/ux-ui-researcher.md` | Step 0.75 (if user wants UX research)  | UX research document generation (optional for ecommerce)                                |
+| `agents/ux-ui-researcher.md` | Step 0.5 (if user wants UX research)   | UX research document generation (optional for ecommerce)                                |     |
 | `agents/conventions.md`      | Before writing ANY code                | Generic code conventions — React Native patterns, data fetching, NativeWind, TypeScript |
-
-### Ecommerce-Specific Files (always read these)
-
-| File                              | When to Read                     | Purpose                                                                                  |
-| --------------------------------- | -------------------------------- | ---------------------------------------------------------------------------------------- |
-| `agents/ecommerce/setup.md`       | Step 0                           | Ecommerce-specific fields (delivery_types, allow_guest, pos_token)                       |
-| `agents/ecommerce/conventions.md` | Before writing ANY code          | Ecommerce-specific conventions — auth tokens, Apollo headers, Jotai stores, payment flow |
-| `agents/ecommerce/generate.md`    | Step 4                           | Ecommerce code generation — types, GraphQL, hooks, components, pages                     |
-| `agents/ecommerce/reference.md`   | Step 4 + Step 5                  | GraphQL queries/mutations, env vars, payment flow checklist                              |
-| `agents/ecommerce/payment.md`     | Step 4 (checkout implementation) | Payment implementation details                                                           |
-
-### Optional Mobile Integration Files (read only when triggered)
-
-| File                                    | When to Read                                                                                                        | Purpose                                                                                                                                                                                                                                                                                                                  |
-| --------------------------------------- | ------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `agents/ecommerce/connect-messenger.md` | Step 4.5, after the Expo frontend project exists in `output/<slug>/`, and the user has asked to connect live chat   | Connects the generated Expo app to erxes Messenger — own Apollo client (HTTP + WebSocket), hooks, GraphQL layer, chat UI components, storage, and the public `<ErxesMessenger>` entry point                                                                                                                              |
-| `agents/ecommerce/notification.md`      | Step 4.6, after the Expo frontend project exists in `output/<slug>/`, and the user has asked for push notifications | Wires up Firebase Cloud Messaging (FCM) end to end — Firebase config files, `app.json` plugins, iOS/Android prebuild config, `usePushNotifications` hook, `registerFcmToken` mutation, token refresh, and foreground/background/terminated notification handling, plus the client-portal backend token-registration flow |
-
-### Routing from Generic Pipeline
-
-When `template_type = "ecommerce"` is selected in `agents/setup.md`:
-
-1. **Stop following `agents/setup.md`** after collecting generic fields
-2. **Switch to `agents/ecommerce/AGENTS.md`** immediately
-3. **Continue ecommerce-specific setup** (delivery_types, allow_guest, pos_token)
-4. **Skip generic business analysis** — ecommerce has its own content flow
-5. **Skip generic UX research** — optional, user can request it
-6. **Proceed directly to design (Step 3.5)** after setup complete
-
-### File Reading Order for Ecommerce (Mobile)
-
-```
-Step 0:  agents/setup.md (generic fields)
-         |
-         agents/ecommerce/setup.md (ecommerce-specific fields)
-         |
-Step 0.5: [OPTIONAL] agents/ux-ui-researcher.md (if user wants UX research)
-         |
-Step 3.5: agents/ecommerce/pencil-design.md (design directions in Pencil)
-         |
-Step 4:  agents/ecommerce/generate.md (ecommerce code generation)
-         agents/ecommerce/conventions.md (ecommerce conventions)
-         agents/conventions.md (generic conventions)
-         agents/frontend.md (frontend architecture)
-         agents/animations.md (animation libraries — if motion level > 0)
-         agents/ecommerce/reference.md (GraphQL reference)
-         agents/ecommerce/payment.md (payment flow)
-         |
-Step 4.5: [OPTIONAL] agents/connect-messenger.md (only if user asked for live chat / erxes Messenger)
-         |
-Step 4.6: [OPTIONAL] agents/ecommerce/notification.md (only if user asked for push notifications / FCM)
-         |
-Step 5:  agents/ecommerce/reference.md (CMS seeding, env vars)
-         |
-Step 6-7: agents/ecommerce/reference.md (verify + deploy)
-```
-
----
 
 ## Pipeline — New storefront (Mobile)
 
 ### Step 0 — Setup
 
-See **Hard Gate** above — do not proceed past this step until every required field is collected and `store.config.json` is written.
+Read [`agents/setup.md`](agents/setup.md). Collect all config fields, write `site.config.json` and `.env`, create the CMS with `tsx scripts/erxes-cms.ts`, save the returned `_id` into `site.config.json` and `.env` as `ERXES_CMS_ID`, then wait for confirmation.
 
-**If coming from generic pipeline (`agents/setup.md`):**
+**Ecommerce routing:** If `template_type` is `"ecommerce"`, stop this pipeline immediately after Step 0 setup collection and switch to [`agents/ecommerce/AGENTS.md`](agents/ecommerce/AGENTS.md). Do not continue the generic pipeline steps below.
 
-- Generic fields already collected in `site.config.json`
-- Rename `site.config.json` → `store.config.json`
-- Read `agents/ecommerce/setup.md` and ask ONLY missing ecommerce-specific fields:
-  - `delivery_types`
-  - `allow_guest`
-  - `pos_token`
-- If the user has already mentioned wanting live chat / erxes Messenger, also record `enable_messenger: true` and ask for `messenger_brand_code` (erxes Admin → Settings → Brands → code)
-- If the user has already mentioned wanting push notifications, also record `enable_push_notifications: true` and ask for the required Firebase values: app name, iOS bundle identifier, Android package name, Firebase project ID, iOS target name, and backend GraphQL endpoint (see `notification.md` → "Required Values To Fill")
+### Step 0.5 — Business Analysis
 
-**If starting fresh:**
+Read [`agents/business-analyst.md`](agents/business-analyst.md). Generate or validate `output/<slug>/business-requirements.md` from `site.config.json`, optional user-provided BRD input, and a plain-chat interview. Do not proceed to UX research or design until the user confirms the BRD is acceptable.
 
-- Read `agents/setup.md` first — collect generic fields (name, template_type, languages, tone, etc.)
-- When `template_type = "ecommerce"`, switch to this file
-- Then read `agents/ecommerce/setup.md` — collect ecommerce-specific fields
+### Step 0.75 — UX/UI Research
 
-**After all fields collected:**
-
-- Write `store.config.json`
-- Update `.env`
-- Create CMS with `tsx scripts/erxes-cms.ts`
-- Save returned `_id` as `ERXES_CMS_ID`
+Read [`agents/ux-ui-researcher.md`](agents/ux-ui-researcher.md). Generate or validate `output/<slug>/ux-research.md` from `output/<slug>/business-requirements.md`, `site.config.json`, optional user-provided UX research, and a plain-chat interview. Do not proceed to Step 3.5 until the user confirms the UX research is acceptable.
 
 ### Step 1 — Read config
 
@@ -240,27 +172,25 @@ Saves returned `_id` into:
 
 ### Step 3 — Initialize Expo project
 
+Run the scaffold script:
+
 ```bash
 tsx scripts/clone.ts "<store-name>"
 ```
 
-Creates the Expo project in `output/<slug>/`. Skips if already exists.
+`clone.ts` internally runs `create-expo-app@latest output/<slug> --template default@sdk-55`
+and creates the project in `output/<slug>/`. **If `output/<slug>/` already exists, `clone.ts` skips scaffolding and reuses it — do not run `create-expo-app` manually afterward.**
 
-**CRITICAL:** Mobile ecommerce uses Expo, not Next.js.
+If `clone.ts` does not exist or fails, fall back to running manually:
 
 ```bash
 npx create-expo-app@latest output/<slug> --template default@sdk-55
 ```
 
-Required packages to install after init:
+**CRITICAL:** Mobile ecommerce uses Expo, not Next.js.
 
-```bash
-cd output/<slug>
-npx expo install expo-router apollo-client @apollo/client graphql jotai nativewind tailwindcss
-npx expo install expo-secure-store expo-constants expo-linking expo-status-bar
-npx expo install react-native-safe-area-context react-native-screens
-npx expo install babel-preset-expo
-```
+Required packages to install after init:
+...
 
 **CRITICAL — `babel.config.js` must always be created at this step, before any bundling is attempted.** Metro fails with `Cannot find module 'babel-preset-expo'` if this file is missing or the package above was skipped. Create it immediately after the installs above (do not defer this to a later step or leave it to be added only if bundling fails):
 
@@ -335,16 +265,17 @@ See **Hard Gate** above — do not enter this step until Step 0 (and Step 0.5, i
 - `brand-first` — build from a brand guide, Figma system, or locked visual identity
 - `beat-competitors` — audit competitor references and design to stand out
 
-**Mobile design considerations (always apply):**
+Apply it like this:
 
-- Design for touch targets (minimum 44×44pt)
-- Bottom tab navigation or drawer navigation — choose based on section count
-- Safe area insets (notch, home indicator) must be handled
-- Gestures (swipe back, pull-to-refresh) should feel native
-- iOS and Android platform conventions where they differ
+- Ask the `design_strategy` explicitly for every `ui_source` before proceeding
+- If `design_strategy` is `copy-site` or `improve-site`, use `reference_url` from config when present
+- If `design_strategy` is `beat-competitors`, use `competitor_urls` from config when present
+- Then read [`agents/pencil-design.md`](agents/pencil-design.md) and use that strategy to control whether the design should be faithful, improved, brand-led, or differentiated
+
+---
 
 **`words`** — user described the look in text:
-Read [`agents/pencil-design.md`](../pencil-design.md). Use `ui_source_ref` as the creative brief. Produce the full design package:
+Read [`agents/pencil-design.md`](agents/pencil-design.md). Use `ui_source_ref` as the creative brief. Produce the full design package:
 
 - First create 2–3 home screen direction previews in Pencil (mobile viewport: 390×844)
 - Save them as real preview artifacts:
@@ -361,63 +292,66 @@ Read [`agents/pencil-design.md`](../pencil-design.md). Use `ui_source_ref` as th
   - `output/<slug>/HANDOFF.md`
 - After the full screen design is ready, ask exactly: `do you wanna edit design before build frontend?`
 - Apply requested edits and repeat until the user explicitly approves
+- Follow with a free-form request for page-specific edits in the user's own words. Do not present preset edit options. The user should answer with the page they want to change and what should change, such as color, section order, spacing, or component treatment.
+- Do not require the agent to separately present or re-show the design if the user can review it directly in Pencil
+- Apply requested design edits in the same Pencil project, re-export the updated design artifacts when needed, and ask the same free-form design edit question again
+- Repeat this edit-review loop until the user explicitly says the design is approved or gives a direct build instruction such as `it's okay`, `looks good`, or `build frontend`
+- Then continue
 
-**`pencil`**, **`screenshot`**, **`website`** — same flow as web version but:
+**`pencil`** — user has an existing `.pen` file
+Read [`agents/pencil-design.md`](agents/pencil-design.md). Open the file at the path in `ui_source_ref` using the Pencil MCP tools. Use it as the base homepage direction, create full-homepage options in Pencil first, export preview images, show the user the choices, then after approval expand the chosen direction into the full design package listed above.
 
-- All previews use mobile viewport (390×844)
-- Extract mobile-specific patterns (bottom nav, cards, modals)
+**`figma`** — user provided a Figma link or exported assets
+Read [`agents/pencil-design.md`](agents/pencil-design.md). Use the Figma URL or image paths in `ui_source_ref` as visual reference. Reconstruct full-homepage direction previews in Pencil first, export preview images, get a user choice, then expand the selected direction into the full design package listed above.
+
+**`screenshot`** — user uploaded screenshots
+Read [`agents/pencil-design.md`](agents/pencil-design.md). Read the image files listed in `ui_source_ref`. Extract layout, sections, colors, and component patterns, rebuild full-homepage direction previews in Pencil first, export preview images, get a user choice, then expand the selected direction into the full design package listed above.
+
+---
+
+**If `required_sections` is empty or `"design"` in `site.config.json`:**
+After analyzing the UI source above, identify which sections are present in the design layout. Map them to valid section names (`about`, `services`, `blog`, `contact`, `gallery`, `pricing`, `team`, `testimonials`, `faq`, `menu`, `portfolio`). Write the detected sections back into `site.config.json` as `required_sections` before continuing to Step 4. Show the detected list to the user and ask for confirmation.
+
+Section-to-page rule:
+
+- The homepage should include the selected sections as landing sections
+- Every selected section should also become a standalone page/route unless the section is purely decorative
+- Use the same section names and slugs consistently across homepage composition, CMS pages, and navigation
+
+**If `ui_source` is `pencil`, `figma`, or `screenshot`**
+Extract the dominant primary color from the design and write it back into `site.config.json` as `color_hint` (e.g. `"forest-green"`, `"navy"`, `"warm-orange"`). Do not ask the user for it.
+
+After handling the UI source, lock motion level (0–5) and present 3 visual directions from this table before any full design or frontend work. Do not skip this step unless the user already provided both the motion level and the exact chosen direction in the same request.
+
+| Direction        | Concept                           | Extra libraries               |
+| ---------------- | --------------------------------- | ----------------------------- |
+| Glass Future     | Dark surfaces, translucent panels | framer-motion, Lenis          |
+| Neon Brutalist   | Raw grid, high-contrast, neon     | framer-motion, react-scramble |
+| Editorial Luxury | Magazine hierarchy, whitespace    | framer-motion, Lenis          |
+| Morphic Soft     | Soft gradients, rounded, 3D feel  | framer-motion                 |
+| Data Precision   | Info density, monospace accents   | framer-motion                 |
+| Organic Texture  | Noise textures, natural palette   | framer-motion, Lenis          |
+| Mongolian Modern | Ulzii motifs, Cyrillic-first      | framer-motion                 |
+| Midnight Cinema  | Full dark, film-poster, immersive | framer-motion, Lenis, GSAP    |
+| Swiss Grid       | Strict grid, typography as hero   | minimal                       |
+| Aurora Gradient  | Iridescent gradients, mesh bg     | framer-motion, Lenis          |
 
 ### Step 4 — Generate code
 
-See **Hard Gate** above — do not enter Step 4 until Step 3.5 is fully complete.
+Read [`agents/frontend.md`](agents/frontend.md) and [`agents/generate.md`](agents/generate.md). Use `design-tokens.json`, `ui-libraries.json`, and `HANDOFF.md` from Step 3.5. Write all files into `output/<slug>/`.
 
-**CRITICAL: Read these files IN ORDER before writing code:**
+Before Step 4 starts, verify all of these:
 
-1. `agents/ecommerce/generate.md` — table of contents, design agnosticism rules, build checklist
-2. `agents/ecommerce/generate-setup.md` — dependencies, utils, constants, env, app.config.ts
-3. `agents/ecommerce/generate-types.md` — TypeScript interfaces
-4. `agents/ecommerce/generate-i18n.md` — i18n routing, locale config, messages JSON
-5. `agents/ecommerce/generate-core.md` — Apollo Client, Jotai stores, app layouts
-6. `agents/ecommerce/generate-graphql.md` — GraphQL file map (do NOT recreate starter files)
-7. `agents/ecommerce/generate-hooks.md` — auth, order, payment, query hooks
-8. `agents/ecommerce/generate-components.md` — layout + product components (React Native)
-9. `agents/ecommerce/generate-pages.md` — home, products, **login**, **register**, **profile**, **orders**, **wishlist**, cart
-10. `agents/ecommerce/generate-checkout.md` — **checkout** + **verify** pages
-11. `agents/ecommerce/generate-cms.md` — review system, CMS pages (about, blog) — read when `has_cms` is true
-12. `agents/ecommerce/conventions.md` — ecommerce conventions (auth tokens, Apollo headers, Jotai stores, payment flow)
-13. `agents/conventions.md` — generic conventions (React Native patterns)
-14. `agents/frontend.md` — frontend architecture, token system, build phases
-15. `agents/animations.md` — animation libraries (if motion level > 0)
-16. `agents/ecommerce/reference.md` — GraphQL queries/mutations
-17. `agents/ecommerce/payment.md` — payment flow implementation
-
-**Do NOT skip generate-pages.md or generate-checkout.md.** These files define the auth, profile, orders, wishlist, checkout, and verify pages. Skipping them produces a static app without the ecommerce flow.
-
-**Then write files in this order:**
-
-1. Dependencies install
-2. Types (`types/`)
-3. Apollo client + provider
-4. Jotai store (`store/`)
-5. GraphQL (`graphql/`)
-6. Root layout: `app/_layout.tsx` + Providers
-7. Tab/Stack navigation: `app/(tabs)/_layout.tsx` or drawer layout
-8. Auth pages: `app/(auth)/login.tsx`, `app/(auth)/register.tsx`, `app/(auth)/forgot-password.tsx`
-9. Ecommerce pages: `app/(tabs)/index.tsx` (home), `app/(tabs)/products/index.tsx`, `app/(tabs)/products/[id].tsx`, `app/cart.tsx`
-10. Profile + account pages: `app/(tabs)/profile/index.tsx`, `app/orders/index.tsx`, `app/orders/[id].tsx`, `app/wishlist.tsx`
-11. Checkout + payment: `app/checkout.tsx`, `app/verify.tsx`
-12. CMS pages: `app/about.tsx`, `app/contact.tsx`, `app/blog/index.tsx`, `app/faq.tsx` — only sections listed in `cms_sections`
-13. Navigation components: `components/layout/TabBar.tsx`, `components/layout/Header.tsx`
-14. `.env.local`
-
-**React Native component rules:**
-
-- Use `<View>`, `<Text>`, `<ScrollView>`, `<FlatList>`, `<Pressable>` — never HTML elements
-- Use `StyleSheet.create()` or NativeWind `className` for styling
-- Use `expo-image` for optimized images instead of `<img>`
-- Use `expo-router` `<Link>` and `useRouter()` for navigation
-- All touch targets minimum 44×44pt
-- Handle keyboard avoiding with `KeyboardAvoidingView`
+- homepage preview artifacts exist and are real Pencil exports
+- each preview represents the full homepage section flow, not a partial hero or cropped concept
+- the user already selected one homepage option
+- `design.pen` and `design.png` were exported from the approved Pencil design
+- `HANDOFF.md` records the approved homepage option and preview files
+- the full designed pages were available for user review in the approved Pencil file after expansion from the chosen homepage option
+- the user was asked `do you wanna edit design before build frontend?`
+- any requested page-level design changes were applied and the final design was explicitly approved
+- `source-audit.json` exists when the source was a website being copied or improved
+- the Pencil file path used during design matches the approved site path and no unrelated `.pen` project was modified
 
 ### Step 4.5 — Connect Messenger (optional, live chat)
 
@@ -513,98 +447,38 @@ Read [`agents/ecommerce/notification.md`](notification.md) in full and follow it
 
 ### Step 5 — Seed CMS content
 
-**Skip this step if `has_cms` is false.**
+Read [`agents/connect-erxes.md`](agents/connect-erxes.md) after the frontend project exists in `output/<slug>/`.
 
-Seed content for every language in `store.config.json`. Use real translated text — no placeholders.
+Use it in combined mode with this pipeline:
 
-**Generate content JSON files first, then run scripts.**
-
-#### 5a. Screens/Pages (`output/pages.json`)
-
-For each section in `cms_sections` (except "none"), generate a page object per language:
-
-```json
-[
-  {
-    "slug": "about",
-    "lang": "mn",
-    "title": "Бидний тухай",
-    "description": "<store-specific 1-2 sentence description>",
-    "content": "<HTML with real info about the store — no lorem ipsum>",
-    "status": "published",
-    "meta": { "title": "Бидний тухай", "description": "...", "keywords": "..." }
-  },
-  {
-    "slug": "about",
-    "lang": "en",
-    "title": "About Us",
-    "description": "...",
-    "content": "...",
-    "status": "published",
-    "meta": { "title": "About Us", "description": "...", "keywords": "..." }
-  }
-]
-```
-
-```bash
-tsx scripts/erxes-pages.ts output/pages.json
-```
-
-#### 5b. Blog posts (`output/posts.json`) — only if `has_blog`
-
-Generate 3 starter posts in each language:
-
-```json
-[
-  {
-    "lang": "mn",
-    "title": "...",
-    "slug": "first-post",
-    "description": "...",
-    "content": "<HTML — at least 3 paragraphs>",
-    "status": "published",
-    "publishedDate": "<today's ISO date>"
-  }
-]
-```
-
-```bash
-tsx scripts/erxes-posts.ts output/posts.json
-```
-
-#### 5c. Navigation menu (`output/menu.json`)
-
-Generate two menus — `Main Navigation` (bottom tabs / drawer) and `Footer` — with links appropriate to the store's `cms_sections`:
-
-```json
-[
-  {
-    "name": "Main Navigation",
-    "items": [
-      { "name": "Нүүр", "link": "/", "order": 1 },
-      { "name": "Бараа", "link": "/products", "order": 2 },
-      { "name": "Блог", "link": "/blog", "order": 3 },
-      { "name": "Бидний тухай", "link": "/about", "order": 4 }
-    ]
-  },
-  {
-    "name": "Footer",
-    "items": [
-      { "name": "Бидний тухай", "link": "/about", "order": 1 },
-      { "name": "Холбоо барих", "link": "/contact", "order": 2 },
-      { "name": "Нийтлэл", "link": "/blog", "order": 3 }
-    ]
-  }
-]
-```
-
-Only include links for pages that exist in `cms_sections`.
-
-```bash
-tsx scripts/erxes-menu.ts output/menu.json
-```
+- fingerprint the generated site before mutations or code edits
+- reuse `site.config.json`, `HANDOFF.md`, `design-tokens.json`, and `ui-libraries.json`
+- reuse `ERXES_CMS_ID` from Step 0 when it already exists, and only create a CMS if it is missing
+- merge Apollo, GraphQL, route, and navigation changes into the generated Next.js project without overwriting unrelated frontend code
+- install Apollo and GraphQL dependencies required for erxes integration
+- generate or update the frontend GraphQL layer, dynamic CMS routes, and shared navigation components
+- keep all `getClient().query()` calls on `revalidate`
+- run `pnpm build` in `output/<slug>/` before deployment
 
 ### Step 6 — Verify
+
+Seed content for **every language** in `languages` from `site.config.json`. Generate real translated content — not placeholders — for each locale.
+
+Use the approved design handoff and CMS field map from `HANDOFF.md` plus the content-model decisions from [`agents/connect-erxes.md`](agents/connect-erxes.md) to shape page, post, menu, category, tag, and optional custom-type content while keeping mutation dependency order intact.
+
+CMS page model:
+
+- Seed content so homepage sections can be rendered on `/`
+- Also create dedicated CMS pages for each selected section slug such as `/about`, `/services`, `/contact`
+- Keep the homepage summary content and standalone page content aligned in tone and structure
+
+Mutation order (always follow this):
+
+```
+cpContentCreateCMS or reuse existing CMS_ID → cpCmsCustomPostTypesAdd when needed → cpCmsCustomFieldGroupsAdd when needed → cpCmsCategoriesAdd → cpCmsTagsAdd → cpCmsPagesAdd → cpCmsPostsAdd → cpCmsAddTranslation when needed → cpCmsAddMenu
+```
+
+Generate a single content file per type with all languages included using the `translations` field. Run each script **once** — the mutation creates all language versions in a single call.
 
 Before bundling, confirm `babel.config.js` exists and `babel-preset-expo` is in `package.json` dependencies (added in Step 3) — a missing preset causes `Cannot find module 'babel-preset-expo'` at bundle time and must be fixed at Step 3, not patched here.
 
@@ -632,6 +506,89 @@ Build must succeed with 0 errors before deploying.
 - `messaging().getToken()` resolves a token and `clientPortalUserAddFcmToken` registers it with `{ deviceId, token, platform }`
 - A test push from the Firebase Console is received in foreground (in-app toast), background (system tray), and terminated (tray + correct route on tap) states
 - Android 13+ shows the `POST_NOTIFICATIONS` prompt; no prompt on Android ≤12
+
+**Content file format** — primary language is the first in `languages`, all others go in `translations`:
+
+```json
+// pages.json
+[
+  {
+    "section": "about",
+    "name": "Бидний тухай",
+    "slug": "about",
+    "description": "...",
+    "content": "...",
+    "translations": [
+      { "language": "en", "title": "About Us", "content": "..." }
+    ]
+  }
+]
+
+// posts.json
+[
+  {
+    "title": "Монгол гарчиг",
+    "slug": "post-slug",
+    "excerpt": "...",
+    "content": "...",
+    "translations": [
+      { "language": "en", "title": "English Title", "excerpt": "...", "content": "..." }
+    ]
+  }
+]
+
+// menu.json — `kind` is required on every item
+[
+  { "label": "Нүүр", "url": "/", "order": 1, "kind": "header",
+    "translations": [{ "language": "en", "title": "Home" }] },
+  { "label": "Бидний тухай", "url": "/about", "order": 2, "kind": "header",
+    "translations": [{ "language": "en", "title": "About" }] },
+  { "label": "Нүүр", "url": "/", "order": 1, "kind": "footer",
+    "translations": [{ "language": "en", "title": "Home" }] }
+]
+```
+
+**Content rules:**
+
+- Primary content (`name`/`title`/`content`) — write in the default language (first in `languages`)
+- `translations` array — one entry per additional language with translated text
+- Slugs: **identical across all languages** — `about` stays `about` so `/mn/about` and `/en/about` map to the same page
+- Menu items **must include `"kind"`** — `"header"` or `"footer"`. Items without `kind` won't appear in navigation queries.
+- `erxes-cms.ts` runs once only — the CMS itself is shared across all languages
+
+## Verify CMS data
+
+Run the verify query from [`agents/connect-erxes.md`](agents/connect-erxes.md) for each language in `languages`. All must pass before deploying. Also require `pnpm build` in `output/<slug>/` to pass.
+
+```graphql
+query Verify($language: String) {
+  cpPages(language: $language) {
+    _id
+    name
+    slug
+    status
+  }
+  cpPosts(language: $language, status: published) {
+    _id
+    title
+    slug
+  }
+  header: cpMenus(language: $language, kind: "header") {
+    _id
+    label
+    url
+    order
+  }
+  footer: cpMenus(language: $language, kind: "footer") {
+    _id
+    label
+    url
+    order
+  }
+}
+```
+
+Pass per language: pages exist, posts exist (if `has_blog`), header has ≥ 2 items, footer has ≥ 1 item.
 
 ### Step 7 — Deploy
 

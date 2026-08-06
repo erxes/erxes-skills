@@ -303,28 +303,96 @@ module.exports = {
 │   └── faq.tsx
 │
 ├── src/
-│   └── features/                 # ★ ALL commerce/domain logic lives here — see PHASE 2.2
+│   └── features/                 # ★ ALL commerce/domain logic lives here — every feature owns 100% of its own components/graphql/hooks/types (see contract below)
 │       ├── products/
+│       │   ├── components/
+│       │   │   ├── ProductCard.tsx
+│       │   │   ├── ProductList.tsx
+│       │   │   ├── ProductDetail.tsx
+│       │   │   ├── ProductSkeleton.tsx
+│       │   │   └── ProductFilterBar.tsx
+│       │   ├── graphql/
+│       │   │   ├── queries.ts
+│       │   │   └── mutations.ts
+│       │   ├── hooks/
+│       │   │   ├── useProducts.ts
+│       │   │   ├── useProductDetail.ts
+│       │   │   └── useProductFilters.ts
+│       │   ├── types.ts
+│       │   └── index.ts          # public export surface — see contract below
+│       │
 │       ├── cart/
+│       │   ├── components/
+│       │   │   ├── CartItem.tsx
+│       │   │   └── CartSummary.tsx
+│       │   ├── graphql/
+│       │   │   ├── queries.ts
+│       │   │   └── mutations.ts
+│       │   ├── hooks/
+│       │   │   └── useCart.ts
+│       │   ├── types.ts
+│       │   └── index.ts
+│       │
 │       ├── orders/
+│       │   ├── components/
+│       │   │   ├── OrderCard.tsx
+│       │   │   └── OrderTimeline.tsx
+│       │   ├── graphql/
+│       │   │   ├── queries.ts
+│       │   │   └── mutations.ts
+│       │   ├── hooks/
+│       │   │   └── useOrder.ts
+│       │   ├── types.ts
+│       │   └── index.ts
+│       │
 │       ├── payment/
+│       │   ├── components/
+│       │   │   └── PaymentMethodPicker.tsx
+│       │   ├── graphql/
+│       │   │   └── mutations.ts
+│       │   ├── hooks/
+│       │   │   └── usePayment.ts
+│       │   ├── types.ts
+│       │   └── index.ts
+│       │
 │       ├── review/
+│       │   ├── components/
+│       │   │   ├── ReviewCard.tsx
+│       │   │   └── ReviewForm.tsx
+│       │   ├── graphql/
+│       │   │   ├── queries.ts
+│       │   │   └── mutations.ts
+│       │   ├── hooks/
+│       │   │   └── useReview.ts
+│       │   ├── types.ts
+│       │   └── index.ts
+│       │
 │       └── auth/
+│           ├── components/
+│           │   ├── LoginForm.tsx
+│           │   └── RegisterForm.tsx
+│           ├── graphql/
+│           │   ├── queries.ts
+│           │   └── mutations.ts
+│           ├── hooks/
+│           │   └── useAuth.ts
+│           ├── types.ts
+│           └── index.ts
 │
 ├── components/                   # NO feature/domain code — design-system + layout only
-│   ├── ui/                       # Design system primitives (Button, Card, Input…)
-│   ├── motion/                   # Animation components (RN) — FadeIn, AnimatedCard…
-│   ├── effects/                  # Direction-specific effects (GlassCard, AuroraBackground…)
+│   ├── ui/                       # react-native-reusables / gluestack-ui primitives — NOT shadcn (Radix/DOM-only, no RN runtime)
+│   ├── motion/                   # Reanimated + Moti variants (replaces Framer Motion) — FadeIn, AnimatedCard…
+│   ├── effects/                  # touch-based effects only — no hover/cursor effects — GlassCard, AuroraBackground…
 │   ├── layout/                   # TabBar, Header, Providers
 │   └── cms/                      # PostCard, PostGrid — content that is NOT a commerce feature
 │
 ├── lib/
-│   ├── motion.ts                 # Reanimated shared values + Moti variants
+│   ├── motion.ts                 # Reanimated shared values + Moti variants (replaces motion.ts + gsap.ts)
 │   ├── tokens.ts                 # Typed token accessors
 │   ├── fonts.ts                  # expo-font loader
 │   ├── utils.ts
 │   ├── constants.ts
-│   └── mock/                     # Mock data — connectErxes target (per-feature subfolders)
+│   └── mock/                     # Mock data — connectErxes target (mirrors the feature split, e.g. lib/mock/products.ts)
 │
 ├── hooks/                        # ONLY cross-feature/global hooks — nothing product/order-specific
 │   ├── useReducedMotion.ts       # AccessibilityInfo.isReduceMotionEnabled
@@ -341,143 +409,12 @@ module.exports = {
 │
 ├── store/                        # global state (jotai atoms that span features)
 │
-├── design-tokens.json
-├── ui-libraries.json
-├── HANDOFF.md
+├── design-tokens.json            # Source of truth from design skill
+├── ui-libraries.json             # Library spec from design skill
+├── HANDOFF.md                    # Design brief from design skill
 ├── tailwind.config.js
 ├── app.config.ts
 └── .agent-config.json
-```
-
-**Why this split:** `app/` stays thin (routing + composition only). `src/features/` owns all
-domain logic (components, graphql, hooks, types for one feature, colocated). `components/`,
-`hooks/`, `graphql/`, `types/` at the root are reserved for things that are genuinely global —
-nothing product/order/payment/review-specific belongs there. This is what stops products,
-hooks, and graphql for the same feature from ending up scattered across unrelated folders.
-
-### 2.2 Feature-Based Organization for Commerce (`src/features/`)
-
-**Rule: every commerce/domain concept gets exactly one folder under `src/features/`, and
-that folder owns 100% of its own components, graphql, hooks, and types. Nothing belonging
-to a feature is ever created directly under the root `components/`, `hooks/`, or `graphql/`
-folders.**
-
-```
-src/features/
-├── products/
-│   ├── components/
-│   │   ├── ProductCard.tsx
-│   │   ├── ProductList.tsx
-│   │   ├── ProductDetail.tsx
-│   │   ├── ProductSkeleton.tsx
-│   │   └── ProductFilterBar.tsx
-│   ├── graphql/
-│   │   ├── queries.ts
-│   │   └── mutations.ts
-│   ├── hooks/
-│   │   ├── useProducts.ts
-│   │   ├── useProductDetail.ts
-│   │   └── useProductFilters.ts
-│   ├── types.ts
-│   └── index.ts                  # public export surface — see rule below
-│
-├── cart/
-│   ├── components/
-│   │   ├── CartItem.tsx
-│   │   └── CartSummary.tsx
-│   ├── graphql/
-│   │   ├── queries.ts
-│   │   └── mutations.ts
-│   ├── hooks/
-│   │   └── useCart.ts
-│   ├── types.ts
-│   └── index.ts
-│
-├── orders/
-│   ├── components/
-│   │   ├── OrderCard.tsx
-│   │   └── OrderTimeline.tsx
-│   ├── graphql/
-│   │   ├── queries.ts
-│   │   └── mutations.ts
-│   ├── hooks/
-│   │   └── useOrder.ts
-│   ├── types.ts
-│   └── index.ts
-│
-├── payment/
-│   ├── components/
-│   │   └── PaymentMethodPicker.tsx
-│   ├── graphql/
-│   │   └── mutations.ts
-│   ├── hooks/
-│   │   └── usePayment.ts
-│   ├── types.ts
-│   └── index.ts
-│
-├── review/
-│   ├── components/
-│   │   ├── ReviewCard.tsx
-│   │   └── ReviewForm.tsx
-│   ├── graphql/
-│   │   ├── queries.ts
-│   │   └── mutations.ts
-│   ├── hooks/
-│   │   └── useReview.ts
-│   ├── types.ts
-│   └── index.ts
-│
-└── auth/
-    ├── components/
-    │   ├── LoginForm.tsx
-    │   └── RegisterForm.tsx
-    ├── graphql/
-    │   ├── queries.ts
-    │   └── mutations.ts
-    ├── hooks/
-    │   └── useAuth.ts
-    ├── types.ts
-    └── index.ts
-```
-
-**Feature module contract:**
-
-```
-[ ] Every feature folder has ALL FIVE of: components/, graphql/, hooks/, types.ts, index.ts
-[ ] Only scaffold the feature folders that SITE_TYPE actually needs (from PHASE 0.1) —
-    do not create empty feature folders for commerce concepts the site doesn't use
-[ ] index.ts re-exports the public API only:
-      export { ProductCard, ProductList } from "./components";
-      export { useProducts, useProductDetail } from "./hooks";
-      export type { Product, ProductVariant } from "./types";
-[ ] Screens in app/ and other features NEVER deep-import a feature's internals —
-    always import from the feature's index.ts:
-      ✅ import { ProductCard, useProducts } from "@/src/features/products";
-      ❌ import { ProductCard } from "@/src/features/products/components/ProductCard";
-[ ] A feature's graphql/queries.ts and graphql/mutations.ts contain ONLY that feature's
-    operations — never a shared "ecommerce" queries file mixing products + orders + cart
-[ ] Cross-feature composition (e.g. checkout uses both cart + payment) happens in
-    app/ screens or in a thin composition component — never by one feature importing
-    another feature's internals directly. Import the other feature's index.ts if needed.
-[ ] lib/mock/ mirrors the same feature split: lib/mock/products.ts, lib/mock/orders.ts, etc.
-```
-
-**Anti-pattern to avoid (this is what caused the scattering):**
-
-```
-❌ components/product/ProductCard.tsx
-❌ graphql/ecommerce/queries/products.ts
-❌ graphql/ecommerce/mutations/products.ts
-❌ hooks/order.ts, hooks/payment.ts, hooks/review.ts, hooks/queries.ts   (flat, mixed features)
-```
-
-```
-✅ src/features/products/components/ProductCard.tsx
-✅ src/features/products/graphql/queries.ts
-✅ src/features/products/graphql/mutations.ts
-✅ src/features/orders/hooks/useOrder.ts
-✅ src/features/payment/hooks/usePayment.ts
-✅ src/features/review/hooks/useReview.ts
 ```
 
 ---
@@ -485,6 +422,9 @@ src/features/
 ## ── PHASE 3: TOKEN SYSTEM ────────────────────────────────────────────────────
 
 ### 3.1 `lib/tokens.ts`
+
+Read every token from design-tokens.json. Components use CSS variables via Tailwind.
+This file provides typed JS access for `lib/motion.ts` and `lib/gsap.ts`.
 
 ```typescript
 import designTokens from "@/design-tokens.json";

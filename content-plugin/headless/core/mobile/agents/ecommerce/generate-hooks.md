@@ -399,19 +399,8 @@ export function useAddPaymentTransaction() {
 ```typescript
 import { atom, useAtom } from "jotai";
 import { useQuery } from "@apollo/client/react";
-<<<<<<< HEAD
 import { POSC_PRODUCT_CATEGORIES } from "../graphql/queries";
 import { ICategory } from "../types";
-=======
-import { CP_PAGES } from "@/graphql/cms/queries/page";
-import { CP_POSTS, CP_POST } from "@/graphql/cms/queries/post";
-import { ICategory } from "../types";
-import { useAtomValue } from "jotai";
-import { useQuery } from "@apollo/client/react";
-import { POSC_PRODUCTS, POSC_PRODUCT_CATEGORIES } from "../graphql/queries";
-import { Product } from "../types";
-import { activeCategoryIdAtom } from "./useProductFilters";
->>>>>>> 78c674321f8491cf528e8274fc119a94b3c029b6
 
 // undefined = "Бүгд" (бүх category)
 export const activeCategoryIdAtom = atom<string | undefined>(undefined);
@@ -426,7 +415,6 @@ export function useProductCategories() {
       fetchPolicy: "cache-and-network",
     },
   );
-<<<<<<< HEAD
 
   return {
     categories: data?.poscProductCategories ?? [],
@@ -491,29 +479,6 @@ export function useFilteredProducts(categoryId?: string, perPage = 20) {
   });
 
   return {
-=======
-
-  return {
-    categories: data?.poscProductCategories ?? [],
-    categoriesLoading: loading,
-    activeCategoryId,
-    setActiveCategoryId,
-  };
-}
-
-export function useProducts(perPage = 20, page = 1) {
-  const activeCategoryId = useAtomValue(activeCategoryIdAtom);
-
-  const { data, loading, fetchMore } = useQuery<{ cpPoscProducts: Product[] }>(
-    POSC_PRODUCTS,
-    {
-      variables: { categoryId: activeCategoryId, perPage, page },
-      fetchPolicy: "cache-and-network",
-    },
-  );
-
-  return {
->>>>>>> 78c674321f8491cf528e8274fc119a94b3c029b6
     products: data?.cpPoscProducts ?? [],
     loading,
     fetchMore,
@@ -521,38 +486,6 @@ export function useProducts(perPage = 20, page = 1) {
   };
 }
 
-<<<<<<< HEAD
-=======
-export function useProductDetail(productId: string) {
-  const { data, loading, error } = useQuery(POSC_PRODUCT_DETAIL, {
-    variables: { _id: productId },
-    skip: !productId,
-    fetchPolicy: "cache-and-network",
-  });
-  return {
-    product: (data as any)?.poscProductDetail || null,
-    loading,
-    error,
-  };
-}
-
-export function useFilteredProducts(categoryId?: string, perPage = 20) {
-  const { data, loading, error, fetchMore } = useQuery<{
-    cpPoscProducts: IProduct[];
-  }>(PRODUCTS, {
-    variables: { categoryId, perPage },
-    fetchPolicy: "cache-and-network",
-  });
-
-  return {
-    products: data?.cpPoscProducts ?? [],
-    loading,
-    error,
-    fetchMore,
-  };
-}
-
->>>>>>> 78c674321f8491cf528e8274fc119a94b3c029b6
 // No single-page-by-slug query — fetch all pages, filter client-side
 export function useCmsPageDetail(slug: string) {
   const { data, loading, error } = useQuery(CP_PAGES, {
