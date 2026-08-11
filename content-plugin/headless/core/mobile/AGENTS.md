@@ -19,6 +19,7 @@ Read the files below as you need them. They are split by concern — do not skip
 | [`agents/pencil-design.md`](agents/pencil-design.md)       | During Step 3.5 — full design handoff creation with Pencil                                                                                                                                                                  |
 | [`connect-messenger.md`](connect-messenger.md)             | Step 4.5 — connecting erxes Messenger (live chat) to the generated Expo app, or any time the user asks to "connect messenger", "add live chat", "connect erxes messenger", "add messenger SDK", or "set up erxes messenger" |
 | [`notification.md`](notification.md)                       | Step 4.6 — wiring up Firebase Cloud Messaging (push notifications), or any time the user asks to "add push notifications", "set up FCM", "connect firebase notifications", or "add notification.md"                         |
+| [`connect-erxes-tickets.md`](connect-erxes-tickets.md)     | Step 4.7 — connecting feedback screen to erxes Client Portal Tickets...                                                                                                                                                     |
 
 ---
 
@@ -40,8 +41,11 @@ Do not enter Step 4.5 (Connect Messenger) or Step 4.6 (Connect Push
 Notifications) until Step 4 is complete and the user has explicitly asked for
 that integration.
 
-Do not enter Step 5 (Seed CMS content) until Step 4 — and Step 4.5 / 4.6 if
-triggered — are complete.
+Do not enter Step 4.7 (Connect Feedback Tickets) until Step 4 is complete
+and the user has explicitly asked for that integration.
+
+Do not enter Step 5 (Seed CMS content) until Step 4 — and Step 4.5 / 4.6 /
+4.7 if triggered — are complete.
 
 Do not enter Step 7 (Deploy) until Step 6 (Verify) passes with 0 errors.
 
@@ -59,6 +63,9 @@ Do not enter Step 7 (Deploy) until Step 6 (Verify) passes with 0 errors.
 - `competitor_urls` is collected when `design_strategy` is `beat-competitors`
 - `enable_messenger` and `messenger_brand_code` are collected when the user has already asked for live chat
 - `enable_push_notifications` and the required Firebase values are collected when the user has already asked for push notifications
+- `enable_feedback_tickets` and `tickets_channel_id` / `tickets_pipeline_id` /
+  `tickets_status_id` (and `tickets_stage_id` if used) are collected when the
+  user has already asked for feedback-to-ticket integration
 - `.env` has the required erxes, CMS, and deployment values
 - the CMS is created via `tsx scripts/erxes-cms.ts` (when `has_cms`) and the returned `_id` is saved into `store.config.json` and `.env` as `ERXES_CMS_ID`
 
@@ -144,6 +151,7 @@ Read `store.config.json`. Derive:
 - `has_contact` = `sections` includes `"contact"` or `cms_sections` includes `"contact"`
 - `has_messenger` = `enable_messenger` is true, OR the user has separately asked to "connect messenger" / "add live chat" / "connect erxes messenger" / "add messenger SDK" / "set up erxes messenger"
 - `has_push_notifications` = `enable_push_notifications` is true, OR the user has separately asked to "add push notifications" / "set up FCM" / "connect firebase notifications"
+- `has_feedback_tickets` = `enable_feedback_tickets` is true, OR the user has separately asked to "connect feedback to tickets" / "send feedback as a ticket" / "add feedback tickets"
 
 **Section-to-screen rule:**
 
@@ -445,6 +453,41 @@ Read [`agents/ecommerce/notification.md`](notification.md) in full and follow it
    - `resolveRoute()` reads `data.route ?? data.url` and falls back to `/notification` when tapping a push
 7. Verify against `notification.md` → "Verification Checklist" (Firebase initialization, permission prompts, token generation, backend registration, push delivery in foreground/background/terminated states, token refresh on reinstall, Android 13+ permission handling) before moving on.
 
+### Step 4.7 — Connect Feedback Tickets (optional, erxes Client Portal)
+
+**Skip this step if `has_feedback_tickets` is false.**
+
+Run this step only after the Expo frontend project exists in `output/<slug>/` (i.e., after Step 4). Trigger it whenever the user says any of:
+
+- "connect feedback to tickets"
+- "send feedback as a ticket"
+- "add feedback tickets"
+- "in-app feedback to erxes ticket"
+
+Read [`agents/ecommerce/connect-erxes-tickets.md`](connect-erxes-tickets.md) in full and follow its pipeline exactly, substituting the project's own values for every placeholder:
+
+| Placeholder                             | Fill from                                            |
+| --------------------------------------- | ---------------------------------------------------- |
+| `EXPO_PUBLIC_ERXES_TICKETS_CHANNEL_ID`  | collected in Step 0 as `tickets_channel_id`          |
+| `EXPO_PUBLIC_ERXES_TICKETS_PIPELINE_ID` | collected in Step 0 as `tickets_pipeline_id`         |
+| `EXPO_PUBLIC_ERXES_TICKETS_STATUS_ID`   | collected in Step 0 as `tickets_status_id`           |
+| `EXPO_PUBLIC_ERXES_TICKETS_STAGE_ID`    | collected in Step 0 as `tickets_stage_id` (optional) |
+
+1. **Env vars** — add the four `EXPO_PUBLIC_ERXES_TICKETS_*` values to `.env.local`, per `connect-erxes-tickets.md` §3. Reuse the existing `EXPO_PUBLIC_ERXES_API_URL` and `EXPO_PUBLIC_ERXES_APP_TOKEN` from the CMS connection — do not duplicate them.
+2. **Auth gating** — confirm the feedback flow reuses the project's existing auth/session hook and blocks submission entirely when no `CPUser` session is present, per `connect-erxes-tickets.md` §2. Never add an anonymous submission path.
+3. **Generate the committed application files** exactly as specified in `connect-erxes-tickets.md` → "Files Modified":
+   - `lib/graphql/mutations/tickets.ts` — **new**, `CP_CREATE_TICKET` mutation
+   - `src/lib/feedbackTicket.ts` — **new**, `submitFeedbackAsTicket()` — best-effort, non-blocking, matching the `registerFcmToken` pattern from `notification.md`
+   - `app/feedback.tsx` — **new**, feedback form gated on auth session
+4. Apply the key behavioral rules from `connect-erxes-tickets.md` §7, in particular:
+   - Use `cpCreateTicket` exactly as specified — do not substitute a different mutation name or add a nonexistent `customerId`/`cpUserId` argument
+   - `channelId`, `pipelineId`, `statusId` are non-nullable — if any are missing from config, stop and ask the user rather than guessing
+   - Never log tokens, ticket IDs tied to PII, or full request payloads
+5. Verify against `connect-erxes-tickets.md` §6 (Verification) before moving on:
+   - Submitting while logged out blocks the mutation entirely
+   - Submitting while logged in creates a ticket visible in erxes Admin under the correct channel/pipeline, attributed to the submitting CPUser
+   - `npx expo export` completes with zero errors
+
 ### Step 5 — Seed CMS content
 
 Read [`agents/connect-erxes.md`](agents/connect-erxes.md) after the frontend project exists in `output/<slug>/`.
@@ -506,6 +549,13 @@ Build must succeed with 0 errors before deploying.
 - `messaging().getToken()` resolves a token and `clientPortalUserAddFcmToken` registers it with `{ deviceId, token, platform }`
 - A test push from the Firebase Console is received in foreground (in-app toast), background (system tray), and terminated (tray + correct route on tap) states
 - Android 13+ shows the `POST_NOTIFICATIONS` prompt; no prompt on Android ≤12
+
+**If `has_feedback_tickets` is true**, additionally confirm the checklist from `connect-erxes-tickets.md` §6 before considering Step 6 complete:
+
+- Submitting feedback while logged out does not fire the `cpCreateTicket` mutation
+- Submitting feedback while logged in creates a ticket visible in erxes Admin under the correct channel/pipeline, attributed to the submitting CPUser
+- No auth token or user PII is printed in client-side logs
+- `npx expo export` completes with zero errors
 
 **Content file format** — primary language is the first in `languages`, all others go in `translations`:
 
@@ -628,5 +678,6 @@ tsx scripts/github-push.ts "<store-name>"
 3. Make only the targeted changes:
    - "connect messenger" / "add live chat" → jump directly to Step 4.5 and `agents/connect-messenger.md`
    - "add push notifications" / "set up FCM" → jump directly to Step 4.6 and `agents/ecommerce/notification.md`
+   - "connect feedback to tickets" / "add feedback tickets" → jump directly to Step 4.7 and `agents/ecommerce/connect-erxes-tickets.md`
      rather than re-running the full pipeline
 4. Redeploy: `eas build --platform all`
