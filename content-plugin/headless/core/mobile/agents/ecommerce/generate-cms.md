@@ -1,10 +1,64 @@
 # Ecommerce CMS Screens + Review System (Mobile)
 
 > **Design rule:** Logic below is authoritative. All `className` values are reference only — apply your design tokens.
+>
+> **i18n rule:** All static UI copy (labels, buttons, empty states, error text) MUST use `i18n.t("key")` from `@/lib/i18n` — never hardcode Mongolian or English strings directly in JSX. Add every new key to BOTH `messages/mn.json` and `messages/en.json` before using it. Only CMS-sourced dynamic content (`page.name`, `post.title`, `post.content`, review `content` typed by users, etc.) may render as raw strings, since that data is already resolved by the `language` variable passed into the query.
+
+---
+
+## Required i18n keys
+
+Add these to `messages/mn.json` and `messages/en.json` before generating the screens below.
+
+```json
+// messages/mn.json (additions)
+{
+  "review": {
+    "title": "Сэтгэгдэл",
+    "placeholder": "Сэтгэгдэл бичих...",
+    "add": "Нэмэх",
+    "save": "Хадгалах",
+    "cancel": "Болих",
+    "edit": "Засах",
+    "remove": "Устгах",
+    "empty": "Одоогоор сэтгэгдэл байхгүй байна."
+  },
+  "cms": {
+    "pageNotFound": "Хуудас олдсонгүй",
+    "blogTitle": "Блог",
+    "blogEmpty": "Нийтлэл байхгүй байна.",
+    "postNotFound": "Нийтлэл олдсонгүй"
+  }
+}
+```
+
+```json
+// messages/en.json (additions)
+{
+  "review": {
+    "title": "Reviews",
+    "placeholder": "Write a review...",
+    "add": "Add",
+    "save": "Save",
+    "cancel": "Cancel",
+    "edit": "Edit",
+    "remove": "Remove",
+    "empty": "No reviews yet."
+  },
+  "cms": {
+    "pageNotFound": "Page not found",
+    "blogTitle": "Blog",
+    "blogEmpty": "No posts yet.",
+    "postNotFound": "Post not found"
+  }
+}
+```
 
 ---
 
 ## Review Hook (`hooks/review.ts`)
+
+No changes — this file has no UI copy, only data logic. Keep as-is.
 
 ```typescript
 import { useMutation, useQuery } from "@apollo/client";
@@ -86,10 +140,13 @@ export function useReviewCUD(productId: string) {
 
 ## Review Component (`components/review/ReviewList.tsx`)
 
+**Changed:** every hardcoded Mongolian string replaced with `i18n.t()`.
+
 ```typescript
 import { useState } from "react";
 import { View, Text, TextInput, Pressable } from "react-native";
 import { useProductReviews, useReviewCUD } from "@/hooks/review";
+import { i18n } from "@/lib/i18n";
 
 function StarRating({
   value,
@@ -158,14 +215,14 @@ export function ReviewList({
 
   return (
     <View className="mt-8 gap-6">
-      <Text className="text-xl font-semibold">Сэтгэгдэл</Text>
+      <Text className="text-xl font-semibold">{i18n.t("review.title")}</Text>
 
       {/* Add review — logged-in users only */}
       {currentUser && (
         <View className="gap-3 rounded-xl border p-4">
           <StarRating value={rating} onChange={setRating} />
           <TextInput
-            placeholder="Сэтгэгдэл бичих..."
+            placeholder={i18n.t("review.placeholder")}
             value={content}
             onChangeText={setContent}
             multiline
@@ -177,12 +234,12 @@ export function ReviewList({
             disabled={loading}
             className="rounded-xl bg-primary p-3 items-center min-h-[44px]"
           >
-            <Text className="text-white font-semibold">Нэмэх</Text>
+            <Text className="text-white font-semibold">{i18n.t("review.add")}</Text>
           </Pressable>
         </View>
       )}
 
-      {/* Review list */}
+      {/* Review list — review.content itself is user-authored, not translated */}
       <View className="gap-4">
         {reviews.map((review: any) => (
           <View key={review._id} className="rounded-xl border p-4">
@@ -202,13 +259,13 @@ export function ReviewList({
                     disabled={loading}
                     className="flex-1 rounded-xl bg-primary p-3 items-center min-h-[44px]"
                   >
-                    <Text className="text-white font-semibold">Хадгалах</Text>
+                    <Text className="text-white font-semibold">{i18n.t("review.save")}</Text>
                   </Pressable>
                   <Pressable
                     onPress={() => setEditingId(null)}
                     className="flex-1 rounded-xl border border-border p-3 items-center min-h-[44px]"
                   >
-                    <Text className="font-medium">Болих</Text>
+                    <Text className="font-medium">{i18n.t("review.cancel")}</Text>
                   </Pressable>
                 </View>
               </View>
@@ -222,13 +279,13 @@ export function ReviewList({
                       onPress={() => handleEdit(review)}
                       className="rounded-lg border border-border px-3 py-2 min-h-[44px] items-center justify-center"
                     >
-                      <Text className="text-sm">Засах</Text>
+                      <Text className="text-sm">{i18n.t("review.edit")}</Text>
                     </Pressable>
                     <Pressable
                       onPress={() => handleRemove(review._id)}
                       className="rounded-lg bg-red-100 px-3 py-2 min-h-[44px] items-center justify-center"
                     >
-                      <Text className="text-sm text-red-700">Устгах</Text>
+                      <Text className="text-sm text-red-700">{i18n.t("review.remove")}</Text>
                     </Pressable>
                   </View>
                 )}
@@ -238,7 +295,7 @@ export function ReviewList({
         ))}
         {reviews.length === 0 && (
           <Text className="text-sm text-muted-foreground">
-            Одоогоор сэтгэгдэл байхгүй байна.
+            {i18n.t("review.empty")}
           </Text>
         )}
       </View>
@@ -250,6 +307,8 @@ export function ReviewList({
 ---
 
 ## About Screen (`app/about.tsx`)
+
+**Changed:** `"Хуудас олдсонгүй"` → `i18n.t("cms.pageNotFound")`. `page.name` / `page.content` stay raw — they come from the CMS already resolved for `i18n.locale`.
 
 ```typescript
 import { ScrollView, Text, ActivityIndicator, View } from "react-native";
@@ -270,7 +329,7 @@ export default function AboutScreen() {
   const page = (data?.cpPages || []).find((p: any) => p.slug === "about");
   if (!page) return (
     <View className="flex-1 items-center justify-center">
-      <Text className="text-muted-foreground">Хуудас олдсонгүй</Text>
+      <Text className="text-muted-foreground">{i18n.t("cms.pageNotFound")}</Text>
     </View>
   );
 
@@ -288,6 +347,8 @@ export default function AboutScreen() {
 ---
 
 ## Blog List (`app/blog/index.tsx`)
+
+**Changed:** `"Блог"` → `i18n.t("cms.blogTitle")`, `"Нийтлэл байхгүй байна."` → `i18n.t("cms.blogEmpty")`, `toLocaleDateString("mn-MN")` → locale-aware via `i18n.locale`.
 
 ```typescript
 import { FlatList, Text, Pressable, View, ActivityIndicator } from "react-native";
@@ -311,9 +372,9 @@ export default function BlogScreen() {
       data={posts}
       keyExtractor={(item) => item._id}
       contentContainerClassName="p-4 gap-6"
-      ListHeaderComponent={<Text className="text-3xl font-bold mb-2">Блог</Text>}
+      ListHeaderComponent={<Text className="text-3xl font-bold mb-2">{i18n.t("cms.blogTitle")}</Text>}
       ListEmptyComponent={
-        <Text className="text-center text-muted-foreground">Нийтлэл байхгүй байна.</Text>
+        <Text className="text-center text-muted-foreground">{i18n.t("cms.blogEmpty")}</Text>
       }
       renderItem={({ item: post }) => (
         <Pressable
@@ -336,7 +397,9 @@ export default function BlogScreen() {
             )}
             {post.publishedDate && (
               <Text className="mt-3 text-xs text-muted-foreground">
-                {new Date(post.publishedDate).toLocaleDateString("mn-MN")}
+                {new Date(post.publishedDate).toLocaleDateString(
+                  i18n.locale === "en" ? "en-US" : "mn-MN",
+                )}
               </Text>
             )}
           </View>
@@ -350,6 +413,8 @@ export default function BlogScreen() {
 ---
 
 ## Blog Detail (`app/blog/[slug].tsx`)
+
+**Changed:** `"Нийтлэл олдсонгүй"` → `i18n.t("cms.postNotFound")`, date locale made dynamic.
 
 ```typescript
 import { ScrollView, Text, View, ActivityIndicator } from "react-native";
@@ -374,7 +439,7 @@ export default function BlogDetailScreen() {
   const post = data?.cpPost;
   if (!post) return (
     <View className="flex-1 items-center justify-center">
-      <Text className="text-muted-foreground">Нийтлэл олдсонгүй</Text>
+      <Text className="text-muted-foreground">{i18n.t("cms.postNotFound")}</Text>
     </View>
   );
 
@@ -391,7 +456,9 @@ export default function BlogDetailScreen() {
         <Text className="text-3xl font-bold">{post.title}</Text>
         {post.publishedDate && (
           <Text className="mt-2 text-sm text-muted-foreground">
-            {new Date(post.publishedDate).toLocaleDateString("mn-MN")}
+            {new Date(post.publishedDate).toLocaleDateString(
+              i18n.locale === "en" ? "en-US" : "mn-MN",
+            )}
           </Text>
         )}
         {post.content && (
