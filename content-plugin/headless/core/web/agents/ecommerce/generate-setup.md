@@ -72,6 +72,10 @@ export const ERXES_API_URL =
 
 export const ERXES_CP_TOKEN = process.env.NEXT_PUBLIC_ERXES_CP_TOKEN || "";
 
+export const CP_ID = process.env.NEXT_PUBLIC_CP_ID || "";
+
+export const CMS_ID = process.env.NEXT_PUBLIC_CMS_ID || "";
+
 export const POS_CONFIG_TOKEN = "pos-config-token";
 
 export const ORDER_STATUS = {
@@ -103,8 +107,14 @@ export const PAYMENT_KINDS = {
 # Erxes API
 NEXT_PUBLIC_ERXES_API_URL=http://localhost:4000/graphql
 
-# Client Portal Token (Client Portal ID)
+# Client Portal Token (Client Portal ID — raw ID, NOT the JWT)
 NEXT_PUBLIC_ERXES_CP_TOKEN=your_client_portal_id_here
+
+# Client Portal ID (for order mutations)
+NEXT_PUBLIC_CP_ID=your_client_portal_id_here
+
+# CMS Record ID (created by erxes-cms.ts script)
+NEXT_PUBLIC_CMS_ID=your_cms_id_here
 
 # POS Config Token (stored in cookie: pos-config-token)
 NEXT_PUBLIC_POS_TOKEN=your_pos_token_here

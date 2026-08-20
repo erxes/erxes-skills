@@ -11,6 +11,7 @@ import {
   createHttpLink,
 } from "@apollo/client/core";
 import { setContext } from "@apollo/client/link/context";
+import { ApolloLink } from "@apollo/client";
 
 const httpLink = createHttpLink({
   uri:
@@ -30,12 +31,32 @@ const authLink = setContext((_, { headers }) => {
   };
 });
 
+/**
+ * Intercepts every operation whose name starts with "cp" and auto-injects
+ * `clientPortalId` into variables so callers don't have to pass it manually.
+ * Required for cpMenus, cpPages, cpPosts, cpCategories, etc.
+ */
+const cmsLink = new ApolloLink((operation, forward) => {
+  const { operationName, variables } = operation;
+  if (
+    operationName.startsWith("cp") &&
+    variables &&
+    !variables.clientPortalId
+  ) {
+    operation.variables = {
+      ...variables,
+      clientPortalId: process.env.NEXT_PUBLIC_ERXES_CP_TOKEN || "",
+    };
+  }
+  return forward(operation);
+});
+
 let instance: ApolloClient<unknown> | undefined;
 
 export function getApolloClient(): ApolloClient<unknown> {
   if (!instance) {
     instance = new ApolloClient({
-      link: authLink.concat(httpLink),
+      link: authLink.concat(cmsLink).concat(httpLink),
       cache: new InMemoryCache(),
     });
   }
@@ -63,6 +84,7 @@ export async function getServerApolloClient() {
         "client-auth-token": token || "",
         "x-app-token": process.env.NEXT_PUBLIC_ERXES_CP_TOKEN || "",
         "erxes-pos-token": process.env.NEXT_PUBLIC_POS_TOKEN || "",
+        "client-portal-id": process.env.NEXT_PUBLIC_ERXES_CP_TOKEN || "",
       },
       fetchOptions: { cache: "no-store" },
     }),

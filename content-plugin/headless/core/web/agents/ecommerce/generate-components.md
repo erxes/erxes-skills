@@ -12,26 +12,27 @@
 
 Open `output/<slug>/design-tokens.json`. Extract and hold in context:
 
-| Token path | Used for |
-|---|---|
-| `colors.semantic.background` | page background |
-| `colors.semantic.card` | card surface |
-| `colors.semantic.primary` | brand color, CTA buttons |
-| `colors.semantic.primaryForeground` | text on primary buttons |
-| `colors.semantic.secondary` | secondary surfaces |
-| `colors.semantic.foreground` | body text |
-| `colors.semantic.mutedForeground` | helper text, labels |
-| `colors.semantic.border` | dividers, input borders |
-| `colors.semantic.destructive` | error, delete actions |
-| `typography.families.display` | headings font |
-| `typography.families.body` | body font |
-| `radius` | border-radius scale |
-| `shadows` | shadow scale |
-| `spacing.scale` | spacing rhythm |
+| Token path                          | Used for                 |
+| ----------------------------------- | ------------------------ |
+| `colors.semantic.background`        | page background          |
+| `colors.semantic.card`              | card surface             |
+| `colors.semantic.primary`           | brand color, CTA buttons |
+| `colors.semantic.primaryForeground` | text on primary buttons  |
+| `colors.semantic.secondary`         | secondary surfaces       |
+| `colors.semantic.foreground`        | body text                |
+| `colors.semantic.mutedForeground`   | helper text, labels      |
+| `colors.semantic.border`            | dividers, input borders  |
+| `colors.semantic.destructive`       | error, delete actions    |
+| `typography.families.display`       | headings font            |
+| `typography.families.body`          | body font                |
+| `radius`                            | border-radius scale      |
+| `shadows`                           | shadow scale             |
+| `spacing.scale`                     | spacing rhythm           |
 
 ### Step 2 — Read `HANDOFF.md`
 
 Open `output/<slug>/HANDOFF.md`. Confirm:
+
 - approved visual direction and homepage option
 - per-component notes (if any)
 - motion level — if > 0, apply animation tokens from `motion` in `design-tokens.json`
@@ -64,42 +65,65 @@ If `globals.css` is missing these variables — write them now before any compon
 
 Replace every mak-ecommerce reference className using the extracted tokens:
 
-| Reference className | Replace with |
-|---|---|
-| `bg-background` | design token `colors.semantic.background` |
-| `bg-card` | design token `colors.semantic.card` |
-| `bg-primary` | design token `colors.semantic.primary` |
-| `bg-secondary` | design token `colors.semantic.secondary` |
-| `bg-muted` | design token `colors.semantic.muted` |
-| `text-foreground` | design token `colors.semantic.foreground` |
-| `text-primary` | design token `colors.semantic.primary` |
-| `text-muted-foreground` | design token `colors.semantic.mutedForeground` |
-| `text-primary-foreground` | design token `colors.semantic.primaryForeground` |
-| `text-destructive` | design token `colors.semantic.destructive` |
-| `border-border` | design token `colors.semantic.border` |
-| `rounded-sm` | design token `radius` small value |
-| `rounded-md` | design token `radius` medium value |
-| `rounded-xl`, `rounded-2xl` | design token `radius` large value |
-| `shadow-sm` | design token `shadows` small value |
-| `shadow-xl` | design token `shadows` large value |
-| `space-y-4`, `gap-6` | design token `spacing.scale` values |
-| font classes | design token `typography.families` |
+| Reference className         | Replace with                                     |
+| --------------------------- | ------------------------------------------------ |
+| `bg-background`             | design token `colors.semantic.background`        |
+| `bg-card`                   | design token `colors.semantic.card`              |
+| `bg-primary`                | design token `colors.semantic.primary`           |
+| `bg-secondary`              | design token `colors.semantic.secondary`         |
+| `bg-muted`                  | design token `colors.semantic.muted`             |
+| `text-foreground`           | design token `colors.semantic.foreground`        |
+| `text-primary`              | design token `colors.semantic.primary`           |
+| `text-muted-foreground`     | design token `colors.semantic.mutedForeground`   |
+| `text-primary-foreground`   | design token `colors.semantic.primaryForeground` |
+| `text-destructive`          | design token `colors.semantic.destructive`       |
+| `border-border`             | design token `colors.semantic.border`            |
+| `rounded-sm`                | design token `radius` small value                |
+| `rounded-md`                | design token `radius` medium value               |
+| `rounded-xl`, `rounded-2xl` | design token `radius` large value                |
+| `shadow-sm`                 | design token `shadows` small value               |
+| `shadow-xl`                 | design token `shadows` large value               |
+| `space-y-4`, `gap-6`        | design token `spacing.scale` values              |
+| font classes                | design token `typography.families`               |
 
 ---
 
 ## Layout Components
 
-### `components/layout/Header.tsx` (Server)
+### `components/layout/Header.tsx` (Client)
 
 ```typescript
-import { getTranslations } from "next-intl/server";
+"use client";
+
 import { Link } from "@/i18n/routing";
+import { useTranslations } from "next-intl";
+import { useMenus } from "@/hooks/cms";
 import { CartButton } from "./CartButton";
 import { WishlistButton } from "./WishlistButton";
 import { UserButton } from "./UserButton";
 
-export default async function Header() {
-  const t = await getTranslations("nav");
+export default function Header() {
+  const t = useTranslations("nav");
+  const { menus: headerMenus } = useMenus("header");
+
+  const fallbackNav = [
+    { _id: "fallback-home", href: "/", label: t("home") },
+    { _id: "fallback-products", href: "/products", label: t("products") },
+    { _id: "fallback-about", href: "/about", label: t("about") },
+    { _id: "fallback-blog", href: "/blog", label: t("blog") },
+  ];
+
+  const navItems =
+    headerMenus.length > 0
+      ? headerMenus
+          .filter((m) => m.url && m.label)
+          .sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
+          .map((m) => ({
+            _id: m._id,
+            href: m.url!,
+            label: m.label!,
+          }))
+      : fallbackNav;
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur">
@@ -109,10 +133,15 @@ export default async function Header() {
             <span className="font-bold">{t("brand")}</span>
           </Link>
           <nav className="hidden md:flex items-center space-x-6 text-sm font-medium">
-            <Link href="/" className="text-foreground hover:text-primary transition-colors">{t("home")}</Link>
-            <Link href="/products" className="text-foreground hover:text-primary transition-colors">{t("products")}</Link>
-            <Link href="/about" className="text-foreground hover:text-primary transition-colors">{t("about")}</Link>
-            <Link href="/blog" className="text-foreground hover:text-primary transition-colors">{t("blog")}</Link>
+            {navItems.map((item) => (
+              <Link
+                key={item._id}
+                href={item.href}
+                className="text-foreground hover:text-primary transition-colors"
+              >
+                {item.label}
+              </Link>
+            ))}
           </nav>
         </div>
         <div className="flex flex-1 items-center justify-end space-x-2">
@@ -125,6 +154,8 @@ export default async function Header() {
   );
 }
 ```
+
+> **ЧУХАЛ:** `key={item._id}` ашигла — хэзээ ч `key={item.label}` биш. Menu items дээр deduplication-ийг `useMenus` hook дотроо хийсэн байх ёстой (URLRequest-based dedup). Fallback зөвхөн CMS menu хоосон үед ашиглана.
 
 ### `components/layout/CartButton.tsx` (Client)
 
@@ -390,26 +421,88 @@ export function UserButton() {
 }
 ```
 
-### `components/layout/Footer.tsx` (Server)
+### `components/layout/Footer.tsx` (Client)
 
 ```typescript
-import { getTranslations } from "next-intl/server";
-import { Link } from "@/i18n/routing";
+"use client";
 
-export async function Footer() {
-  const t = await getTranslations("nav");
+import { Link } from "@/i18n/routing";
+import { useTranslations } from "next-intl";
+import { useMenus } from "@/hooks/cms";
+
+export default function Footer() {
+  const t = useTranslations("nav");
+  const { menus: footerMenus } = useMenus("footer");
+
+  const fallbackGroups = [
+    {
+      title: t("brand"),
+      links: [
+        { _id: "fb-home", href: "/", label: t("home") },
+        { _id: "fb-products", href: "/products", label: t("products") },
+      ],
+    },
+    {
+      title: t("about"),
+      links: [
+        { _id: "fb-about", href: "/about", label: t("about") },
+        { _id: "fb-contact", href: "/contact", label: t("contact") },
+      ],
+    },
+  ];
+
+  const footerLinks =
+    footerMenus.length > 0
+      ? footerMenus
+          .filter((m) => m.url && m.label)
+          .sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
+          .map((m) => ({
+            _id: m._id,
+            href: m.url!,
+            label: m.label!,
+          }))
+      : fallbackGroups.flatMap((g) => g.links);
 
   return (
     <footer className="border-t bg-background">
       <div className="container py-8">
-        {/* 3-column grid: brand, quick links, contact */}
-        {/* links: home, products, about */}
-        {/* copyright */}
+        <div className="grid gap-8 sm:grid-cols-3">
+          <div>
+            <h3 className="heading-4 mb-4 text-ink">{t("brand")}</h3>
+            <p className="body-1 text-muted-foreground">{t("brand")}</p>
+          </div>
+          <div>
+            <h3 className="heading-4 mb-4 text-ink">{t("about")}</h3>
+            <ul className="space-y-2">
+              {footerLinks.map((item) => (
+                <li key={item._id}>
+                  <Link
+                    href={item.href}
+                    className="body-1 text-muted-foreground hover:text-ink transition-colors"
+                  >
+                    {item.label}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </div>
+          <div>
+            <h3 className="heading-4 mb-4 text-ink">{t("contact")}</h3>
+            <p className="body-1 text-muted-foreground">contact@example.com</p>
+          </div>
+        </div>
+        <div className="mt-8 border-t pt-4">
+          <p className="caption text-muted-foreground">
+            &copy; {new Date().getFullYear()} {t("brand")}. All rights reserved.
+          </p>
+        </div>
       </div>
     </footer>
   );
 }
 ```
+
+> **ЧУХАЛ:** `key={item._id}` ашигла — хэзээ ч `key={item.label}` биш. Menu items дээр deduplication-ийг `useMenus` hook дотроо хийсэн байх ёстой. Fallback зөвхөн CMS menu хоосон үед ашиглана.
 
 ---
 

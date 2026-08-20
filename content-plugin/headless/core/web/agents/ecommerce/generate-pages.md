@@ -37,25 +37,33 @@ Before writing each page, check `HANDOFF.md` section **1. Frontend Build Map** f
 
 ## Homepage (`app/[locale]/page.tsx`) — Server
 
-Fetches `poscProducts` (page: 1, perPage: 8). Renders hero section + featured products grid + "View All" link to `/products`.
+Fetches `poscProducts` (page: 1, perPage: 8) and `poscProductCategories` (parentId: undefined, excludeEmpty: true). Renders hero section + category tiles grid + featured products grid + "View All" link to `/products`.
+
+**Category tiles must always use real data from `poscProductCategories`** — never hardcode category names, codes, or images. Each tile links to `/products?category={category._id}` so it works with the `selectedCategory` filter already used on the Products page.
 
 ```typescript
 import { getTranslations } from "next-intl/server";
 import { Link } from "@/i18n/routing";
 import { getApolloClient } from "@/lib/apollo/client";
-import { POSC_PRODUCTS } from "@/graphql/ecommerce/queries/product";
+import { POSC_PRODUCTS, POSC_PRODUCT_CATEGORIES } from "@/graphql/ecommerce/queries/product";
 import { ProductCard } from "@/components/product/ProductCard";
 
 export default async function HomePage() {
   const t = await getTranslations();
   const client = getApolloClient();
 
-  const { data } = await client.query({
+  const { data: productsData } = await client.query({
     query: POSC_PRODUCTS,
     variables: { page: 1, perPage: 8 },
   });
 
-  const products = data?.poscProducts || [];
+  const { data: categoriesData } = await client.query({
+    query: POSC_PRODUCT_CATEGORIES,
+    variables: { excludeEmpty: true },
+  });
+
+  const products = productsData?.poscProducts || [];
+  const categories = categoriesData?.poscProductCategories || [];
 
   return (
     <div className="container py-8">
@@ -64,6 +72,33 @@ export default async function HomePage() {
         <h1>{t("metadata.title")}</h1>
         <p>{t("metadata.description")}</p>
       </section>
+
+      {categories.length > 0 && (
+        <section className="mb-12">
+          <div className="flex items-center justify-between mb-6">
+            <h2>{t("categories.title")}</h2>
+          </div>
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            {categories.map((category: any) => (
+              <Link
+                key={category._id}
+                href={`/products?category=${category._id}`}
+                className="group block rounded-xl border p-6"
+              >
+                {category.attachment?.url && (
+                  <img
+                    src={category.attachment.url}
+                    alt={category.name}
+                    className="mb-4 aspect-[4/3] w-full rounded-lg object-cover"
+                  />
+                )}
+                <span className="mono-xs text-muted">{category.code}</span>
+                <h3 className="font-semibold">{category.name}</h3>
+              </Link>
+            ))}
+          </div>
+        </section>
+      )}
 
       {/* Featured products */}
       <section>

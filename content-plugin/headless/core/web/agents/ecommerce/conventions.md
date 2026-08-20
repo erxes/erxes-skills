@@ -41,6 +41,31 @@ const authLink = setContext((_, { headers }) => {
 });
 ```
 
+## 2a. Apollo CMS Link
+
+**`cp` эхэлсэн query-д `clientPortalId` автоматаар injection хийнэ.**
+
+```typescript
+import { ApolloLink } from "@apollo/client";
+
+const cmsLink = new ApolloLink((operation, forward) => {
+  const { operationName, variables } = operation;
+  if (
+    operationName.startsWith("cp") &&
+    variables &&
+    !variables.clientPortalId
+  ) {
+    operation.variables = {
+      ...variables,
+      clientPortalId: process.env.NEXT_PUBLIC_ERXES_CP_TOKEN || "",
+    };
+  }
+  return forward(operation);
+});
+```
+
+**ЧУХАЛ:** Link chain: `authLink → cmsLink → httpLink`. `cpMenus`, `cpPages`, `cpPosts`, `cpCategories` зэрэг бүх CMS query-д `clientPortalId` шаардлагатай — энэ link нь caller-уудад manual-аар pass хийх шаардлагагүй болгодог.
+
 **ЧУХАЛ:** Login дараа `triggerRefetchUser(true)` дуудахын өмнө `sessionStorage.setItem("token", token)` хийсэн байх ёстой.
 
 ---
@@ -99,13 +124,13 @@ import Link from "next/link";
 
 ## 7. Server vs Client Components
 
-| Component   | Type   | Why                           |
-| ----------- | ------ | ----------------------------- |
-| Header      | Server | Categories from `getClient()` |
-| Footer      | Server | Menus from `getClient()`      |
-| CartDrawer  | Client | Jotai state                   |
-| ProductCard | Client | Add to cart interaction       |
-| Checkout    | Client | Forms, payment state          |
+| Component   | Type   | Why                                   |
+| ----------- | ------ | ------------------------------------- |
+| Header      | Client | Fetches CMS menus via `useMenus` hook |
+| Footer      | Client | Fetches CMS menus via `useMenus` hook |
+| CartDrawer  | Client | Jotai state                           |
+| ProductCard | Client | Add to cart interaction               |
+| Checkout    | Client | Forms, payment state                  |
 
 ---
 
@@ -186,6 +211,11 @@ Key naming convention: `section.key` — e.g. `product.addToCart`, `cart.empty`,
 - [ ] Register: mutation нэр `clientPortalUserRegister`, flat variables, token буцаахгүй — user object буцаана
 - [ ] Logout: `sessionStorage.removeItem("token")` + `removeItem("refreshToken")`, `setCurrentUser(null)`, redirect "/"
 - [ ] Apollo `authLink`: `x-app-token` = `NEXT_PUBLIC_ERXES_CP_TOKEN` (client portal ID), `erxes-pos-token` = `NEXT_PUBLIC_POS_TOKEN` (POS token)
+- [ ] Apollo `cmsLink`: `clientPortalId` auto-injected into all `cp*` operations
+- [ ] Header/Footer are Client components — fetch CMS menus via `useMenus("header")` / `useMenus("footer")`
+- [ ] Header renders menu items with `key={item._id}`, never `key={item.label}`
+- [ ] `useMenus` deduplicates by URL — defensive against CMS duplicate records
+- [ ] `NEXT_PUBLIC_CP_ID` in `.env.local` and exported as `CP_ID` from constants
 - [ ] `/verify` auto-polling: `useCallback` + `useEffect` + `setInterval(5000)` — invoice үүссэний дараа идэвхждэг, `paymentStatus === "paid"` болмогц `clearInterval`
 - [ ] `useCreateInvoice` — destructured params (`paymentIds`, `amount`, `description`, `contentType`, `contentTypeId`, `customerId`, `customerType`)
 - [ ] `/verify` — `invoiceCreate` + `paymentTransactionsAdd` хоёуланг нэг handler дотор дуудна
