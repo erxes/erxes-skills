@@ -502,3 +502,45 @@ export function useCmsPostDetail(slug: string) {
   };
 }
 ```
+
+---
+
+## `src/hooks/cms.ts`
+
+```typescript
+"use client";
+
+import { useMemo } from "react";
+import { useQuery } from "@apollo/client/react";
+import { useLocale } from "next-intl";
+import { CP_MENUS } from "@/graphql/cms/queries/menu";
+
+function deduplicateMenus(items: any[]): any[] {
+  const seen = new Map<string, any>();
+  for (const item of items) {
+    const key = item.url ?? item._id;
+    if (!seen.has(key)) {
+      seen.set(key, item);
+    }
+  }
+  return Array.from(seen.values());
+}
+
+export function useMenus(kind?: string) {
+  const locale = useLocale();
+
+  const { data, loading, error } = useQuery(CP_MENUS, {
+    variables: { language: locale, kind },
+    fetchPolicy: "cache-and-network",
+  });
+
+  const menus = useMemo(
+    () => deduplicateMenus((data as any)?.cpMenus ?? []),
+    [data?.cpMenus],
+  );
+
+  return { menus, loading, error };
+}
+```
+
+> **ЧУХАЛ:** CMS нь duplicate menu records үүсгэдэг (нэг label, өөр `_id`). `deduplicateMenus` нь URL-аар dedup хийдэг — зөвхөн анхны олдсон item-ыг буцаана. **Загвар үүсгэхдээ энэ hook-ийг заавал бич — `useMenus("header")` / `useMenus("footer")` ашиглана.** Header/Footer нь энэ hook-оос menu авч, fallback нь зөвхөн CMS хоосон үед ашиглана.

@@ -9,6 +9,7 @@ All queries and mutations used in the ecommerce storefront.
 ### Queries
 
 **`clientPortalCurrentUser`**
+
 ```graphql
 query ClientPortalCurrentUser {
   clientPortalCurrentUser {
@@ -24,6 +25,7 @@ query ClientPortalCurrentUser {
 ```
 
 **`currentConfig`**
+
 ```graphql
 query CurrentConfig {
   currentConfig {
@@ -48,15 +50,21 @@ query CurrentConfig {
 ### Mutations
 
 **`clientPortalUserLoginWithCredentials`**
+
 ```graphql
-mutation ClientPortalUserLoginWithCredentials($email: String, $password: String) {
+mutation ClientPortalUserLoginWithCredentials(
+  $email: String
+  $password: String
+) {
   clientPortalUserLoginWithCredentials(email: $email, password: $password)
 }
 ```
+
 - Returns: JSON scalar (object with `token` and `refreshToken`)
 - Usage: Login form
 
 **`clientPortalUserRegister`**
+
 ```graphql
 mutation ClientPortalUserRegister(
   $email: String
@@ -87,6 +95,7 @@ mutation ClientPortalUserRegister(
 ```
 
 **`clientPortalLogout`**
+
 ```graphql
 mutation ClientPortalLogout {
   clientPortalLogout
@@ -94,6 +103,7 @@ mutation ClientPortalLogout {
 ```
 
 **`clientPortalUsersEdit`**
+
 ```graphql
 mutation ClientPortalUsersEdit(
   $_id: String!
@@ -131,6 +141,7 @@ mutation ClientPortalUsersEdit(
 ### Queries
 
 **`poscProducts`**
+
 ```graphql
 query PoscProducts(
   $searchValue: String
@@ -167,6 +178,7 @@ query PoscProducts(
 ```
 
 **`poscProductsTotalCount`**
+
 ```graphql
 query PoscProductsTotalCount(
   $categoryId: String
@@ -186,6 +198,7 @@ query PoscProductsTotalCount(
 ```
 
 **`poscProductCategories`**
+
 ```graphql
 query PoscProductCategories(
   $parentId: String
@@ -220,6 +233,7 @@ query PoscProductCategories(
 ```
 
 **`poscProductDetail`**
+
 ```graphql
 query ProductDetail($_id: String) {
   poscProductDetail(_id: $_id) {
@@ -248,6 +262,7 @@ query ProductDetail($_id: String) {
 ```
 
 **`poscProductSimilarities`**
+
 ```graphql
 query PoscProductSimilarities($id: String!, $groupedSimilarity: String) {
   poscProductSimilarities(_id: $id, groupedSimilarity: $groupedSimilarity) {
@@ -282,6 +297,7 @@ query PoscProductSimilarities($id: String!, $groupedSimilarity: String) {
 ```
 
 **`cpProductReviews`**
+
 ```graphql
 query CpProductReviews(
   $productIds: [String]
@@ -312,6 +328,7 @@ query CpProductReviews(
 ### Queries
 
 **`cpFullOrders` (current cart)**
+
 ```graphql
 query CurrentOrder(
   $customerId: String
@@ -354,6 +371,7 @@ query CurrentOrder(
 ```
 
 **`orderDetail` (visitor cart)**
+
 ```graphql
 query ActiveOrderDetail($id: String, $customerId: String) {
   orderDetail(_id: $id, customerId: $customerId) {
@@ -382,6 +400,7 @@ query ActiveOrderDetail($id: String, $customerId: String) {
 ```
 
 **`cpFullOrders` (order history)**
+
 ```graphql
 query FullOrders(
   $statuses: [String]
@@ -412,6 +431,7 @@ query FullOrders(
 ```
 
 **`cpOrderDetail`**
+
 ```graphql
 query CpOrderDetail($id: String!, $customerId: String!) {
   cpOrderDetail(_id: $id, customerId: $customerId) {
@@ -477,6 +497,7 @@ query CpOrderDetail($id: String!, $customerId: String!) {
 ### Mutations
 
 **`cpOrdersAdd`**
+
 ```graphql
 mutation CpOrdersAdd(
   $items: [OrderItemInput]
@@ -514,6 +535,7 @@ mutation CpOrdersAdd(
 ```
 
 **`cpOrdersEdit`**
+
 ```graphql
 mutation CpOrdersEdit(
   $_id: String!
@@ -554,6 +576,7 @@ mutation CpOrdersEdit(
 ```
 
 **`cpOrdersCancel`**
+
 ```graphql
 mutation CpOrdersCancel($_id: String!) {
   cpOrdersCancel(_id: $_id)
@@ -561,6 +584,7 @@ mutation CpOrdersCancel($_id: String!) {
 ```
 
 **`cpOrderChangeSaleStatus`**
+
 ```graphql
 mutation CpOrderChangeSaleStatus($_id: String!, $saleStatus: String) {
   cpOrderChangeSaleStatus(_id: $_id, saleStatus: $saleStatus) {
@@ -576,6 +600,7 @@ mutation CpOrderChangeSaleStatus($_id: String!, $saleStatus: String) {
 ### Queries
 
 **`cpPayments`**
+
 ```graphql
 query CpPayments {
   cpPayments {
@@ -592,6 +617,7 @@ query CpPayments {
 ### Mutations
 
 **`invoiceCreate`**
+
 ```graphql
 mutation InvoiceCreate($input: InvoiceInput!) {
   invoiceCreate(input: $input) {
@@ -618,14 +644,17 @@ mutation InvoiceCreate($input: InvoiceInput!) {
 ```
 
 **`invoicesCheck`**
+
 ```graphql
 mutation InvoicesCheck($id: String!) {
   invoicesCheck(_id: $id)
 }
 ```
+
 - Returns: String (`"paid"`, `"pending"`, `"failed"`, `"cancelled"`)
 
 **`paymentTransactionsAdd`**
+
 ```graphql
 mutation PaymentTransactionsAdd($input: PaymentTransactionInput!) {
   paymentTransactionsAdd(input: $input) {
@@ -648,6 +677,7 @@ mutation PaymentTransactionsAdd($input: PaymentTransactionInput!) {
 ### Queries
 
 **`cpMenus`**
+
 ```graphql
 query CpMenus($id: String) {
   cpMenus(_id: $id) {
@@ -672,6 +702,7 @@ query CpMenus($id: String) {
 ```
 
 **`cpPageDetail`**
+
 ```graphql
 query CpPageDetail($slug: String, $lang: String) {
   cpPageDetail(slug: $slug, lang: $lang) {
@@ -697,6 +728,7 @@ query CpPageDetail($slug: String, $lang: String) {
 ```
 
 **`cpPosts`**
+
 ```graphql
 query CpPosts($page: Int, $perPage: Int, $lang: String) {
   cpPosts(page: $page, perPage: $perPage, lang: $lang) {
@@ -716,6 +748,7 @@ query CpPosts($page: Int, $perPage: Int, $lang: String) {
 ```
 
 **`cpPostDetail`**
+
 ```graphql
 query CpPostDetail($slug: String, $lang: String) {
   cpPostDetail(slug: $slug, lang: $lang) {
@@ -747,6 +780,7 @@ query CpPostDetail($slug: String, $lang: String) {
 ### Queries
 
 **`cpWishlist`**
+
 ```graphql
 query CpWishlist($customerId: String!) {
   cpWishlist(customerId: $customerId) {
@@ -764,6 +798,7 @@ query CpWishlist($customerId: String!) {
 ### Mutations
 
 **`cpWishlistAdd`**
+
 ```graphql
 mutation CpWishlistAdd($productId: String!, $customerId: String!) {
   cpWishlistAdd(productId: $productId, customerId: $customerId) {
@@ -776,6 +811,7 @@ mutation CpWishlistAdd($productId: String!, $customerId: String!) {
 ```
 
 **`cpWishlistRemove`**
+
 ```graphql
 mutation CpWishlistRemove($_id: String!) {
   cpWishlistRemove(_id: $_id)
@@ -786,17 +822,18 @@ mutation CpWishlistRemove($_id: String!) {
 
 ## Environment Variables
 
-| Variable | Source | Header | Usage |
-|----------|--------|--------|-------|
-| `NEXT_PUBLIC_ERXES_API_URL` | Setup | — | GraphQL endpoint |
-| `NEXT_PUBLIC_ERXES_CP_TOKEN` | Client Portal | `x-app-token` | Client portal ID |
-| `NEXT_PUBLIC_POS_TOKEN` | POS Config | `erxes-pos-token` | POS token |
-| `NEXT_PUBLIC_POS_TOKEN` | POS settings | cookie | POS config |
-| `NEXT_PUBLIC_MAIN_API_DOMAIN` | Derived from API URL | — | CORS / images |
-| `NEXT_PUBLIC_STORE_NAME` | store.config.json | — | Site title |
-| `NEXT_PUBLIC_SITE_URL` | Deploy target | — | Metadata |
-| `NEXT_PUBLIC_CMS_ID` | Created by script | — | CMS queries |
-| `NEXT_PUBLIC_CP_ID` | Client Portal ID | — | Order mutations |
+| Variable                      | Source               | Header            | Usage                       |
+| ----------------------------- | -------------------- | ----------------- | --------------------------- |
+| `NEXT_PUBLIC_ERXES_API_URL`   | Setup                | —                 | GraphQL endpoint            |
+| `NEXT_PUBLIC_ERXES_ENDPOINT`  | Setup                | —                 | Apollo client HTTP link URI |
+| `NEXT_PUBLIC_ERXES_CP_TOKEN`  | Client Portal        | `x-app-token`     | Client portal ID            |
+| `NEXT_PUBLIC_CP_ID`           | Client Portal ID     | —                 | Order mutations             |
+| `NEXT_PUBLIC_POS_TOKEN`       | POS Config           | `erxes-pos-token` | POS token                   |
+| `NEXT_PUBLIC_POS_TOKEN`       | POS settings         | cookie            | POS config                  |
+| `NEXT_PUBLIC_MAIN_API_DOMAIN` | Derived from API URL | —                 | CORS / images               |
+| `NEXT_PUBLIC_STORE_NAME`      | store.config.json    | —                 | Site title                  |
+| `NEXT_PUBLIC_SITE_URL`        | Deploy target        | —                 | Metadata                    |
+| `NEXT_PUBLIC_CMS_ID`          | Created by script    | —                 | CMS queries                 |
 
 ---
 

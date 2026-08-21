@@ -41,6 +41,7 @@ implementing. Do not improvise library APIs from memory.
 ## 1. GSAP + ScrollTrigger + SplitText {#gsap}
 
 ### Install
+
 ```bash
 pnpm add gsap @gsap/react
 ```
@@ -92,7 +93,7 @@ import { gsap, ScrollTrigger } from "@/lib/gsap";
  */
 export function useGSAPAnimation(
   callback: (ctx: gsap.Context) => void,
-  deps: React.DependencyList = []
+  deps: React.DependencyList = [],
 ) {
   const ctx = useRef<gsap.Context | null>(null);
 
@@ -100,9 +101,9 @@ export function useGSAPAnimation(
     ctx.current = gsap.context(callback);
     return () => {
       ctx.current?.revert();
-      ScrollTrigger.getAll().forEach(st => st.kill());
+      ScrollTrigger.getAll().forEach((st) => st.kill());
     };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, deps);
 }
 ```
@@ -405,6 +406,7 @@ export function PageTransitionWrapper({
 ## 3. Lenis Smooth Scroll {#lenis}
 
 ### Install
+
 ```bash
 pnpm add lenis
 ```
@@ -461,6 +463,7 @@ export const getLenis = (): Lenis | null => lenisInstance;
 ## 4. Three.js / React Three Fiber {#three}
 
 ### Install
+
 ```bash
 pnpm add three @react-three/fiber @react-three/drei @types/three
 ```
@@ -471,8 +474,11 @@ pnpm add three @react-three/fiber @react-three/drei @types/three
 // In the page/layout that uses Three.js:
 import dynamic from "next/dynamic";
 const ThreeScene = dynamic(
-  () => import("@/components/effects/ThreeScene").then(m => ({ default: m.ThreeScene })),
-  { ssr: false, loading: () => null }
+  () =>
+    import("@/components/effects/ThreeScene").then((m) => ({
+      default: m.ThreeScene,
+    })),
+  { ssr: false, loading: () => null },
 );
 ```
 
@@ -562,6 +568,7 @@ export function ThreeScene({ className, variant = "sphere" }: ThreeSceneProps) {
 ## 5. tsParticles {#particles}
 
 ### Install
+
 ```bash
 pnpm add @tsparticles/react @tsparticles/slim @tsparticles/engine
 ```
@@ -655,6 +662,7 @@ export function ParticleField({
 ## 6. Rive {#rive}
 
 ### Install
+
 ```bash
 pnpm add @rive-app/react-canvas
 ```
@@ -727,6 +735,7 @@ export function RiveHero({
 ## 7. Lottie {#lottie}
 
 ### Install
+
 ```bash
 pnpm add lottie-react
 # Or for DotLottie format:
@@ -796,12 +805,15 @@ export function LottiePlayer({
 ## 8. Barba.js Page Transitions {#barba}
 
 ### Install
+
 ```bash
 pnpm add barba
 ```
 
 ### IMPORTANT: Barba.js hijacks the router. In Next.js, use with App Router carefully.
+
 ### Recommended: Use Framer Motion AnimatePresence instead for Next.js projects.
+
 ### Only use Barba.js for non-Next.js or when HANDOFF.md specifically requires it.
 
 ### `lib/barba.ts` — If Barba.js is required
@@ -849,18 +861,24 @@ export function initBarba() {
 ```
 
 ### Curtain overlay element (add to layout.tsx body):
+
 ```tsx
-{/* Page curtain for Barba.js transitions */}
+{
+  /* Page curtain for Barba.js transitions */
+}
 <div
   id="page-curtain"
   aria-hidden="true"
   style={{
-    position: "fixed", inset: 0, zIndex: 9999,
+    position: "fixed",
+    inset: 0,
+    zIndex: 9999,
     background: "var(--color-accent)",
-    transform: "scaleY(0)", transformOrigin: "bottom",
+    transform: "scaleY(0)",
+    transformOrigin: "bottom",
     pointerEvents: "none",
   }}
-/>
+/>;
 ```
 
 ---
@@ -868,6 +886,7 @@ export function initBarba() {
 ## 9. VanillaTilt 3D Hover {#vanillatilt}
 
 ### Install
+
 ```bash
 pnpm add vanilla-tilt @types/vanilla-tilt
 ```
@@ -934,6 +953,7 @@ export function TiltCard({
 ## 10. TextScramble {#textscramble}
 
 ### Install
+
 ```bash
 pnpm add react-scramble
 # Or use the custom implementation below (no npm needed)
@@ -1170,6 +1190,7 @@ export function TextReveal({
 ## 13. CountUp.js {#countup}
 
 ### Install
+
 ```bash
 pnpm add countup.js react-countup
 ```
@@ -1493,6 +1514,7 @@ export function CurtainTransition({ children }: CurtainTransitionProps) {
 ## 20. View Transitions API {#viewtransitions}
 
 ### Install
+
 ```bash
 pnpm add next-view-transitions
 ```
@@ -1517,18 +1539,38 @@ export default function RootLayout({ children }) {
 
 ```css
 /* Shared element transition — e.g. PostCard image → Article hero */
-.post-card-image { view-transition-name: var(--post-id); }
-.article-hero    { view-transition-name: var(--post-id); }
+.post-card-image {
+  view-transition-name: var(--post-id);
+}
+.article-hero {
+  view-transition-name: var(--post-id);
+}
 
-@keyframes slide-from-right  { from { transform: translateX(30px); opacity: 0; } }
-@keyframes slide-to-left      { to   { transform: translateX(-30px); opacity: 0; } }
+@keyframes slide-from-right {
+  from {
+    transform: translateX(30px);
+    opacity: 0;
+  }
+}
+@keyframes slide-to-left {
+  to {
+    transform: translateX(-30px);
+    opacity: 0;
+  }
+}
 
-::view-transition-old(root) { animation: slide-to-left 0.3s ease forwards; }
-::view-transition-new(root) { animation: slide-from-right 0.3s ease forwards; }
+::view-transition-old(root) {
+  animation: slide-to-left 0.3s ease forwards;
+}
+::view-transition-new(root) {
+  animation: slide-from-right 0.3s ease forwards;
+}
 
 @media (prefers-reduced-motion: reduce) {
   ::view-transition-old(root),
-  ::view-transition-new(root) { animation: none; }
+  ::view-transition-new(root) {
+    animation: none;
+  }
 }
 ```
 
@@ -2072,6 +2114,7 @@ export function ShatterButton({ children, className, onClick }: ShatterButtonPro
 ## 27. Theatre.js {#theatre}
 
 ### Install
+
 ```bash
 pnpm add @theatre/core @theatre/studio
 # For R3F:
@@ -2099,8 +2142,8 @@ export const heroSheet = project.sheet("Hero Animation");
 // Define animated objects
 export const heroAnim = heroSheet.object("Hero", {
   titleOpacity: types.number(0, { range: [0, 1] }),
-  titleY:       types.number(40, { range: [-100, 100] }),
-  bgScale:      types.number(1,  { range: [0.5, 2] }),
+  titleY: types.number(40, { range: [-100, 100] }),
+  bgScale: types.number(1, { range: [0.5, 2] }),
 });
 ```
 
@@ -2123,7 +2166,8 @@ export function TheatreHero() {
 
     // Or attach to scroll:
     const handleScroll = () => {
-      const progress = window.scrollY / (document.body.scrollHeight - window.innerHeight);
+      const progress =
+        window.scrollY / (document.body.scrollHeight - window.innerHeight);
       heroSheet.sequence.position = progress * 2; // scrub 0–2 seconds
     };
     window.addEventListener("scroll", handleScroll, { passive: true });
