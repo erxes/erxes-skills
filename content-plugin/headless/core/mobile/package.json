@@ -3,20 +3,28 @@
   "version": "1.0.0",
   "main": "index.ts",
   "dependencies": {
-    "expo": "~54.0.36",
-    "expo-status-bar": "~55.0.6",
-    "react": "19.2.0",
-    "react-native": "0.83.6"
+    "expo": "57.0.16",
+    "expo-status-bar": "~57.0.1",
+    "react": "19.2.3",
+    "react-native": "0.86.2"
   },
   "devDependencies": {
+    "@types/node": "^20.0.0",
     "@types/react": "~19.2.2",
-    "typescript": "~5.9.2"
+    "tsx": "^4.0.0",
+    "typescript": "~6.0.3"
   },
   "scripts": {
     "start": "expo start",
     "android": "expo start --android",
     "ios": "expo start --ios",
-    "web": "expo start --web"
+    "web": "expo start --web",
+    "clone": "tsx scripts/clone.ts",
+    "erxes:cms": "tsx scripts/erxes-cms.ts",
+    "erxes:pages": "tsx scripts/erxes-pages.ts",
+    "erxes:posts": "tsx scripts/erxes-posts.ts",
+    "erxes:menu": "tsx scripts/erxes-menu.ts",
+    "github:push": "tsx scripts/github-push.ts"
   },
   "private": true
 }

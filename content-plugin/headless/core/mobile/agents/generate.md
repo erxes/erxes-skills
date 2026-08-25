@@ -148,7 +148,7 @@ export function getApolloClient() {
     link: new HttpLink({
       uri: process.env.EXPO_PUBLIC_ERXES_ENDPOINT,
       headers: {
-        "x-app-token": process.env.EXPO_PUBLIC_ERXES_APP_TOKEN ?? "",
+        "x-app-token": process.env.EXPO_PUBLIC_CLIENT_PORTAL_TOKEN ?? "",
       },
     }),
   });

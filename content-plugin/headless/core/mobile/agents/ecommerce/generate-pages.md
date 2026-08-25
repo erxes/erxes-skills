@@ -15,6 +15,7 @@
 - Screen headings must use `typography.families.display` font
 - Body text must use `typography.families.body` font
 - All interactive states (pressed, focused) must use the token-mapped colors — do not hardcode hex values
+- **Colors come from two sanctioned paths ONLY:** (1) semantic className (`bg-primary`, `text-accent`) for anything styleable, (2) `import { tokens } from "@/lib/tokens"` → `tokens.colors.semantic.*` for surfaces className cannot reach — navigator theme options (`tabBarActiveTintColor`, `headerStyle`), native props (`placeholderTextColor`, `tintColor`), Reanimated styles. Raw hex literals are forbidden in screens. Product swatch data (`colorOptions[].hex`) is exempt — it is data, not theme.
 - If `motion.motionLevel` > 0 in `design-tokens.json`, apply entrance animations from `motion.variants` using `react-native-reanimated`
 
 ### Web → Mobile conversion rules
@@ -32,7 +33,7 @@
 | `usePathname` from next             | `usePathname` from `expo-router`                                      |
 | `className="..."`                   | `className="..."` via NativeWind or `style={styles.x}` via StyleSheet |
 | `dangerouslySetInnerHTML`           | `react-native-render-html`                                            |
-| `sessionStorage`                    | `AsyncStorage` from `@react-native-async-storage/async-storage`       |
+| `sessionStorage` / `localStorage`  | `SecureStore` from `expo-secure-store` (conventions.md §1 — tokens/auth state only)   |
 | `confirm(...)`                      | `Alert.alert(...)` from `react-native`                                |
 | Page-level `async` server component | `useEffect` + `useQuery` hook                                         |
 | `getTranslations()` server          | `useTranslation()` from `react-i18next`                               |
@@ -64,7 +65,7 @@ import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator, Image } fr
 import { useRouter } from 'expo-router';
 import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useProducts, setProductsCache } from '@/features/products/hooks/useProducts';
+import { useProducts, setProductsCache } from 'hooks/useProducts';
 import ProductCard from '@/components/ProductCard';
 
 export default function HomeScreen() {
@@ -139,7 +140,7 @@ import { View, Text, ScrollView, TextInput, TouchableOpacity, ActivityIndicator,
 import { useState } from 'react';
 import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
-import { useProducts, useProductCategories } from '@/features/products/hooks/useProducts';
+import { useProducts, useProductCategories } from 'hooks/useProducts';
 import ProductCard from '@/components/ProductCard';
 
 export default function ProductsScreen() {
@@ -243,7 +244,7 @@ Key patterns:
 
 - `useLocalSearchParams` replaces `params: Promise<{ id }>` — no async unwrap needed
 - **Image carousel**: `FlatList horizontal pagingEnabled` over `product.attachmentMore` (fallback to single `product.attachment`)
-- **Size/color selection**: required before add-to-cart. Use `product.sizes`/`product.colors` from CP_PRODUCT_DETAIL if present, otherwise fall back to a dummy set (`38–41` / Brown, Black, White) so the UI is never blocked by missing product-level variant data
+- **Size/color selection**: required before add-to-cart. **The POS schema does NOT guarantee `product.sizes`/`product.colors` — most products return no variant data at all.** Always define module-level `DEFAULT_SIZES = ['38', '39', '40', '41']` and `DEFAULT_COLORS` (Brown/Black/White with hex values) and fall back to them when the product fields are missing, so the UI is never blocked by absent product-level variant data
 - `addToCart`: validates size + color are selected, then upserts `{ selectedSize, selectedColor }` into the cart item
 - `addToWishlist`: calls `CP_WISHLIST_ADD` if logged in
 - Reviews: `CP_PRODUCT_REVIEWS` query + add/update/remove mutations
@@ -259,12 +260,12 @@ import { useQuery, useMutation } from '@apollo/client/react';
 import { useTranslation } from 'react-i18next';
 import { useCartStore } from '@/stores/cart';
 import { useAuthStore } from '@/stores/auth';
-import { useProductDetail } from '@/features/products/hooks/useProductDetail';
+import { useProductDetail } from 'hooks/useProductDetail';
 import { formatPriceMnt, formatPriceUsd } from '@/lib/utils';
 import { tokens } from '@/lib/design-tokens';
-import { CP_WISHLIST_ADD } from '@/graphql/mutations/wishlist';
-import { CP_PRODUCT_REVIEW_ADD, PRODUCT_REVIEW_UPDATE, PRODUCT_REVIEW_REMOVE } from '@/graphql/mutations/productReview';
-import { CP_PRODUCT_REVIEWS } from '@/graphql/queries/productReview';
+import { CP_WISHLIST_ADD } from 'graphql/ecommerce/mutations/wishlist';
+import { CP_PRODUCT_REVIEW_ADD, PRODUCT_REVIEW_UPDATE, PRODUCT_REVIEW_REMOVE } from 'graphql/ecommerce/mutations/productReview';
+import { CP_PRODUCT_REVIEWS } from 'graphql/ecommerce/queries/productReview';
 import StarRating from '@/components/StarRating';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
@@ -610,7 +611,7 @@ import { View, Text, TextInput, TouchableOpacity, ActivityIndicator, KeyboardAvo
 import { useState } from 'react';
 import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
-import { useLogin } from '@/hooks/auth';
+import { useLogin } from 'hooks/auth';
 
 export default function LoginScreen() {
   const { t } = useTranslation();
@@ -707,7 +708,7 @@ import { useEffect } from 'react';
 import { useRouter, usePathname } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { useAuthStore } from '@/stores/auth';
-import { useCurrentUser, useLogout } from '@/hooks/auth';
+import { useCurrentUser, useLogout } from 'hooks/auth';
 
 const navItems = [
   { labelKey: 'profile.title', route: '/profile' },
@@ -797,7 +798,7 @@ import { useEffect } from 'react';
 import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { useAuthStore } from '@/stores/auth';
-import { useOrders } from '@/hooks/order';
+import { useOrders } from 'hooks/order';
 import { formatPriceMnt } from '@/lib/utils';
 
 export default function OrdersScreen() {
@@ -873,8 +874,8 @@ import { useRouter } from 'expo-router';
 import { useQuery, useMutation } from '@apollo/client/react';
 import { useTranslation } from 'react-i18next';
 import { useAuthStore } from '@/stores/auth';
-import { CP_WISHLIST } from '@/graphql/queries/wishlist';
-import { CP_WISHLIST_REMOVE } from '@/graphql/mutations/wishlist';
+import { CP_WISHLIST } from 'graphql/ecommerce/queries/wishlist';
+import { CP_WISHLIST_REMOVE } from 'graphql/ecommerce/mutations/wishlist';
 import { formatPriceMnt } from '@/lib/utils';
 
 export default function WishlistScreen() {
@@ -1081,13 +1082,13 @@ export default function CartScreen() {
 
 1. Never use `div`, `section`, `form`, or `button` HTML elements — always use `View`, `TouchableOpacity`, `Pressable`.
 2. Never use `dangerouslySetInnerHTML` — use `react-native-render-html` for HTML content.
-3. Never use `sessionStorage` or `localStorage` — use `AsyncStorage` from `@react-native-async-storage/async-storage`.
+3. Never use `sessionStorage` or `localStorage` — use `SecureStore` from `expo-secure-store` (per conventions.md §1, the storage source of truth).
 4. Never use `confirm()` — use `Alert.alert()` with confirm/cancel buttons.
 5. Never use `Link` from Next.js or `next/image` — use `router.push()` and `Image` from `react-native`.
 6. Always use `useLocalSearchParams` for route params — never `params: Promise<{ id }>`.
 7. Always use `KeyboardAvoidingView` with `Platform.OS === 'ios' ? 'padding' : 'height'` for forms.
 8. Always use `FlatList` for long lists — never `ScrollView` with `map` for large datasets.
 9. Gate auth-required screens with `useEffect` redirect to `/login` when `currentUser` is null.
-10. `sessionStorage.setItem('redirectAfterLogin', ...)` → `AsyncStorage.setItem('redirectAfterLogin', ...)`.
+10. `sessionStorage.setItem('redirectAfterLogin', ...)` → `SecureStore.setItemAsync('redirectAfterLogin', ...)`.
 11. Always include `showsVerticalScrollIndicator={false}` on `ScrollView` components.
 12. Price must display in both MNT (`₮`) and USD (`$`) formats using `formatPriceMnt` and `formatPriceUsd`.

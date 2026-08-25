@@ -49,7 +49,10 @@ async function main() {
   }
 
   const apiUrl = config.erxes_api_url || env.EXPO_PUBLIC_ERXES_API_URL;
-  const appToken = env.EXPO_PUBLIC_ERXES_CP_TOKEN || config.erxes_app_token;
+  const appToken =
+    env.EXPO_PUBLIC_CLIENT_PORTAL_TOKEN ||
+    env.ERXES_APP_TOKEN ||
+    config.erxes_app_token;
 
   if (!apiUrl || !appToken) {
     console.error("Missing erxes_api_url or app token");

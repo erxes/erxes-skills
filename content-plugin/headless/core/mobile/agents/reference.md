@@ -49,7 +49,7 @@ Menu `kind` values: `"header"` · `"footer"` · `"link"` (fallback) — on mobil
 | `lib/mock/`                           | Frontend build       | Never modify after creation                                                                                                    |
 | `lib/mock/index.ts` exports           | Frontend build       | **Never change signatures** — `lib/graphql/` must match exactly                                                                |
 | `lib/graphql/`                        | CMS seeding (Step 5) | Created after mutations; replaces mock at runtime                                                                              |
-| `graphql/client.ts`                   | CMS seeding          | Single shared Apollo client instance — setup ONLY, no feature queries/mutations here (those live in `src/features/*/graphql/`) |
+| `lib/apollo/client.ts`                | CMS seeding          | Single shared Apollo client instance — setup ONLY, no feature queries/mutations here (those live in `graphql/<domain>/`)        |
 | `components/layout/ApolloWrapper.tsx` | CMS seeding          | Apollo `<ApolloProvider>` wrapping the root layout — no `"use client"` directive needed, everything is client-side             |
 | `components/**`                       | Frontend build       | Never overwritten by CMS seeding                                                                                               |
 | `types/cms.ts`                        | Frontend build       | Shared — neither layer modifies after creation                                                                                 |
@@ -68,9 +68,9 @@ Menu `kind` values: `"header"` · `"footer"` · `"link"` (fallback) — on mobil
 
 ### Frontend Code
 
-- [ ] `graphql/client.ts` instantiates a single `ApolloClient` (no `registerApolloClient` — that API is Next.js RSC-only)
+- [ ] `lib/apollo/client.ts` instantiates a single `ApolloClient` (no `registerApolloClient` — that API is Next.js RSC-only)
 - [ ] `components/layout/ApolloWrapper.tsx` wraps the root `app/_layout.tsx` with `<ApolloProvider>`
-- [ ] Feature GraphQL operations live only in `src/features/<feature>/graphql/queries.ts` and `mutations.ts` — never mixed into a shared/global file
+- [ ] Feature GraphQL operations live only in `graphql/<domain>/queries|mutations` (auth, cms, ecommerce) — never mixed into a shared/global file
 - [ ] ~~`generateStaticParams`~~ — **not applicable**; Expo Router resolves dynamic `[slug].tsx` routes at runtime, no static param generation step exists
 - [ ] All `useQuery()` calls set an explicit `fetchPolicy` (e.g. `cache-and-network`) instead of a `revalidate` context
 - [ ] `_id` (not `id`) in all GraphQL selections
@@ -80,7 +80,7 @@ Menu `kind` values: `"header"` · `"footer"` · `"link"` (fallback) — on mobil
 ### Environment
 
 - [ ] `.env` is in `.gitignore`
-- [ ] `EXPO_PUBLIC_ERXES_ENDPOINT`, `EXPO_PUBLIC_ERXES_APP_TOKEN`, `EXPO_PUBLIC_ERXES_CMS_ID` set in `eas.json` build profile `env` blocks (replaces setting them in `next.config.mjs`)
+- [ ] `EXPO_PUBLIC_ERXES_ENDPOINT`, `EXPO_PUBLIC_CLIENT_PORTAL_TOKEN`, `EXPO_PUBLIC_CMS_ID` set in `eas.json` build profile `env` blocks
 
 ---
 
@@ -97,6 +97,6 @@ scripts/
 lib/                utility functions (clone, mutate, deploy, github push)
 agents/             instruction files read by OpenCode
 output/             generated apps (gitignored)
-site.config.json    filled in during setup (gitignored)
+store.config.json    filled in during setup (gitignored)
 .env                secrets (gitignored)
 ```

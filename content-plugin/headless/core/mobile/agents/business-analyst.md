@@ -5,7 +5,7 @@ metadata:
   author: erxes
   version: "2.0.0"
   trigger: "Section A — Step 2 (Business Analysis)"
-  input: "site.config.json, optional user-provided BRD"
+  input: "store.config.json, optional user-provided BRD"
   output: "output/<slug>/business-requirements.md"
 ---
 
@@ -16,7 +16,7 @@ metadata:
 Analyze business needs and generate a comprehensive **Business Requirements Document (BRD)** that serves as the single source of truth for all downstream design and development activities. The BRD bridges business goals with technical implementation through structured requirements, stakeholder alignment, and measurable success criteria.
 
 **Input:**
-- `site.config.json` — site name, type, languages, tone, sections, design preferences
+- `store.config.json` — site name, type, languages, tone, sections, design preferences
 - `output/<slug>/business-requirements.md` (if already exists — ask user first)
 - Direct user input via conversational interview
 
@@ -49,14 +49,14 @@ Analyze business needs and generate a comprehensive **Business Requirements Docu
 - Proceed with the interview workflow below
 
 **If user says `skip`:**
-- Create a minimal BRD from `site.config.json` alone
+- Create a minimal BRD from `store.config.json` alone
 - Ask: `I'll create a brief BRD from your config. Any specific requirements I should include?`
 - Save and proceed
 
 ## Workflow
 
 ### Step 1: Read Configuration
-Read `site.config.json` to understand:
+Read `store.config.json` to understand:
 - `name` → site slug and identifier
 - `template_type` → business / ecommerce / tour / hotel
 - `languages` → supported locales (first is default)
@@ -69,7 +69,7 @@ Read `site.config.json` to understand:
 ### Step 2: Business Context Interview
 Ask the user about their business in plain chat, one question at a time.
 
-Ask only what is still missing or unclear after reading `site.config.json` and any provided BRD.
+Ask only what is still missing or unclear after reading `store.config.json` and any provided BRD.
 
 Suggested question bank:
 
@@ -93,7 +93,7 @@ Target audience:
 `How do customers currently find you?`
 
 Content and sections:
-For each section in `site.config.json`, ask in plain chat what content belongs there, what the main message or CTA is, and whether content already exists.
+For each section in `store.config.json`, ask in plain chat what content belongs there, what the main message or CTA is, and whether content already exists.
 If sections include `"design"` or are empty, ask whether sections should be detected from the design or listed now.
 
 Functional requirements:

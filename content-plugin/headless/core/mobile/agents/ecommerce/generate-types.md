@@ -48,7 +48,7 @@ export interface IChangePasswordInput {
 
 ---
 
-## `features/products/types.ts`
+## `types/products.types.ts`
 
 ```typescript
 export interface IProduct {
@@ -64,6 +64,12 @@ export interface IProduct {
   attachment?: { url: string };
   attachmentMore?: Array<{ url: string }>;
   remainder?: number;
+  // WARNING: the POS schema does NOT guarantee sizes/colors fields.
+  // Verified against the live gateway: POSC_PRODUCT_DETAIL typically returns
+  // NO variant data at all. These fields are optional and MUST fall back to
+  // DEFAULT_SIZES / DEFAULT_COLORS constants in the UI (generate-pages.md).
+  sizes?: string[];
+  colors?: Array<{ label: string; value: string; hex: string }>;
 }
 
 export interface ICategory {
@@ -84,7 +90,7 @@ export interface IWishlistItem {
 
 ---
 
-## `types/order.types.ts`
+## `types/orders.types.ts`
 
 ```typescript
 export interface IOrder {
@@ -136,9 +142,30 @@ export interface ICartItem {
 }
 ```
 
-**Agent rule:** `selectedSize` болон `selectedColor` нь **optional** боловч цаг ямагт `ICartItem`-ийн default хэлбэрт орсон байх ёстой. Cart type, cart context (`store/cart.ts`), эсвэл AsyncStorage/SecureStore cart persistence-ийг үүсгэдэг ямар ч generator эдгээр 2 field-ийг эхнээсээ агуулна — `generate-pages.md`-ийн Product Detail screen feature-ийг хүлээж дараа нь retrofit хийхгүй.
+**Agent rule:** `selectedSize` болон `selectedColor` нь **optional** боловч цаг ямагт `ICartItem`-ийн default хэлбэрт орсон байх ёстой. Cart type, cart context (`store/cart.store.ts`), эсвэл AsyncStorage/SecureStore cart persistence-ийг үүсгэдэг ямар ч generator эдгээр 2 field-ийг эхнээсээ агуулна — `generate-pages.md`-ийн Product Detail screen feature-ийг хүлээж дараа нь retrofit хийхгүй.
 
-> Хэрэв product-д size/color байхгүй бол эдгээр field `undefined` хэвээр үлдэнэ — cart дэх бусад item-үүдэд алдаа үүсгэхгүй тул optional байдал зөв шийдэл.
+**Product variant rule (size/color):** `IProduct.sizes` / `IProduct.colors` нь
+POS schema-д **баталгаажсан талбар биш** — ихэнх product-д огт ирхгүй. Product
+Detail screen дээр заавал доорх fallback constants-ийг ашигла:
+
+```typescript
+const DEFAULT_SIZES = ["38", "39", "40", "41"];
+const DEFAULT_COLORS = [
+  { label: "Brown", value: "brown", hex: "#8B5E3C" },
+  { label: "Black", value: "black", hex: "#1A1A1A" },
+  { label: "White", value: "white", hex: "#F5F5F5" },
+];
+
+// ЗӨВ — product талбар ирвэл ашигла, ирэхгүй бол fallback
+const sizes: string[] = product?.sizes?.length ? product.sizes : DEFAULT_SIZES;
+const colors = product?.colors?.length ? product.colors : DEFAULT_COLORS;
+
+// БУРУУ — `product.sizes` байхгүй тул хоосон array, size сонгох боломжгүй
+const sizes = product?.sizes ?? [];
+```
+
+> Хэрэв product-д size/color байхгүй бол cart-ын `selectedSize`/`selectedColor`
+> field-үүд fallback утгаар орно — cart дэх бусад item-үүдэд алдаа үүсгэхгүй.
 
 ---
 

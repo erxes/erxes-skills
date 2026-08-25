@@ -1,7 +1,20 @@
 # Ecommerce SDK Hooks (Mobile)
 
 > `"use client"` directive байхгүй — Expo-д хэрэггүй.
-> `src/hooks/` биш `hooks/` ашиглана.
+> Hooks live flat in top-level `hooks/` (auth.ts, order.ts, payment.ts,
+> review.ts, useProductFilters.ts) — matching the shipped starter layout
+> (`conventions.md` §5). Do NOT create `src/features/` folders.
+>
+> **Apollo Client v4:** доорх бүх жишээний import-ийг **яг** хуулбарла —
+>
+> ```typescript
+> import { useMutation, useQuery } from "@apollo/client/react"; // ЗӨВ
+> // БУРУУ (v3): import { useMutation, useQuery } from "@apollo/client";
+> ```
+>
+> `useQuery` / `useMutation` / `ApolloProvider` нь v4-өөс зөвхөн
+> `@apollo/client/react` сувгаар экспортлогддог. Мөн `ApolloClient` type нь
+> generic биш (`ApolloClient<unknown>` биш шууд `ApolloClient`).
 
 ---
 
@@ -20,15 +33,15 @@ import {
   REGISTER,
   FORGOT_PASSWORD,
   RESET_PASSWORD,
-} from "@/graphql/auth/mutations";
-import { CURRENT_USER as CURRENT_USER_QUERY } from "@/graphql/auth/queries/currentUser";
-import { currentUserAtom, triggerRefetchUserAtom } from "@/store/auth.store";
+} from "graphql/auth/mutations";
+import { CURRENT_USER as CURRENT_USER_QUERY } from "graphql/auth/queries/currentUser";
+import { currentUserAtom, triggerRefetchUserAtom } from "store/auth.store";
 import {
   ILoginInput,
   IRegisterInput,
   IForgotPasswordInput,
   IResetPasswordInput,
-} from "@/types/auth.types";
+} from "types/auth.types";
 
 export function useCurrentUser() {
   const [trigger] = useAtom(triggerRefetchUserAtom);
@@ -130,11 +143,13 @@ export function useForgotPassword() {
 
   const forgotPassword = useCallback(
     async (input: IForgotPasswordInput) => {
+      // VERIFIED against the live gateway: clientPortalUserForgotPassword
+      // accepts ONLY `email`. There is NO clientPortalId argument — the
+      // gateway resolves the portal from the x-app-token header. Older docs
+      // showing `clientPortalId: process.env.EXPO_PUBLIC_ERXES_CP_TOKEN`
+      // were wrong on both counts (arg + variable name) and fail validation.
       const { data } = await mutation({
-        variables: {
-          email: input.email,
-          clientPortalId: process.env.EXPO_PUBLIC_ERXES_CP_TOKEN,
-        },
+        variables: { email: input.email },
       });
       return { success: !!(data as any)?.clientPortalUserForgotPassword };
     },
@@ -169,10 +184,10 @@ export function useResetPassword() {
 import { useMutation, useQuery } from "@apollo/client/react";
 import { useAtom } from "jotai";
 import { useCallback } from "react";
-import { ORDERS_ADD, ORDERS_REMOVE } from "@/graphql/ecommerce/mutations/order";
-import { ORDERS, ORDER_DETAIL } from "@/graphql/ecommerce/queries/order";
-import { activeOrderAtom, orderLoadingAtom } from "@/store/order.store";
-import { cartItemsAtom } from "@/store/cart.store";
+import { ORDERS_ADD, ORDERS_REMOVE } from "graphql/ecommerce/mutations/order";
+import { ORDERS, ORDER_DETAIL } from "graphql/ecommerce/queries/order";
+import { activeOrderAtom, orderLoadingAtom } from "store/order.store";
+import { cartItemsAtom } from "store/cart.store";
 
 export function useOrders(customerId?: string) {
   const { data, loading, error, refetch } = useQuery(ORDERS, {
@@ -279,17 +294,17 @@ export function useOrderCUD() {
 import { useMutation, useQuery } from "@apollo/client/react";
 import { useAtom } from "jotai";
 import { useCallback } from "react";
-import { PAYMENTS } from "@/graphql/ecommerce/queries/payment";
+import { PAYMENTS } from "graphql/ecommerce/queries/payment";
 import {
   CREATE_INVOICE,
   CHECK_INVOICE,
   PAYMENT_TRANSACTIONS_ADD,
-} from "@/graphql/ecommerce/mutations/payment";
+} from "graphql/ecommerce/mutations/payment";
 import {
   paymentsAtom,
   selectedPaymentAtom,
   invoiceAtom,
-} from "@/store/payment.store";
+} from "store/payment.store";
 
 export function usePayments() {
   const { data, loading, error } = useQuery(PAYMENTS, {
@@ -394,7 +409,7 @@ export function useAddPaymentTransaction() {
 
 ---
 
-## `features/products/hooks/useProductFilters.ts`
+## `hooks/useProductFilters.ts`
 
 ```typescript
 import { atom, useAtom } from "jotai";
@@ -470,26 +485,32 @@ export function useProductDetail(productId: string) {
   };
 }
 
-export function useFilteredProducts(categoryId?: string, perPage = 20) {
-  const { data, loading, error, fetchMore } = useQuery<{
-    cpPoscProducts: IProduct[];
-  }>(PRODUCTS, {
-    variables: { categoryId, perPage },
-    fetchPolicy: "cache-and-network",
-  });
+// NOTE: useProducts above already covers category-filtered fetching via
+// activeCategoryIdAtom. Do NOT write a second `useFilteredProducts` that
+// references an undefined `PRODUCTS` export — POSC_PRODUCTS is the only
+// products query.
 
-  return {
-    products: data?.cpPoscProducts ?? [],
-    loading,
-    fetchMore,
-    activeCategoryId,
-  };
-}
-
-// No single-page-by-slug query — fetch all pages, filter client-side
+// No single-page-by-slug query — fetch all pages, filter client-side.
+// See generate-cms.md "cpPages caveats": results are capped (~20) and there
+// are NO pagination/slug/cmsId arguments on this query.
+//
+// CMS-CONTENT LANGUAGE RULE: every cpPages/cpPosts/cpPost call MUST pass
+// `language`. The gateway resolves translated content server-side per record
+// seeded by erxes-pages.ts / erxes-posts.ts (one record per language) — the
+// app never translates or stores CMS content locally.
+//
+// REACTIVITY RULE: subscribe to `localeAtom` (NOT the static `i18n.locale`
+// property) so switching language re-renders the hook, changes the query
+// variables, and makes Apollo refetch the CMS content in the new language.
+//
+// Required imports:
+//   import { useAtomValue } from "jotai";
+//   import { localeAtom } from "@/store/locale";
+//   import { CP_PAGES, CP_POSTS, CP_POST } from "graphql/cms/queries/page"; // post queries live in graphql/cms/queries/post
 export function useCmsPageDetail(slug: string) {
+  const locale = useAtomValue(localeAtom);
   const { data, loading, error } = useQuery(CP_PAGES, {
-    variables: {},
+    variables: { language: locale },
     skip: !slug,
     fetchPolicy: "cache-and-network",
   });
@@ -509,8 +530,9 @@ export function useCmsPosts(variables?: {
   cursor?: string;
   limit?: number;
 }) {
+  const locale = useAtomValue(localeAtom);
   const { data, loading, error } = useQuery(CP_POSTS, {
-    variables: { status: "published", ...variables },
+    variables: { status: "published", language: locale, ...variables },
     fetchPolicy: "cache-and-network",
   });
 
@@ -522,8 +544,9 @@ export function useCmsPosts(variables?: {
 }
 
 export function useCmsPostDetail(slug: string) {
+  const locale = useAtomValue(localeAtom);
   const { data, loading, error } = useQuery(CP_POST, {
-    variables: { slug },
+    variables: { slug, language: locale },
     skip: !slug,
     fetchPolicy: "cache-and-network",
   });
