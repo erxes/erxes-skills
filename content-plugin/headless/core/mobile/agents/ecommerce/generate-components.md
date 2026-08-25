@@ -62,6 +62,24 @@ theme: {
 
 Same token mapping as web — apply via NativeWind `className` on RN components.
 
+### Step 5 — Color Enforcement (architectural, not convention)
+
+The semantic utility class must be the only convenient path to any theme
+color, mirroring the web pipeline:
+
+1. **className-reachable styling** → semantic classes ONLY (`bg-primary`,
+   `text-accent`, `text-primary-foreground`, `rounded-card`). Arbitrary hex
+   classes (`bg-[#D4AF37]`) and inline `style={{ color: "#…" }}` are forbidden.
+2. **className-unreachable surfaces** (navigator theme options like
+   `tabBarActiveTintColor`, native props like `placeholderTextColor` /
+   `tintColor`, Reanimated animated styles) → `import { tokens } from
+   "@/lib/tokens"` and pass `tokens.colors.semantic.*`. Never raw hex.
+3. `lib/tokens.ts` and `tailwind.config.js` both derive from the same
+   `design-tokens.json` (`generate-setup.md` → Token Wiring) — one source,
+   zero drift.
+4. **Exemption:** product swatch data (`colorOptions[].hex`) is product DATA,
+   not theme styling.
+
 ---
 
 ## Layout Components
@@ -104,7 +122,7 @@ export function Header() {
 }
 ```
 
-### `components/layout/CartButton.tsx`
+### `components/ui/CartButton.tsx`
 
 `Sheet` sidebar байхгүй — `Modal` + slide-up bottom sheet ашиглана.
 
@@ -118,8 +136,8 @@ import { Image } from "expo-image";
 import * as SecureStore from "expo-secure-store";
 import { useAtom } from "jotai";
 import { useRouter } from "expo-router";
-import { cartItemsAtom, cartCountAtom, cartTotalAtom } from "@/store/cart.store";
-import { currentUserAtom } from "@/store/auth.store";
+import { cartItemsAtom, cartCountAtom, cartTotalAtom } from "store/cart.store";
+import { currentUserAtom } from "store/auth.store";
 import { formatPrice, isValidUrl } from "@/lib/utils";
 
 export function CartButton() {
@@ -279,13 +297,13 @@ function CartItems({ onClose }: { onClose: () => void }) {
 }
 ```
 
-### `components/layout/WishlistButton.tsx`
+### `components/ui/WishlistButton.tsx`
 
 ```typescript
 import { useAtom } from "jotai";
 import { Pressable, View, Text } from "react-native";
 import { useRouter } from "expo-router";
-import { wishlistCountAtom } from "@/store/wishlist.store";
+import { wishlistCountAtom } from "store/wishlist.store";
 
 export function WishlistButton() {
   const [count] = useAtom(wishlistCountAtom);
@@ -314,8 +332,8 @@ import { useAtom } from "jotai";
 import { useEffect } from "react";
 import { Pressable, Text, View } from "react-native";
 import { useRouter } from "expo-router";
-import { currentUserAtom } from "@/store/auth.store";
-import { useCurrentUser, useLogout } from "@/hooks/auth";
+import { currentUserAtom } from "store/auth.store";
+import { useCurrentUser, useLogout } from "hooks/auth";
 
 export function UserButton() {
   const [currentUser, setCurrentUser] = useAtom(currentUserAtom);
@@ -389,7 +407,7 @@ export function Footer() {
 
 ## Product Components
 
-### `src/features/products/components/ProductCard.tsx`
+### `components/products/ProductCard.tsx`
 
 ```typescript
 import { useAtom } from "jotai";
@@ -397,8 +415,10 @@ import { View, Text, Pressable } from "react-native";
 import { Image } from "expo-image";
 import { useRouter } from "expo-router";
 import { useMutation } from "@apollo/client/react";
-import { cartItemsAtom, wishlistItemsAtom, CP_WISHLIST_ADD } from "@/src/features/cart";
-import { currentUserAtom } from "@/src/features/auth";
+import { cartItemsAtom } from "@/store/cart.store";
+import { wishlistItemsAtom } from "@/store/wishlist.store";
+import { CP_WISHLIST_ADD } from "@/graphql/ecommerce/mutations/wishlist";
+import { currentUserAtom } from "@/store/auth.store";
 import { formatPrice, isValidUrl } from "@/lib/utils";
 import { Product } from "../types";
 
@@ -490,7 +510,7 @@ export function ProductCard({ product }: ProductCardProps) {
 
 ---
 
-### `src/features/products/components/ProductFilterBar.tsx`
+### `components/products/ProductFilterBar.tsx`
 
 ```typescript
 import { ScrollView, Pressable, Text } from "react-native";
@@ -552,7 +572,7 @@ export function ProductFilterBar() {
 
 ---
 
-### `src/features/products/components/ProductList.tsx`
+### `components/products/ProductList.tsx`
 
 ```typescript
 import { FlatList, ActivityIndicator, View } from "react-native";
@@ -589,7 +609,8 @@ export function ProductList() {
 > **Ашиглалт:**
 >
 > ```tsx
-> import { ProductFilterBar, ProductList } from "@/features/products";
+> import { ProductFilterBar } from "@/components/products/ProductFilterBar";
+> import { ProductList } from "@/components/products/ProductList";
 >
 > <ProductFilterBar />
 > <ProductList />
@@ -600,13 +621,13 @@ export function ProductList() {
 
 ---
 
-### `src/features/components/payment/PaymentType.tsx`
+### `components/payment/PaymentType.tsx`
 
 ```typescript
 import { useAtom } from "jotai";
 import { View, Text, Pressable } from "react-native";
-import { selectedPaymentAtom } from "@/store/payment.store";
-import { IPayment } from "@/types/payment.types";
+import { selectedPaymentAtom } from "store/payment.store";
+import { IPayment } from "types/payment.types";
 
 interface PaymentTypeProps { payments: IPayment[]; }
 

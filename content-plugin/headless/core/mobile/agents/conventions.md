@@ -2,25 +2,29 @@
 
 Follow these in every file you write.
 
+> **Read order:** for ecommerce builds read
+> [`agents/ecommerce/conventions.md`](ecommerce/conventions.md) FIRST — it is
+> the **source of truth** — then this file for global/project-wide rules.
+> Where the two overlap on an ecommerce build, the ecommerce file wins.
+>
+> **Moved to the ecommerce file (do not duplicate here):** erxes data-fetching
+> rules (`_id`, no `clientPortalId` variables, fetch policies), Apollo v4
+> import patterns, auth-token storage, image handling details, and navigation
+> specifics.
+
 ## React Native / Expo
 
 - **Expo Go project** — only use libraries supported inside Expo Go (Expo SDK modules or pure-JS packages). Never add a library that requires custom native code, a config plugin, or a **custom dev client** — those break Expo Go compatibility.
 - Never run `npx expo prebuild`, `expo eject`, or anything that generates native `ios/`/`android` folders — this project must stay a managed, Expo-Go-runnable app.
-- Use **Expo Router** (file-based routing under `app/`) for all screens and navigation.
-- Use `<Link href="...">` from `expo-router` for all internal navigation — never manually call `Linking.openURL` for in-app routes.
-- Use `expo-image`'s `<Image>` for all images — never the core `react-native` `Image`.
+- Use Expo Router (file-based routing under `app/`) for all screens and navigation.
 - Use `expo-font` (`useFonts`) for custom fonts — never load fonts from a remote CDN URL at runtime.
-- Everything is a client component by default — there is no Server/Client Component split in React Native. Keep screens lean: pull data-fetching and heavy logic into hooks (`hooks/`), keep screen files focused on layout.
+- Keep screens lean: pull data-fetching and heavy logic into hooks (`hooks/`), keep screen files focused on layout.
 - **Do not upgrade the starter's framework stack** — never change `expo`, `react-native`, `react`, or NativeWind/Tailwind major versions, and never scaffold a new app when working inside `output/<slug>/`.
 - **Never use `@latest` for framework-affecting tools inside the cloned starter** — that includes `create-expo-app`, `expo install --fix`, `expo upgrade`, and any command that can rewrite config based on a newer Expo SDK release.
 - Use `expo install <package>` instead of `pnpm add <package>` for any native-adjacent Expo package, so the correct SDK-compatible version is installed.
 
-## Data fetching from erxes
-
-- All data fetching happens client-side — use Apollo `useQuery` / `useMutation` in every component that needs data (no server-only fetch path exists in Expo Go).
-- Prefer `fetchPolicy: 'cache-and-network'` on `useQuery` calls that back a screen the user can pull-to-refresh, instead of the Next.js `revalidate` pattern (which is a web-only concept).
-- Always use `_id` (not `id`) in all GraphQL selections.
-- **Never send `clientPortalId` in query or mutation variables** — the gateway resolves it from the `x-app-token` header.
+> Navigation, image handling, and the client-component model are defined per
+> template — see `agents/ecommerce/conventions.md` §7–§8 for ecommerce builds.
 
 ## NativeWind (Tailwind for React Native)
 
@@ -37,7 +41,7 @@ Follow these in every file you write.
 ## TypeScript
 
 - Never use `any` — use proper types or `unknown` with narrowing.
-- Never use `id` — erxes always returns `_id` (MongoDB ObjectId).
+- GraphQL identifiers: erxes always returns `_id` (MongoDB ObjectId) — the detailed rule lives in `agents/ecommerce/conventions.md` §4.
 
 ## Styling
 
@@ -51,7 +55,12 @@ Follow these in every file you write.
 
 ## File structure
 
-Always scaffold new mobile projects to match this tree exactly:
+> **Ecommerce builds:** do NOT scaffold from the tree below — the ecommerce
+> structure (tabs group, `graphql/`, `store/`, `features/products/`) is
+> defined by `agents/ecommerce/generate-setup.md` + `agents/ecommerce/generate.md`
+> Step 4. This tree applies to the generic CMS mobile template only.
+
+Always scaffold new generic mobile projects to match this tree exactly:
 
 ```
 <project>/

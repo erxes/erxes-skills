@@ -53,12 +53,12 @@ ErxesApp
 
 Messenger uses its **own Apollo client, separate from the CMS Apollo client**:
 
-|                  | CMS Client               | Messenger Client                                  |
-| ---------------- | ------------------------ | ------------------------------------------------- |
-| **Auth**         | `erxes-app-token` header | `credentials: 'include'` (cookie)                 |
-| **Transport**    | HTTP only                | HTTP + WebSocket                                  |
-| **Subscription** | None                     | `graphql-ws`                                      |
-| **File**         | `lib/apollo-client.ts`   | `src/messenger/core/apollo/createApolloClient.ts` |
+|                  | CMS Client                        | Messenger Client                                  |
+| ---------------- | --------------------------------- | ------------------------------------------------- |
+| **Auth**         | `x-app-token` header (+ `client-auth-token` when logged in) | `credentials: 'include'` (cookie) |
+| **Transport**    | HTTP only                         | HTTP + WebSocket                                  |
+| **Subscription** | None                              | `graphql-ws`                                      |
+| **File**         | `lib/apollo/client.ts`            | `src/messenger/core/apollo/createApolloClient.ts` |
 
 ---
 

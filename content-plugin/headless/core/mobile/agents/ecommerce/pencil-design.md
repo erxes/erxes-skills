@@ -21,7 +21,7 @@ Do not start design exploration if setup is incomplete.
 
 ## Inputs
 
-Read `site.config.json` and use:
+Read `store.config.json` and use:
 
 - `name`
 - `template_type`
@@ -43,7 +43,7 @@ If any required input is missing, stop and send the flow back to setup instead o
 
 Required before design starts:
 
-- `site.config.json` exists
+- `store.config.json` exists
 - `ui_source` exists
 - `ui_source_ref` exists
 - `design_strategy` exists
@@ -245,7 +245,7 @@ Capture:
 - `price_point` — `luxury`, `mid-range`, or `budget`
 - `brand_personality` — a 2–3 word description (e.g. "bold and playful", "minimal and cold", "warm and handcrafted", "raw and rebellious")
 
-If these are not in `site.config.json` or `extra_notes`, infer them from the reference URL, store name, product images, or audit data. Do not ask unless the source gives no signal at all.
+If these are not in `store.config.json` or `extra_notes`, infer them from the reference URL, store name, product images, or audit data. Do not ask unless the source gives no signal at all.
 
 These three inputs are required before Phase 1. Direction choices that ignore `product_category` or `price_point` will produce generic output.
 
@@ -266,8 +266,8 @@ Available strategies:
 How to apply this:
 
 - Ask the strategy explicitly for every `ui_source` before presenting directions
-- If `design_strategy` is `copy-site` or `improve-site`, prefer `reference_url` from `site.config.json` instead of asking again
-- If `design_strategy` is `beat-competitors`, use `competitor_urls` from `site.config.json` and only ask again if the list is missing or too short
+- If `design_strategy` is `copy-site` or `improve-site`, prefer `reference_url` from `store.config.json` instead of asking again
+- If `design_strategy` is `beat-competitors`, use `competitor_urls` from `store.config.json` and only ask again if the list is missing or too short
 
 Strategy rules:
 
@@ -913,7 +913,7 @@ Allowed output values:
 - `menu`
 - `portfolio`
 
-Write the detected list back into `site.config.json` as `required_sections` or `sections`, following the current project flow.
+Write the detected list back into `store.config.json` as `required_sections` or `sections`, following the current project flow.
 
 Show the detected list to the user and get confirmation before Section C — Step 1.
 
@@ -924,7 +924,7 @@ Show the detected list to the user and get confirmation before Section C — Ste
 If `ui_source` is `pencil`, `figma`, `screenshot`, or `website`:
 
 - extract the dominant primary color from the source
-- write it back into `site.config.json` as `color_hint`
+- write it back into `store.config.json` as `color_hint`
 - do not ask the user for it unless the source is too ambiguous
 
 Use meaningful names like:

@@ -4,5 +4,6 @@
     "strict": true,
     "jsx": "react-native",
     "skipLibCheck": true
-  }
+  },
+  "exclude": ["output/"]
 }

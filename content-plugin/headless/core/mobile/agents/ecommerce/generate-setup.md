@@ -143,6 +143,57 @@ export const PAYMENT_KINDS = {
 } as const;
 ```
 
+### `lib/tokens.ts` — Design Token Wiring (MANDATORY before any component)
+
+Single typed accessor generated **directly from `output/<slug>/design-tokens.json`**
+in the same pass as `tailwind.config.js` + `global.css` below. This mirrors the
+web pipeline's architectural enforcement: className-reachable styling uses
+semantic utility classes (`bg-primary`, `text-accent`) generated from the same
+JSON; only surfaces className cannot reach (navigator theme options, native
+props like `placeholderTextColor`/`tintColor`, Reanimated styles) import from
+here. Hex literals are unnecessary everywhere.
+
+```typescript
+// lib/tokens.ts — GENERATED from design-tokens.json. Values below are examples.
+// Regenerate whenever design-tokens.json changes — never let them diverge.
+export const tokens = {
+  colors: {
+    semantic: {
+      background: "#F8F9FA",
+      foreground: "#14213D",
+      card: "#FFFFFF",
+      cardForeground: "#14213D",
+      primary: "#14213D",
+      primaryForeground: "#FFFFFF",
+      secondary: "#0A1F44",
+      accent: "#D4AF37",
+      muted: "#EEF0F3",
+      mutedForeground: "#8A93A0",
+      border: "#E2E6EA",
+      destructive: "#C0392B",
+    },
+  },
+  radius: { input: 12, btn: 14, card: 16 },
+} as const;
+
+export type Tokens = typeof tokens;
+```
+
+**Agent rules:**
+
+1. Generate this file BEFORE any component or screen — components reference
+   `tokens.colors.*`, not hex.
+2. className-reachable styling → semantic classes ONLY (`bg-primary`,
+   `text-accent`, `rounded-card`). Arbitrary values (`bg-[#D4AF37]`) forbidden.
+3. className-unreachable surfaces → `import { tokens } from "@/lib/tokens"`.
+4. Product color-swatch data (`colorOptions[].hex`) is product DATA, not theme
+   styling — it does not come from tokens and is exempt from rule 3.
+5. Post-generation gate:
+   ```bash
+   grep -rnE '#[0-9A-Fa-f]{6}' output/<slug>/app output/<slug>/components output/<slug>/src --include='*.tsx' --include='*.ts' | grep -v 'hex:'
+   ```
+   must return zero hits (the `grep -v 'hex:'` exempts swatch data fields).
+
 ---
 
 ## 15. Environment File
@@ -213,12 +264,16 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
 
 ```js
 module.exports = {
-  content: ["./app/**/*.{js,jsx,ts,tsx}", "./components/**/*.{js,jsx,ts,tsx}"],
+  content: ["./app/**/*.{js,jsx,ts,tsx}", "./components/**/*.{js,jsx,ts,tsx}", "./src/**/*.{js,jsx,ts,tsx}"],
   presets: [require("nativewind/preset")],
   theme: { extend: {} },
   plugins: [],
 };
 ```
+
+> This is the bare scaffold. The full design-token mapping (colors/radius/
+> fontFamily from `design-tokens.json`) belongs in the authoritative sample in
+> `generate-core.md` §6 — wire it there in the same pass as `lib/tokens.ts`.
 
 ### `babel.config.js`
 
@@ -251,7 +306,24 @@ module.exports = withNativeWind(config, { input: "./global.css" });
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* Mirror design-tokens.json semantic colors as CSS variables — NativeWind v4
+   supports :root custom properties; enables runtime theming / dark mode via
+   vars() from "nativewind" later. Values come from design-tokens.json. */
+@layer base {
+  :root {
+    --color-background: #f8f9fa;
+    --color-primary: #14213d;
+    --color-accent: #d4af37;
+    --color-foreground: #14213d;
+    --color-muted: #eef0f3;
+    --color-border: #e2e6ea;
+  }
+}
 ```
+
+Write the actual values from this project's `design-tokens.json` — the ones
+above are examples.
 
 **Agent rule:** this file must not be generated until `babel-preset-expo` has
 been installed (see Dependencies section above) — writing the config before

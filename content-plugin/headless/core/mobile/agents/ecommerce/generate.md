@@ -70,26 +70,25 @@ Keep all `Button`, `Input`, `Label`, `Sheet`, `SheetContent` etc. component impo
 
 ### Logic checks
 
-- [ ] Auth token stored in `sessionStorage` (NOT `localStorage`)
-- [ ] Apollo `authLink` reads `sessionStorage` per request
+- [ ] Auth token stored in `SecureStore` (expo-secure-store — NOT `sessionStorage`/`localStorage`)
+- [ ] Apollo `authLink` reads SecureStore per request (`async setContext`)
 - [ ] `client-auth-token` header used for auth
-- [ ] `x-app-token` = `NEXT_PUBLIC_ERXES_CP_TOKEN` (client portal ID)
-- [ ] `erxes-pos-token` = `NEXT_PUBLIC_POS_TOKEN` (POS token)
+- [ ] `x-app-token` = `EXPO_PUBLIC_CLIENT_PORTAL_TOKEN` (client portal JWT)
+- [ ] `erxes-pos-token` = `EXPO_PUBLIC_POS_TOKEN` (POS token)
 - [ ] POS token in cookie: `pos-config-token`
 - [ ] `useCreateInvoice` accepts destructured params (not `IOrder` object)
 - [ ] `/verify` auto-polling: `useCallback` + `useEffect` + `setInterval(5000)` идэвхтэй, `paymentStatus === "paid"` болмогц зогсдог
 - [ ] `handleCreateInvoice` — `invoiceCreate` + `paymentTransactionsAdd` нэг handler дотор, `paymentStatus` state шинэчилдэг
 - [ ] Checkout `deliveryInfo` — `firstName`, `lastName`, `email`, `phone`, `address`, `description` бүгдийг дамжуулдаг
 - [ ] `useOrderCUD` patches `_id` into `activeOrder` immediately after `cpOrdersAdd` success
-- [ ] `CartDrawer` checks `currentUser` — redirects to `/login` with `redirectAfterLogin` if guest
-- [ ] `useLogin` checks `sessionStorage.getItem("redirectAfterLogin")` after successful login
-- [ ] `Link` and `useRouter` from `@/i18n/routing` (NOT `next/link`)
+- [ ] `CartDrawer` checks `currentUser` — redirects to `/(auth)/login` with `redirectAfterLogin` if guest
+- [ ] `useLogin` checks `SecureStore.getItemAsync("redirectAfterLogin")` after successful login
+- [ ] `Link` and `useRouter` from `expo-router` (NOT `next/link`, NOT `@/i18n/routing`)
 - [ ] `useCurrentUser` `fetchPolicy: "network-only"`
-- [ ] Login handler: `typeof raw === "string" ? raw : raw?.token`
-- [ ] Token saved to `sessionStorage` BEFORE `triggerRefetchUser(true)`
+- [ ] Login handler: reads `raw?.token` + `raw?.refreshToken` from the JSON scalar response
+- [ ] Token saved to SecureStore BEFORE `triggerRefetchUser()`
 - [ ] `store/order.store.ts` does NOT import from `cart.store.ts`
-- [ ] `app/layout.tsx` only returns `children` (no `html`/`body`)
-- [ ] `app/[locale]/layout.tsx` has `html`/`body`, `Header`, `Footer`
+- [ ] `app/_layout.tsx` is the single root layout (no `html`/`body`, no `[locale]` layout)
 - [ ] `shadcn@latest init` is NOT run — components created manually
-- [ ] Image URLs validated with `isValidUrl` before passing to Next.js `Image`
+- [ ] Image URLs validated with `isValidUrl` before passing to `expo-image`
 - [ ] `next.config.mjs`-д `images.remotePatterns` дотор erxes hostname бүртгэгдсэн

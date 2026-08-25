@@ -120,7 +120,7 @@ ERXES_POS_TOKEN="dFhsNNfym9wDdoKIHU7s3b8Ip3iNhjQG"
 
 # ─── Client-side (Expo app — runs on device, EXPO_PUBLIC_ prefix required) ───
 EXPO_PUBLIC_ERXES_API_URL=https://dent.next.erxes.io/gateway/graphql
-EXPO_PUBLIC_ERXES_APP_TOKEN="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJjbGllbnRQb3J0YWxJZCI6Ik9ZZkhlSVd2VENQQ2E0SjBLUjhGMiIsImlhdCI6MTc4MDk3ODU0N30.TW1umhOGO3I92uyedmMfUOpUh4cNmOStegz6ng3yUAg"
+EXPO_PUBLIC_CLIENT_PORTAL_TOKEN="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJjbGllbnRQb3J0YWxJZCI6Ik9ZZkhlSVd2VENQQ2E0SjBLUjhGMiIsImlhdCI6MTc4MDk3ODU0N30.TW1umhOGO3I92uyedmMfUOpUh4cNmOStegz6ng3yUAg"
 EXPO_PUBLIC_ERXES_BRAND_CODE=mRugDycpAY52Ds3fQ6oBI
 ```
 
@@ -129,10 +129,11 @@ EXPO_PUBLIC_ERXES_BRAND_CODE=mRugDycpAY52Ds3fQ6oBI
 > - `ERXES_*` (no prefix) — used by Node.js seed scripts only. Never bundled into the app.
 > - `EXPO_PUBLIC_*` — bundled into the Expo app and readable on the device. Required for all client-side API calls (`useQuery`, `useMutation`, Apollo Client).
 > - Variables without `EXPO_PUBLIC_` are **invisible** to the Expo app at runtime even if they exist in `.env.local`.
+> - The client portal JWT is the same value as `ERXES_APP_TOKEN` — the client-side copy is named `EXPO_PUBLIC_CLIENT_PORTAL_TOKEN`. Do not introduce an `EXPO_PUBLIC_ERXES_APP_TOKEN` alias (obsolete name).
 
 How to get tokens:
 
-- `ERXES_APP_TOKEN` / `EXPO_PUBLIC_ERXES_APP_TOKEN`: erxes Admin → Settings → App Tokens → Create App → copy token
+- `ERXES_APP_TOKEN` / `EXPO_PUBLIC_CLIENT_PORTAL_TOKEN`: erxes Admin → Settings → App Tokens → Create App → copy token
 - `ERXES_POS_TOKEN`: erxes Admin → POS → Settings → copy token
 - `EXPO_PUBLIC_ERXES_BRAND_CODE`: erxes Admin → Settings → Channels → (your channel) → Integrations → erxes Messenger → Integration ID
 
@@ -145,23 +146,31 @@ npm install @apollo/client graphql
 
 ### 2.3 Apollo Client Setup (client-side)
 
-`lib/apollo-client.ts`
+Canonical path and scheme — **the ONLY allowed Apollo client file is `lib/apollo/client.ts`** (matches `agents/ecommerce/generate-core.md`; do not create `lib/apollo-client.ts` or `graphql/client.ts`):
 
 ```typescript
 import { ApolloClient, InMemoryCache, HttpLink } from "@apollo/client";
+import { setContext } from "@apollo/client/link/context";
+import * as SecureStore from "expo-secure-store";
 
 let client: ApolloClient<unknown> | null = null;
 
 export function getApolloClient() {
   if (client) return client;
+  const httpLink = new HttpLink({
+    uri: process.env.EXPO_PUBLIC_ERXES_API_URL,
+  });
+  const authLink = setContext(async () => ({
+    headers: {
+      // static portal JWT — identifies the app/portal
+      "x-app-token": process.env.EXPO_PUBLIC_CLIENT_PORTAL_TOKEN ?? "",
+      // per-user session token — present only after login
+      "client-auth-token": (await SecureStore.getItemAsync("token")) ?? "",
+    },
+  }));
   client = new ApolloClient({
     cache: new InMemoryCache(),
-    link: new HttpLink({
-      uri: `${process.env.EXPO_PUBLIC_ERXES_API_URL}`,
-      headers: {
-        "erxes-app-token": process.env.EXPO_PUBLIC_ERXES_APP_TOKEN ?? "",
-      },
-    }),
+    link: authLink.concat(httpLink),
   });
   return client;
 }
@@ -169,13 +178,13 @@ export function getApolloClient() {
 
 ### 2.4 Connection Points
 
-| Purpose                 | Variable                       | Used by         | Header                         |
-| ----------------------- | ------------------------------ | --------------- | ------------------------------ |
-| Screen queries (client) | `EXPO_PUBLIC_ERXES_API_URL`    | Expo app        | `erxes-app-token`              |
-| Screen queries (client) | `EXPO_PUBLIC_ERXES_APP_TOKEN`  | Expo app        | `erxes-app-token`              |
-| Messenger widget        | `EXPO_PUBLIC_ERXES_BRAND_CODE` | Expo app        | (cookie session)               |
-| CMS seed mutations      | `ERXES_API_URL`                | Node.js scripts | `x-app-token: ERXES_APP_TOKEN` |
-| POS mutations           | `ERXES_API_URL`                | Node.js scripts | `x-app-token: ERXES_POS_TOKEN` |
+| Purpose                 | Variable                            | Used by         | Header                                  |
+| ----------------------- | ----------------------------------- | --------------- | --------------------------------------- |
+| Screen queries (client) | `EXPO_PUBLIC_ERXES_API_URL`         | Expo app        | `x-app-token` + `client-auth-token`     |
+| Screen queries (client) | `EXPO_PUBLIC_CLIENT_PORTAL_TOKEN`   | Expo app        | `x-app-token`                           |
+| Messenger widget        | `EXPO_PUBLIC_ERXES_BRAND_CODE`      | Expo app        | (cookie session)                        |
+| CMS seed mutations      | `ERXES_API_URL`                     | Node.js scripts | `x-app-token: ERXES_APP_TOKEN`          |
+| POS mutations           | `ERXES_API_URL`                     | Node.js scripts | `x-app-token: ERXES_POS_TOKEN`          |
 
 ---
 
@@ -402,37 +411,15 @@ After CMS entities exist, generate or merge these files into `output/<slug>/`.
 
 ### 4.1 Apollo Client
 
-`lib/apollo-client.ts`
-
-```typescript
-import { ApolloClient, InMemoryCache, HttpLink } from "@apollo/client";
-
-// Singleton — reuse across screens
-let client: ApolloClient<unknown> | null = null;
-
-export function getApolloClient() {
-  if (client) return client;
-  client = new ApolloClient({
-    cache: new InMemoryCache(),
-    link: new HttpLink({
-      uri: process.env.EXPO_PUBLIC_ERXES_API_URL,
-      headers: {
-        "erxes-app-token": process.env.EXPO_PUBLIC_ERXES_APP_TOKEN ?? "",
-      },
-    }),
-  });
-  return client;
-}
-```
+`lib/apollo/client.ts` — canonical path; copy the block from §2.3 verbatim.
 
 ### 4.2 Apollo Provider
 
 `lib/apollo-provider.tsx`
 
 ```tsx
-"use client";
 import { ApolloProvider } from "@apollo/client";
-import { getApolloClient } from "./apollo-client";
+import { getApolloClient } from "@/lib/apollo/client";
 
 export function ApolloWrapper({ children }: { children: React.ReactNode }) {
   return <ApolloProvider client={getApolloClient()}>{children}</ApolloProvider>;
@@ -595,7 +582,8 @@ components/
     DrawerNav.tsx
 
 lib/
-  apollo-client.ts         ← singleton ApolloClient (EXPO_PUBLIC_* env)
+  apollo/
+    client.ts          ← singleton ApolloClient (EXPO_PUBLIC_* env, x-app-token + client-auth-token)
   apollo-provider.tsx      ← ApolloProvider wrapper
   graphql/
     queries/
@@ -693,7 +681,7 @@ Pass criteria:
 
 ### Frontend Code
 
-- [ ] `lib/apollo-client.ts` uses singleton pattern (not `registerApolloClient`)
+- [ ] `lib/apollo/client.ts` uses singleton pattern (not `registerApolloClient`)
 - [ ] `lib/apollo-provider.tsx` is a client component with `ApolloProvider`
 - [ ] `app/_layout.tsx` wraps children in `ApolloWrapper`
 - [ ] `GestureHandlerRootView` is the outermost wrapper in `_layout.tsx`

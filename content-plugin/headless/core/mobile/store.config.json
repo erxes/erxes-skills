@@ -1,5 +1,5 @@
 {
-  "name": "Dent Store",
+  "name": "test-app",
   "template_type": "ecommerce",
   "language": "mn",
   "defaultLanguage": "mn",
@@ -7,18 +7,12 @@
     "mn",
     "en"
   ],
-  "tone": "friendly, modern",
+  "tone": "modern",
   "sections": [
-    "hero",
-    "products",
-    "blog",
-    "contact",
     "about"
   ],
   "cms_sections": [
-    "about",
-    "contact",
-    "blog"
+    "about"
   ],
   "delivery_types": [
     "delivery",
@@ -32,14 +26,15 @@
   "erxes_cms_id": "6a71617766d21006a952cfe6",
   "pos_token": "dFhsNNfym9wDdoKIHU7s3b8Ip3iNhjQG",
   "enable_messenger": false,
+  "messenger_brand_id": null,
   "enable_push_notifications": false,
   "design_strategy": "from-scratch",
   "ui_source": "words",
-  "ui_source_ref": "Clean, modern ecommerce app with product grid on home, bottom tab navigation (Home, Products, Cart, Profile), warm and trustworthy color palette suitable for a general retail store, motion level 2 (Morphic Soft direction if it fits).",
-  "motion_level": 2,
+  "ui_source_ref": "Modern, premium e-commerce mobile app. Primary navy blue (#0A1F44 / #14213D), gold/amber accent (#D4AF37) or coral for product cards and CTA buttons. White/light gray background (#F8F9FA), cards with navy border or navy header. Large product images, clean grid layout. Clean sans-serif font (Inter/Poppins). Rounded corners (12-16px), soft shadow — luxury, trustworthy, minimal. Cart, checkout, product detail pages with navy accents, clean, generous whitespace.",
+  "motion_level": null,
   "reference_url": null,
   "competitor_urls": [],
-  "color_hint": "warm-terracotta",
+  "color_hint": "navy-blue with gold-amber accent",
   "extra_notes": null,
-  "deploy_target": "expo-go"
+  "deploy_target": "none"
 }
