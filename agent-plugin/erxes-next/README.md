@@ -110,8 +110,8 @@ After editing plugin files:
    clawhub publish ./agent-plugin/erxes-next \
      --slug erxes-next-plugin \
      --name "erxes-next-plugin" \
-     --version 1.0.22 \
-     --changelog "Persist OAuth session + secret for silent refresh; durable storage; never re-OAuth mid-session"
+     --version 1.1.0 \
+     --changelog "Add permission-filtered erxes tool discovery and calls while preserving durable OAuth sessions"
    ```
 
 4. Update an installed copy with `openclaw plugins update erxes-next-plugin` (or `clawhub update erxes-next-plugin`).
