@@ -1,12 +1,14 @@
 # erxes Agent Plugin
 
-This Clawhub/OpenClaw agent plugin lets agents operate erxes through the live GraphQL API using confidential OAuth device-flow authentication.
+This Clawhub/OpenClaw agent plugin lets agents operate every enabled erxes service through live, permission-filtered tools using confidential OAuth device-flow authentication.
 
 The plugin is intentionally scoped to erxes. It should not fall back to generic CRM schemas, invented REST endpoints, or guessed GraphQL operations when an erxes lookup fails.
 
 ## What It Supports
 
+- Live capability discovery filtered by the exact scopes selected during OAuth and the user's current erxes permissions.
 - Core erxes workflows: contacts, products, tags, documents, brands, automations, organization structure, and team members.
+- Public plugin workflows: accounting, content, frontline, insurance, loyalty, mongolian, operation, payment, POS client, sales, and tourism.
 - Block plugin workflows: projects, buildings, floor zonings, units, unit types, opportunities, statuses, payment plans, contracts, offers, invoices, documents, attachments, notes, and developer profile.
 - Operation plugin workflows: projects, tasks, triage, teams, statuses, cycles, milestones, notes, activities, and templates.
 - Safe read/list/search/group actions.
