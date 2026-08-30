@@ -114,7 +114,8 @@ Validate, in order:
 
 1. `store.config.json` exists and contains every required field: `name`, `template_type = "ecommerce"`, `language`, `defaultLanguage`, `languages`, `tone`, `sections`, `cms_sections`, `delivery_types`, `allow_guest`, `pos_token`, `design_strategy`, `ui_source`, `ui_source_ref`, `deploy_target`, plus `messenger_brand_id` when `enable_messenger` is true and the tickets ids when `enable_feedback_tickets` is true. (`direction_family` and `motion_level` are set by Step 3.5 inference — NOT required at intake.)
 2. `.env` contains `GITHUB_TOKEN` (required for starter clone), `EXPO_PUBLIC_CLIENT_PORTAL_TOKEN`, `EXPO_PUBLIC_ERXES_API_URL`, `EXPO_PUBLIC_POS_TOKEN`.
-3. If any field is missing or invalid → **stop with a hard error naming the field** and instruct re-running the top-level intake. Never prompt mid-run and never invent defaults.
+3. When `ui_source` is `screenshot`: every path in `ui_source_ref` (one per line) must exist on the filesystem — the canonical set is the copies under `output/<slug>/screenshots/`. Any missing path → **stop with a hard error naming the file**.
+4. If any field is missing or invalid → **stop with a hard error naming the field** and instruct re-running the top-level intake. Never prompt mid-run and never invent defaults.
 
 Then execute:
 

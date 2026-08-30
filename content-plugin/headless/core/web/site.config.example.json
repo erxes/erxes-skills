@@ -9,6 +9,7 @@
   "erxes_endpoint": "",
   "erxes_app_token": "",
   "erxes_cms_id": "",
+  "pos_token": "",
   "color_hint": null,
   "extra_notes": null,
   "deploy_target": "vercel",
