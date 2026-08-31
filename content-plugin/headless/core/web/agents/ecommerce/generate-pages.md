@@ -180,19 +180,59 @@ export default function ProductsPage() {
 
 ---
 
-## Product Detail (`app/[locale]/products/[id]/page.tsx`) — Client
+## Product Detail (`app/[locale]/products/[id]/page.tsx`)
 
-Complex page: product detail + add-to-cart + wishlist toggle + review CRUD.
+Split into a thin Server page (enumerates products for `generateStaticParams` — required under `output: "export"`) plus a client `ProductDetail` component holding the detail + add-to-cart + wishlist toggle + review CRUD.
 
 Key patterns:
 
-- `params` is `Promise<{ id: string }>` in Next.js 15 — resolve with `useEffect`
+- the page file must NOT be a client component — `generateStaticParams` can only be exported from a non-`"use client"` file
+- `params` is `Promise<{ id: string }>` in Next.js 15 — the server page awaits it and passes `productId` down as a prop
 - `addToCart`: upserts count in `cartItemsAtom`
 - `addToWishlist`: calls `CP_WISHLIST_ADD` if logged in, always updates `wishlistItemsAtom`
 - Reviews: `CP_PRODUCT_REVIEWS` query + `CP_PRODUCT_REVIEW_ADD`/`UPDATE`/`REMOVE` mutations
 - `myReview`: find by `customerId === currentUser._id`; pre-populate form if found
 - `avgRating`: average of all review scores
 - `StarRating` component: interactive (for form) or static (for display), hover state
+
+```typescript
+import ProductDetail from "@/components/product/ProductDetail";
+
+// Static export: every dynamic segment needs params at build time so
+// `output: "export"` can emit each /products/<id> page.
+// Runs only at build; direct fetch because generateStaticParams cannot
+// use the cookies()-based server Apollo client.
+export async function generateStaticParams() {
+  const uri =
+    process.env.NEXT_PUBLIC_ERXES_ENDPOINT || "http://localhost:4000/graphql";
+  const res = await fetch(uri, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "x-app-token": process.env.NEXT_PUBLIC_ERXES_CP_TOKEN || "",
+      "client-portal-id": process.env.NEXT_PUBLIC_ERXES_CP_TOKEN || "",
+      "erxes-pos-token": process.env.NEXT_PUBLIC_POS_TOKEN || "",
+    },
+    body: JSON.stringify({
+      query: `{ poscProducts(page: 1, perPage: 100) { _id } }`,
+    }),
+  });
+  const json = await res.json();
+  const ids: string[] = (json?.data?.poscProducts || []).map((p: any) => p._id);
+  return ["mn", "en"].flatMap((locale) => ids.map((id) => ({ locale, id })));
+}
+
+export default async function ProductDetailPage({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
+  const { id } = await params;
+  return <ProductDetail productId={id} />;
+}
+```
+
+### `components/product/ProductDetail.tsx` — Client
 
 ```typescript
 "use client";
@@ -235,15 +275,12 @@ function StarRating({ rating, onRate, interactive = false, size = 20 }: { rating
   );
 }
 
-export default function ProductDetailPage({ params }: { params: Promise<{ id: string }> }) {
+export default function ProductDetail({ productId }: { productId: string }) {
   const router = useRouter();
-  const [productId, setProductId] = useState<string>("");
   const [quantity, setQuantity] = useState(1);
   const [reviewRating, setReviewRating] = useState(0);
   const [reviewText, setReviewText] = useState("");
   const [editingReviewId, setEditingReviewId] = useState<string | null>(null);
-
-  useEffect(() => { params.then((p) => setProductId(p.id)); }, [params]);
 
   const { product, loading } = useProductDetail(productId);
   const [, setCartItems] = useAtom(cartItemsAtom);
@@ -502,7 +539,11 @@ export default function ProfilePage() {
 
 ## Orders (`app/[locale]/orders/page.tsx`) — Client
 
-Auth guard. Uses `useOrders(currentUser?._id)`. Shows order list with status + total + date. Links to `/orders/[id]`.
+Auth guard. Uses `useOrders(currentUser?._id)`. Shows order list with status + total + date. Each row links to its detail shell: `Link href={`/orders/${order._id}`}` from `@/i18n/routing` (i18n-aware, adds the locale segment). Uses NO inline expansion — order detail lives on the `[id]` route.
+
+**Static export flag — `orders/[id]` (LOCKED — Option 2, static shell):** order detail is per-customer (`cpOrderDetail(_id, customerId)` behind the login session), so real order ids can never be known at build time. The route is implemented as a statically-exported shell — a thin server page plus a client component that fetches at runtime. Do NOT use `force-dynamic` (incompatible with `output: "export"`) and do NOT pre-render real order ids.
+
+**Export fallback behavior — document this, the agent must not guess:** with `output: "export"`, Next forces `dynamicParams = false`. Only the params returned by `generateStaticParams` are emitted as on-disk HTML, and the function is REQUIRED for every dynamic segment (a `[id]` page without it fails the build). Return a single inert placeholder (`[{ id: "placeholder" }]`) so the route graph exists and builds. Real order ids are never pre-rendered — a hard browser load of `/orders/<real-id>` on the static host falls through to `out/404.html` (no server, no fallback rendering). That is the documented deep-link limitation; the page still works when reached by in-app navigation from `/orders` (the router has the page chunk). NEVER put a real per-customer order id in `generateStaticParams` — it would bake auth-gated data into a public static file.
 
 ```typescript
 "use client";
@@ -548,6 +589,95 @@ export default function OrdersPage() {
         </div>
       )}
     </div>
+  );
+}
+```
+
+### `app/[locale]/orders/[id]/page.tsx` — thin server page
+
+Must be a NON-`"use client"` file so `generateStaticParams` can be exported (same constraint as `products/[id]`). Renders no data — delegates immediately to the client shell.
+
+```typescript
+import OrderDetailShell from "@/components/order-detail-shell";
+
+export async function generateStaticParams() {
+  // Locked (Option 2): only an inert placeholder is pre-rendered. Real order
+  // ids are per-customer and resolve client-side at runtime; hard loads of
+  // unmatched ids fall through to out/404.html (see export flag above).
+  return [{ id: "placeholder" }];
+}
+
+export default async function OrderDetailPage({
+  params,
+}: {
+  params: Promise<{ locale: string; id: string }>;
+}) {
+  const { locale, id } = await params;
+  return <OrderDetailShell locale={locale} orderId={id} />;
+}
+```
+
+### `components/order-detail-shell.tsx` — client shell
+
+`"use client"`. Reads the `[id]`, fetches order detail AT RUNTIME through the shared Apollo client — its auth links already attach `x-app-token` = `NEXT_PUBLIC_ERXES_CP_TOKEN` and `client-auth-token` (sessionStorage), and the endpoint comes from `NEXT_PUBLIC_ERXES_ENDPOINT` (all wired per the next-config env injection). `customerId` comes from the logged-in session (`currentUserAtom`). `skip: !customerId` ensures nothing is fetched or baked at build time. Includes a loading state and an error/not-found state — the shell has no build-time knowledge of whether the id is valid.
+
+```typescript
+"use client";
+
+import { useAtom } from "jotai";
+import { useQuery } from "@apollo/client/react";
+import { Link } from "@/i18n/routing";
+import { currentUserAtom } from "@/store/auth.store";
+import { ORDER_DETAIL } from "@/graphql/ecommerce/queries/order";
+import { formatPrice } from "@/lib/utils";
+
+export default function OrderDetailShell({
+  locale,
+  orderId,
+}: {
+  locale: string;
+  orderId: string;
+}) {
+  const [currentUser] = useAtom(currentUserAtom);
+  const customerId = currentUser?._id || "";
+  const { data, loading, error } = useQuery(ORDER_DETAIL, {
+    variables: { _id: orderId, customerId },
+    skip: !customerId,
+    fetchPolicy: "cache-and-network",
+  });
+
+  const detail = (data as any)?.cpOrderDetail || null;
+
+  return (
+    <main className="container py-8">
+      <h1 className="mb-4">Order details</h1>
+      <p className="text-sm text-muted-foreground">Locale: {locale} · Order: {orderId}</p>
+      {loading ? (
+        <div className="mt-6 h-48 animate-pulse rounded-lg bg-muted" />
+      ) : !detail ? (
+        <div className="mt-6">
+          <p className="text-muted-foreground">
+            {error ? "Order not found — it may belong to another account." : "Захиалга олдсонгүй"}
+          </p>
+          <Link href="/orders" className="mt-4 inline-block text-sm underline">← Back to orders</Link>
+        </div>
+      ) : (
+        <div className="mt-6 space-y-3">
+          <p className="text-sm font-medium">Status: {detail.status}</p>
+          <p className="text-sm text-muted-foreground">{new Date(detail.createdAt).toLocaleDateString()}</p>
+          {(detail.items || []).map((item: any, i: number) => (
+            <div key={i} className="flex items-center justify-between text-sm">
+              <span>{item.productName} × {item.count}</span>
+              <span>{formatPrice(item.unitPrice * item.count)}</span>
+            </div>
+          ))}
+          <div className="flex items-center justify-between border-t pt-2 text-sm font-semibold">
+            <span>Нийт</span>
+            <span>{formatPrice(detail.totalAmount)}</span>
+          </div>
+        </div>
+      )}
+    </main>
   );
 }
 ```

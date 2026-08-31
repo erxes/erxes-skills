@@ -148,7 +148,20 @@ Use the Figma link or exported assets in `ui_source_ref` as the visual source. R
 
 ### `screenshot`
 
-Extract layout, sections, spacing, color energy, typography feel, and UI patterns from the screenshots. Rebuild the design in Pencil.
+The screenshot files were copied into `output/<slug>/screenshots/` during setup, and `ui_source_ref` lists their paths one per line.
+
+1. Open every image — use the same image-viewing capability used to review Pencil exports (Pencil MCP tools / native image reader) to actually view each file listed in `ui_source_ref`. Never design from a path, a description, or assumptions about what an image shows.
+2. Before rebuilding anything, record an explicit screenshot inventory in `output/<slug>/HANDOFF.md`:
+   - layout and section order
+   - header and footer patterns
+   - component types (cards, CTAs, forms, lists, product rows)
+   - dominant colors (name them)
+   - typography feel
+   - spacing density, corner radius, shadow character
+3. If any region of a screenshot is blurred, cropped, low-contrast, or otherwise ambiguous, state your interpretation as an assumption in `HANDOFF.md` instead of silently guessing.
+4. Rebuild the design in Pencil from that observed inventory only.
+
+Do not begin design work until every screenshot in `ui_source_ref` has been opened and its observed details are written into `HANDOFF.md`.
 
 ### `website`
 
@@ -746,6 +759,8 @@ Section B — Step 2 is complete only when all of these are true:
 
 If the source is a website with strategy `copy-site` or `improve-site`, Section B — Step 2 is not complete until the relevant source pages and locale variants were audited and recorded in the handoff.
 If the source is a website with strategy `copy-site` or `improve-site`, `source-audit.json` must exist and be used during handoff creation.
+
+If `ui_source` is `screenshot`, Section B — Step 2 is not complete until every screenshot file listed in `ui_source_ref` was opened and viewed, and the observed screenshot inventory (sections, layout, colors, typography, components, assumptions) is recorded in `HANDOFF.md`.
 
 If any artifact is a placeholder, blank stub, or file-type fake, Section B — Step 2 is not complete.
 

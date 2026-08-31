@@ -259,7 +259,7 @@ Step 3.5 is complete only when:
 6. Root layout + Providers
 7. Auth pages: `login/page.tsx`, `register/page.tsx`, `forgot-password/page.tsx`
 8. Ecommerce pages: `page.tsx` (home), `products/page.tsx`, `products/[id]/page.tsx`, `cart/page.tsx`
-9. Profile + account pages: `profile/page.tsx`, `orders/page.tsx`, `orders/[id]/page.tsx`, `wishlist/page.tsx`
+9. Profile + account pages: `profile/page.tsx`, `orders/page.tsx`, `orders/[id]/page.tsx`, `components/order-detail-shell.tsx` (static shell — order detail fetched client-side at runtime per the locked static-export flag in `generate-pages.md`), `wishlist/page.tsx`
 10. Checkout + payment: `checkout/page.tsx`, `verify/page.tsx`
 11. CMS pages: `about/page.tsx`, `contact/page.tsx`, `blog/page.tsx`, `faq/page.tsx` — only sections listed in `cms_sections`
 12. Header + Footer (nav from `cpMenus` via `NEXT_PUBLIC_CMS_ID`)

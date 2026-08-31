@@ -202,47 +202,86 @@ export const wishlistCountAtom = atom((get) => get(wishlistItemsAtom).length);
 
 ### `app/globals.css`
 
-```css
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+The starter runs **Tailwind CSS v4** (`@import "tailwindcss"` + `@theme`). Do NOT use
+Tailwind v3 syntax (`@tailwind base; … ` or a bare `:root { --primary: … }` block) —
+v4 only generates the semantic utility classes (`bg-primary`, `text-primary-foreground`,
+`bg-card`, `border-border`, `bg-muted`, …) when their color keys live inside the
+`@theme inline` block. Without that mapping the classes resolve to nothing and the
+whole design collapses to the starter's default theme.
 
-@layer base {
-  :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
-    --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
-    --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
-    --primary: 222.2 47.4% 11.2%;
-    --primary-foreground: 210 40% 98%;
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 222.2 84% 4.9%;
-    --radius: 0.5rem;
-  }
+```css
+@import "tailwindcss";
+
+:root {
+  /* Replace every value with the exact token read from design-tokens.json. No hardcoded values. */
+  --background: <colors.semantic.background>;
+  --foreground: <colors.semantic.foreground>;
+  --card: <colors.semantic.card>;
+  --card-foreground: <colors.semantic.cardForeground>;
+  --popover: <colors.semantic.popover>;
+  --popover-foreground: <colors.semantic.popoverForeground>;
+  --primary: <colors.semantic.primary>;
+  --primary-foreground: <colors.semantic.primaryForeground>;
+  --secondary: <colors.semantic.secondary>;
+  --secondary-foreground: <colors.semantic.secondaryForeground>;
+  --muted: <colors.semantic.muted>;
+  --muted-foreground: <colors.semantic.mutedForeground>;
+  --accent: <colors.semantic.accent>;
+  --accent-foreground: <colors.semantic.accentForeground>;
+  --destructive: <colors.semantic.destructive>;
+  --border: <colors.semantic.border>;
+  --input: <colors.semantic.input>;
+  --ring: <colors.semantic.ring>;
+  --radius: <radius>;
+}
+
+/* Tailwind v4: expose every CSS variable as a theme key. A semantic utility class
+   (bg-primary, text-primary-foreground, bg-card, border-border, bg-muted, ...) is only
+   generated if its "--color-*" key is declared here — never use a class whose key is missing. */
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
 }
 
 @layer base {
-  * {
-    @apply border-border;
-  }
   body {
     @apply bg-background text-foreground;
   }
 }
 ```
 
-> Replace CSS variable values with the project's design tokens from `design-tokens.json`.
+> Replace the CSS variable values with the project's design tokens from `design-tokens.json`.
+> Do NOT add `* { @apply border-border; }` or any `@apply` of a semantic class without first
+> confirming the class's `--color-*` key is declared in the `@theme inline` block above — an
+> `@apply` of an unknown utility is a hard build error in Tailwind v4.
+>
+> **Checklist before writing any component:**
+> - [ ] `app/globals.css` starts with `@import "tailwindcss";`
+> - [ ] every semantic `--color-*` key used by components (`bg-primary`, `text-primary-foreground`,
+>       `bg-card`, `bg-muted`, `text-muted-foreground`, `border-border`, `bg-secondary`, `bg-accent`,
+>       `text-destructive`, …) is declared inside `@theme inline`
+> - [ ] no semantic class is used in a component unless its key exists in the `@theme inline` block
+> - [ ] no `@apply border-border` / v3 directive (`@tailwind base;`) remains in the file
 
 ### `app/layout.tsx`
 
@@ -265,7 +304,13 @@ import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 import "../globals.css";
 
-// ЧУХАЛ: Next.js 15-д params нь Promise болсон — await хийж destructure хийнэ
+// ЧУХАЛ: Next.js 15-д params нь Promise болсон — await хийж destructure хийнэ.
+// Static export хийхэд заавал байх: `output: "export"` дээр [locale] сегмент
+// generateStaticParams-гүй бол хуудас үүсэхгүй (build алдагдана).
+export function generateStaticParams() {
+  return [{ locale: "mn" }, { locale: "en" }];
+}
+
 export default async function LocaleLayout({
   children,
   params,

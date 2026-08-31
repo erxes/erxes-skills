@@ -24,6 +24,7 @@ Before anything else, ask the user which sections they already have ready.
 **If user has Section B ready:**
 
 - Ask: "Please share your design files — Pencil `.pen` file path or screenshot paths."
+- For screenshot references, apply the screenshot intake rules in Section A — question 7 (validate every path on disk, copy into `output/<slug>/screenshots/`, save the persisted paths in `ui_source_ref`)
 - Save references to `store.config.json` as `ui_source` and `ui_source_ref`
 - Ensure `store.config.json` exists (collect minimum fields if missing)
 - Skip Sections A and B → jump to **Section C — Step 1 (Development)**
@@ -134,8 +135,14 @@ Run this before anything else. Ask every field — do not assume or skip.
    - Then ask the follow-up based on the answer:
      - `words` → "Describe the look and feel you want."
      - `pencil` → "What is the path to your `.pen` file?"
-     - `screenshot` → "What are the screenshot file path(s)?"
+     - `screenshot` → "Enter the screenshot file path(s) — one per line; press Enter on an empty line when you are done."
    - Save the follow-up answer as `ui_source_ref` in `store.config.json`
+   - **Screenshot intake rules (when `ui_source` is `screenshot`):**
+     - Accept one or more paths, separated by newlines or commas
+     - For every path, verify it exists on disk before saving; if any path is missing, name the missing files and re-ask for them once — if still missing, stop with a hard error naming the files
+     - Copy every valid screenshot into `output/<slug>/screenshots/` (slug = site name lowercased, spaces → hyphens)
+     - Save `ui_source_ref` in `store.config.json` as the persisted copied absolute paths, one per line — never the original unverified input
+     - Keep `color_hint` as `null` (it is extracted from the design later)
 
 8. **Color hint** — ask **only** when `ui_source` is `words`
 

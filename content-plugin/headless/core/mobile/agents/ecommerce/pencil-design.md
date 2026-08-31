@@ -148,7 +148,19 @@ Use the Figma link or exported assets in `ui_source_ref` as the visual source. R
 
 ### `screenshot`
 
-Extract screen layouts, navigation patterns, spacing, color energy, typography feel, and UI components from the screenshots. Rebuild the experience in Pencil.
+Your screenshot files were copied into `output/<slug>/screenshots/` during Step 0 intake, and `ui_source_ref` lists their persisted paths, one per line.
+
+1. Open every image with the same image-viewing capability you use to review Pencil exports (Pencil MCP tools / native image reader) to actually view each file listed in `ui_source_ref`. Never design from a path, a description, or assumptions about what an image shows.
+2. Before rebuilding anything, record an explicit screenshot inventory in `output/<slug>/HANDOFF.md`:
+   - screen flow and navigation pattern (tab/bottom bar, drawers, product flow)
+   - layout, hierarchy, and component types (cards, CTAs, forms, product rows)
+   - dominant colors (name them)
+   - typography feel
+   - spacing density, corner radius, shadow character
+3. If any region of a screenshot is blurred, cropped, low-contrast, or otherwise ambiguous, state your interpretation as an assumption in `HANDOFF.md` instead of silently guessing.
+4. Rebuild the design in Pencil from that observed inventory only. Unattended mode still applies — this is a "read first, then render" gate, not a user-interaction gate.
+
+Do not begin design work until every screenshot in `ui_source_ref` has been opened and its observed details are written into `HANDOFF.md`.
 
 ### `website`
 
