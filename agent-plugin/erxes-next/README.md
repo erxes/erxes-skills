@@ -1,12 +1,14 @@
 # erxes Agent Plugin
 
-This Clawhub/OpenClaw agent plugin lets agents operate erxes through the live GraphQL API using confidential OAuth device-flow authentication.
+This Clawhub/OpenClaw agent plugin lets agents operate every enabled erxes service through live, permission-filtered tools using confidential OAuth device-flow authentication.
 
 The plugin is intentionally scoped to erxes. It should not fall back to generic CRM schemas, invented REST endpoints, or guessed GraphQL operations when an erxes lookup fails.
 
 ## What It Supports
 
+- Live capability discovery filtered by the exact scopes selected during OAuth and the user's current erxes permissions.
 - Core erxes workflows: contacts, products, tags, documents, brands, automations, organization structure, and team members.
+- Public plugin workflows: accounting, content, frontline, insurance, loyalty, mongolian, operation, payment, POS client, sales, and tourism.
 - Block plugin workflows: projects, buildings, floor zonings, units, unit types, opportunities, statuses, payment plans, contracts, offers, invoices, documents, attachments, notes, and developer profile.
 - Operation plugin workflows: projects, tasks, triage, teams, statuses, cycles, milestones, notes, activities, and templates.
 - Safe read/list/search/group actions.
@@ -108,8 +110,8 @@ After editing plugin files:
    clawhub publish ./agent-plugin/erxes-next \
      --slug erxes-next-plugin \
      --name "erxes-next-plugin" \
-     --version 1.0.22 \
-     --changelog "Persist OAuth session + secret for silent refresh; durable storage; never re-OAuth mid-session"
+     --version 1.1.0 \
+     --changelog "Add permission-filtered erxes tool discovery and calls while preserving durable OAuth sessions"
    ```
 
 4. Update an installed copy with `openclaw plugins update erxes-next-plugin` (or `clawhub update erxes-next-plugin`).
