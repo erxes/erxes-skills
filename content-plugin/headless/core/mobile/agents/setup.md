@@ -12,20 +12,21 @@ Before anything else, ask the user which sections they already have ready.
 
 "Do you already have any of these ready: a business requirements document (Section A), design files or wireframes (Section B), or existing frontend code (Section C)? Or say none and we'll develop everything from scratch."
 
-> **Note:** `site.config.json` is always required regardless of which section you jump to. If it does not exist yet, collect the minimum fields (`name`, `template_type`, `language`, `erxes_endpoint`, `erxes_app_token`, `client_portal_id`) before proceeding to the target section.
+> **Note:** `store.config.json` is always required regardless of which section you jump to. If it does not exist yet, collect the minimum fields (`name`, `template_type`, `language`, `erxes_endpoint`, `erxes_app_token`, `client_portal_id`) before proceeding to the target section.
 
 **If user has Section A ready:**
 
 - Ask: "Please share your business requirements document — paste the content or give me the file path."
 - Save to `output/<slug>/business-requirements.md`
-- Ensure `site.config.json` exists (collect minimum fields if missing)
+- Ensure `store.config.json` exists (collect minimum fields if missing)
 - Skip Section A entirely → jump to **Section B — Step 1 (UX Research)**
 
 **If user has Section B ready:**
 
 - Ask: "Please share your design files — Pencil `.pen` file path or screenshot paths."
-- Save references to `site.config.json` as `ui_source` and `ui_source_ref`
-- Ensure `site.config.json` exists (collect minimum fields if missing)
+- For screenshot references, apply the screenshot intake rules in Section A — question 7 (validate every path on disk, copy into `output/<slug>/screenshots/`, save the persisted paths in `ui_source_ref`)
+- Save references to `store.config.json` as `ui_source` and `ui_source_ref`
+- Ensure `store.config.json` exists (collect minimum fields if missing)
 - Skip Sections A and B → jump to **Section C — Step 1 (Development)**
 
 **If user has Section C ready (existing frontend code):**
@@ -63,7 +64,7 @@ Run this before anything else. Ask every field — do not assume or skip.
 - Ask `color_hint` only when `ui_source` is `words`
 - Ask `vercel_token` and `vercel_org_id` only when `deploy_target` is `vercel`
 
-## site.config.json — ask in this order
+## store.config.json — ask in this order
 
 1. **Site name**
 
@@ -95,7 +96,7 @@ Run this before anything else. Ask every field — do not assume or skip.
 
    > Ask: "Which sections do you need? List comma-separated. Options: `about`, `services`, `blog`, `contact`, `gallery`, `pricing`, `team`, `testimonials`, `faq`, `menu`, `portfolio`"
    - If the user includes `hero`, keep it, but do not require it
-   - If the user says `design`: skip saving sections now — defer to Section B — Step 2 (Design) where the UI source is analyzed. After analyzing the design, extract the sections and save them to `site.config.json` before continuing to Section C — Step 1.
+   - If the user says `design`: skip saving sections now — defer to Section B — Step 2 (Design) where the UI source is analyzed. After analyzing the design, extract the sections and save them to `store.config.json` before continuing to Section C — Step 1.
 
 6. **Design strategy**
 
@@ -105,18 +106,18 @@ Run this before anything else. Ask every field — do not assume or skip.
    - `improve-site` — take an existing site and make it better
    - `brand-first` — start from brand identity (colors, fonts, logo)
    - `beat-competitors` — analyze competitors and outdesign them
-   - Save as `design_strategy` in `site.config.json`
+   - Save as `design_strategy` in `store.config.json`
 
    **If `design_strategy` is `copy-site` or `improve-site`:**
    - Set `ui_source` to `website` automatically — do **not** ask the UI source question
    - Ask: "What is the URL of the site to copy or improve?"
-   - Save as both `ui_source_ref` and `reference_url` in `site.config.json`
+   - Save as both `ui_source_ref` and `reference_url` in `store.config.json`
    - Set `competitor_urls` to `[]`
 
    **If `design_strategy` is `beat-competitors`:**
    - Set `ui_source` to `words` automatically — do **not** ask the UI source question
    - Ask: "Enter a competitor URL." — after each answer ask "Any more? (2–5 total)" until done
-   - Save as `competitor_urls` in `site.config.json`
+   - Save as `competitor_urls` in `store.config.json`
    - Set `reference_url` to `null`
 
    **If `design_strategy` is `from-scratch` or `brand-first`:**
@@ -130,12 +131,18 @@ Run this before anything else. Ask every field — do not assume or skip.
    - `words` — user describes what they want in text
    - `pencil` — user has an existing `.pen` file
    - `screenshot` — user uploads one or more screenshots
-   - Save as `ui_source` in `site.config.json`
+   - Save as `ui_source` in `store.config.json`
    - Then ask the follow-up based on the answer:
      - `words` → "Describe the look and feel you want."
      - `pencil` → "What is the path to your `.pen` file?"
-     - `screenshot` → "What are the screenshot file path(s)?"
-   - Save the follow-up answer as `ui_source_ref` in `site.config.json`
+     - `screenshot` → "Enter the screenshot file path(s) — one per line; press Enter on an empty line when you are done."
+   - Save the follow-up answer as `ui_source_ref` in `store.config.json`
+   - **Screenshot intake rules (when `ui_source` is `screenshot`):**
+     - Accept one or more paths, separated by newlines or commas
+     - For every path, verify it exists on disk before saving; if any path is missing, name the missing files and re-ask for them once — if still missing, stop with a hard error naming the files
+     - Copy every valid screenshot into `output/<slug>/screenshots/` (slug = site name lowercased, spaces → hyphens)
+     - Save `ui_source_ref` in `store.config.json` as the persisted copied absolute paths, one per line — never the original unverified input
+     - Keep `color_hint` as `null` (it is extracted from the design later)
 
 8. **Color hint** — ask **only** when `ui_source` is `words`
 
@@ -151,7 +158,7 @@ Run this before anything else. Ask every field — do not assume or skip.
     > Ask: "Deploy to Vercel after building, or just push to GitHub? Options: `vercel` / `github`"
     - `vercel` — push to GitHub and deploy to Vercel (live URL returned)
     - `github` — push to GitHub only (no Vercel deploy)
-    - Save as `deploy_target` in `site.config.json`
+    - Save as `deploy_target` in `store.config.json`
 
 11. **erxes SaaS URL**
 
@@ -163,7 +170,7 @@ Run this before anything else. Ask every field — do not assume or skip.
 
     > Ask: "What is your Client Portal Token?"
     - Explain: "This is a secret key that lets your website talk to erxes. To get it: open your erxes dashboard → **Settings** → **Create client portal** → copy the **Client portal token** shown there."
-    - Save as `erxes_app_token` in `site.config.json` and `ERXES_APP_TOKEN` in `.env`
+    - Save as `erxes_app_token` in `store.config.json` and `ERXES_APP_TOKEN` in `.env`
 
 13. **Client Portal ID**
     > Ask: "What is your Client Portal ID?"
@@ -193,7 +200,7 @@ Run this before anything else. Ask every field — do not assume or skip.
 
 ## After collecting all answers
 
-Write `site.config.json`:
+Write `store.config.json`:
 
 ```json
 {
@@ -222,14 +229,14 @@ Update `.env` — preserve existing lines, only add/update the collected fields.
 
 After saving config, create the CMS with `cpContentCreateCMS`, then write the returned `_id` into:
 
-- `site.config.json` as `erxes_cms_id`
+- `store.config.json` as `erxes_cms_id`
 - `.env` as `ERXES_CMS_ID`
 
 ---
 
 ## Template-Specific Pipeline Routing
 
-After `site.config.json` is saved and CMS is created, route to the correct template pipeline based on `template_type`:
+After `store.config.json` is saved and CMS is created, route to the correct template pipeline based on `template_type`:
 
 | `template_type` | Next Step                                             | Read These Files                                                       |
 | --------------- | ----------------------------------------------------- | ---------------------------------------------------------------------- |
@@ -250,13 +257,13 @@ The ecommerce pipeline (`agents/ecommerce/setup.md`) asks for additional fields 
 2. **Allow guest checkout** (`allow_guest`) — `true`/`false`
 3. **POS token** (`pos_token`) — from erxes POS settings
 
-These fields are **not** in the generic `site.config.json` schema above. The ecommerce pipeline uses `store.config.json` instead of `site.config.json` with an extended schema.
+These fields are **not** in the generic `store.config.json` schema above. The ecommerce pipeline uses `store.config.json` instead of `store.config.json` with an extended schema.
 
 **Migration at routing time:**
 
 When switching to ecommerce:
 
-- Rename `site.config.json` → `store.config.json`
+- Rename `store.config.json` → `store.config.json`
 - Add ecommerce-specific fields:
   - `delivery_types`: ask user "What order types? (delivery/pickup/eat)"
   - `allow_guest`: ask user "Can customers check out without registering? (yes/no)"
@@ -272,4 +279,4 @@ When switching to ecommerce:
 
 > **Skip this step entirely if `template_type` is `ecommerce`.** Ecommerce has its own business analysis flow in `agents/ecommerce/AGENTS.md`.
 
-Read `agents/business-analyst.md`. Generate or validate `output/<slug>/business-requirements.md` from `site.config.json`, optional user-provided BRD input, and a plain-chat interview. Do not proceed to UX research or design until the user confirms the BRD is acceptable.
+Read `agents/business-analyst.md`. Generate or validate `output/<slug>/business-requirements.md` from `store.config.json`, optional user-provided BRD input, and a plain-chat interview. Do not proceed to UX research or design until the user confirms the BRD is acceptable.

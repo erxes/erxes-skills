@@ -39,27 +39,32 @@ Open `output/<slug>/HANDOFF.md`. Confirm:
 
 ### Step 3 — Verify `globals.css`
 
-Check that `output/<slug>/app/globals.css` has CSS variables declared from the design tokens:
+Check that `output/<slug>/app/globals.css` (Tailwind **v4** — must start with `@import "tailwindcss";`) declares the design tokens inside an `@theme inline` block. A bare `:root { --primary: … }` block does NOT create utility classes in v4; the semantic keys must be mapped:
 
 ```css
-:root {
-  --color-background: <from token>;
-  --color-card: <from token>;
-  --color-primary: <from token>;
-  --color-primary-foreground: <from token>;
-  --color-foreground: <from token>;
-  --color-muted-foreground: <from token>;
-  --color-border: <from token>;
-  --color-destructive: <from token>;
-  --radius-sm: <from token>;
-  --radius-md: <from token>;
-  --radius-lg: <from token>;
-  --shadow-sm: <from token>;
-  --shadow-md: <from token>;
+@theme inline {
+  --color-background: <from token colors.semantic.background>;
+  --color-card: <from token colors.semantic.card>;
+  --color-primary: <from token colors.semantic.primary>;
+  --color-primary-foreground: <from token colors.semantic.primaryForeground>;
+  --color-foreground: <from token colors.semantic.foreground>;
+  --color-muted-foreground: <from token colors.semantic.mutedForeground>;
+  --color-muted: <from token colors.semantic.muted>;
+  --color-border: <from token colors.semantic.border>;
+  --color-destructive: <from token colors.semantic.destructive>;
+  --radius-sm: <from token radius>;
+  --radius-md: <from token radius>;
+  --radius-lg: <from token radius>;
 }
 ```
 
 If `globals.css` is missing these variables — write them now before any component.
+
+**Hard rule:** You may only use a semantic utility class in a component if its `--color-*` key is declared in the `@theme inline` block of `globals.css`. Before finishing a component, confirm:
+
+- [ ] every className used (`bg-primary`, `text-primary-foreground`, `bg-card`, `bg-muted`, `text-muted-foreground`, `border-border`, `bg-secondary`, `bg-accent`, `text-destructive`, …) maps to a declared `--color-*` key in `@theme inline`
+- [ ] no component uses a semantic class whose key is missing from `globals.css`
+- [ ] `globals.css` contains no v3 artifacts (`@tailwind base;`, `* { @apply border-border; }`, or an unmapped `:root { --primary: … }` block)
 
 ### Step 4 — className Mapping
 

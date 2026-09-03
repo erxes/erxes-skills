@@ -1,5 +1,10 @@
 # Ecommerce Coding Conventions — Mobile (Expo)
 
+> **SOURCE OF TRUTH for ecommerce builds.** Read this file BEFORE
+> `agents/conventions.md` (which holds only project-wide/global rules).
+> Where the two files overlap on an ecommerce build, THIS file wins —
+> do not "reconcile" a conflict by re-introducing generic-web patterns.
+
 Follow these rules in every file.
 
 ---
@@ -40,7 +45,7 @@ const authLink = setContext(async (_, { headers }) => {
     headers: {
       ...headers,
       "client-auth-token": token,
-      "x-app-token": process.env.EXPO_PUBLIC_ERXES_CP_TOKEN ?? "",
+      "x-app-token": process.env.EXPO_PUBLIC_CLIENT_PORTAL_TOKEN ?? "",
       "erxes-pos-token": process.env.EXPO_PUBLIC_POS_TOKEN ?? "",
     },
   };
@@ -52,46 +57,114 @@ const authLink = setContext(async (_, { headers }) => {
 
 > `setContext` нь `async` callback дэмждэг тул `await` ашиглаж болно.
 
+**Canonical Apollo client file:** `lib/apollo/client.ts` — энэ нь тус тус төсөлд зөвшөөрөгдсөн ЦОР ГАНЦ Apollo client файл. `lib/apollo-client.ts` эсвэл `graphql/client.ts` үүсгэж болохгүй (хуучин docs-ийн нэрс — бүү ашигла). Экспорт нь зөвхөн `getApolloClient()`.
+
+**`clientPortalId` — хэзээ ч variables-д илгээхгүй** (`cpContentCreateCMS`-ээс бусад тохиолдолд): gateway нь portal-ыг `x-app-token` header-оос өөрөө тодорхойлно. Web pipeline-ийн `cmsLink` auto-injectionтай зөрчилддөггүй — web нь operation document-д `$clientPortalId` declare хийлгүй зөвхөн variables object-ээр нэмдэг тул gateway түүнийг ignore хийдэг; mobile doc-ууд харин operation дотор ч variable-аар ч бүү declare хий.
+
 ---
 
 ## 3. Token Types
 
-| Token      | Env Var                      | Header              | Source                       |
-| ---------- | ---------------------------- | ------------------- | ---------------------------- |
-| CP Token   | `EXPO_PUBLIC_ERXES_CP_TOKEN` | `x-app-token`       | Client Portal ID             |
-| Auth Token | —                            | `client-auth-token` | SecureStore (login response) |
-| POS Token  | `EXPO_PUBLIC_POS_TOKEN`      | `erxes-pos-token`   | POS settings                 |
+| Token      | Env Var                              | Header              | Source                       |
+| ---------- | ------------------------------------ | ------------------- | ---------------------------- |
+| CP Token   | `EXPO_PUBLIC_CLIENT_PORTAL_TOKEN`    | `x-app-token`       | Client Portal JWT            |
+| Auth Token | —                                    | `client-auth-token` | SecureStore (login response) |
+| POS Token  | `EXPO_PUBLIC_POS_TOKEN`              | `erxes-pos-token`   | POS settings                 |
 
 > `NEXT_PUBLIC_*` биш `EXPO_PUBLIC_*` ашиглана.
+> **Хуучин нэр хэрэглэхгүй:** `EXPO_PUBLIC_ERXES_CP_TOKEN` гэсэн нэр
+> docs-ийн эртний хувилбарт байсан боловч код `EXPO_PUBLIC_CLIENT_PORTAL_TOKEN`
+> уншидаг тул хоосон auth header үүсгэнэ — хэзээ ч бүү ашигла.
 
 ---
 
-## 4. GraphQL File Organization
+## 4. Apollo Data-Fetching Rules (erxes)
 
-**`src/graphql/` биш `graphql/` ашиглана (Expo-д `src/` байхгүй).**
+- All data fetching happens client-side with Apollo `useQuery` / `useMutation`.
+- **Apollo Client v4 imports (mandatory):**
 
 ```typescript
-// ЗӨВ
-import { GET_PRODUCTS } from "@/graphql/products";
+// ЗӨВ — v4: hooks/provider live in the react entrypoint
+import { useQuery, useMutation, ApolloProvider } from "@apollo/client/react";
+import { gql } from "@apollo/client"; // gql stays on the root entrypoint
+import { setContext } from "@apollo/client/link/context";
+
+// БУРУУ — v3 pattern, crashes in v4 ("useQuery is not a function" / provider undefined)
+import { useQuery, useMutation } from "@apollo/client";
+```
+
+- **`ApolloClient` нь v4-өөс generic биш** — `ApolloClient<unknown>` биш
+  шууд `ApolloClient` гэж type-лана:
+
+```typescript
+let instance: ApolloClient | undefined;
+
+export function getApolloClient(): ApolloClient {
+  if (!instance) {
+    instance = new ApolloClient({
+      link: authLink.concat(httpLink),
+      cache: new InMemoryCache(),
+    });
+  }
+  return instance;
+}
+```
+
+- Always use `_id` (not `id`) in GraphQL selections — erxes returns MongoDB ObjectIds.
+- **Never send `clientPortalId` in query/mutation variables** — the gateway
+  resolves it from the `x-app-token` header. Passing it as a variable either
+  errors or silently scopes wrong.
+- Prefer `fetchPolicy: "cache-and-network"` on queries backing pull-to-refresh
+  screens; use `"network-only"` for `CURRENT_USER` so login state never serves stale.
+
+---
+
+## 5. Project Structure (flat starter layout)
+
+**Шинээр app үүсгэхдээ shipped starter-ийн FLAT бүтцийг ашиглана — `src/features/` байхгүй.** (`frontend.md` PHASE 2.1-ийн feature-folder зохион байгуулалт нь зөвхөн маш том app-уудад OPTIONAL; ecommerce docs-ийг бүгд доорх flat бүтцэд зориулж бичсэн.)
+
+Each domain owns its files under top-level folders:
+
+```
+graphql/auth/          # FORGOT_PASSWORD, RESET_PASSWORD, …
+graphql/cms/           # CP_PAGES, CP_POSTS, CP_CATEGORIES, …
+graphql/ecommerce/     # POSC_PRODUCTS, CP_CREATE_TICKET, …
+hooks/                 # auth.ts, order.ts, payment.ts, review.ts
+store/                 # auth.store.ts, cart.store.ts, order.store.ts, …
+types/                 # auth.types.ts, cms.types.ts, order.types.ts, payment.types.ts
+lib/                   # apollo/client.ts, i18n/, constants.ts, utils.ts
+components/            # ui/, layout/, payment/, products/
+```
+
+**Зөвхөн `src/messenger/` л `src/` дор орно** (Messenger холбогдсон үед л — `connect-messenger.md`). Үүнээс бусад `src/` контент бол бүтцийн зөрчил.
+
+```typescript
+// ЗӨВ — feature-owned imports go through the feature folder
+import { GET_PRODUCTS } from "graphql/ecommerce/queries/product";
+import { cartItemsAtom } from "store/cart.store";
+
+// БУРУУ — flat legacy paths
+import { GET_PRODUCTS } from "@/graphql/ecommerce/queries/product";
+import { cartItemsAtom } from "@/store/cart.store";
 ```
 
 ---
 
-## 5. Jotai Store Rules
+## 6. Jotai Store Rules
 
 **Circular dependency байхгүй байх — web-тэй ижил дүрэм.**
 
 ```typescript
 // ЗӨВ: order.store → cart.store (order.store нь cart.store-аас import хийхгүй)
-// cart.store.ts
-import { itemsAtom, cartTotalAtom } from "@/store/order.store";
+// store/cart.store.ts
+import { itemsAtom, cartTotalAtom } from "store/order.store";
 
 // БУРУУ: order.store.ts дотор `import { something } from "./cart.store"` байж болохгүй
 ```
 
 ---
 
-## 6. Navigation
+## 7. Navigation
 
 **`next/link` болон `@/i18n/routing` байхгүй — `expo-router` ашиглана.**
 
@@ -108,9 +181,14 @@ import { useRouter } from "next/navigation";
 import { Link } from "@/i18n/routing";
 ```
 
+> **Exception:** in-app routes үргэлж `expo-router`-оор. Гэтэл payment
+> `redirectUrl` гэх мэт **гадаад deep link**-ийг `expo-linking`-ийн
+> `Linking.openURL(url)`-ээр нээнэ — үүнийг router-оор солих боломжгүй
+> (дэлгэрэнгүй §10 Payment Flow).
+
 ---
 
-## 7. Client vs Screen Components
+## 8. Client vs Screen Components
 
 Expo-д Server Component байхгүй — бүгд client-side.
 
@@ -124,9 +202,14 @@ Expo-д Server Component байхгүй — бүгд client-side.
 
 ---
 
-## 8. Image Handling
+## 9. Image Handling
 
 **`expo-image` ашиглана — `next/image` эсвэл `<img>` биш.**
+
+> Note: доорх жишээнд image хэмжээг `style={{ width, height }}`-ээр өгсөн —
+> `expo-image`-д uri + contentFit-тэй хамт ашиглахад зүш зүйлс байхгүй;
+> layout бус styling-ийг className token-оор, зурагний хэмжээг style/className
+> аль альгаар өгч болно.
 
 ```typescript
 import { Image } from "expo-image";
@@ -152,7 +235,7 @@ export function isValidUrl(url: string | undefined): boolean {
 
 ---
 
-## 9. Payment Flow
+## 10. Payment Flow
 
 1. `app/checkout.tsx` — delivery info бөглөж (`firstName`, `lastName`, `email`, `phone`, `address`, `description`), payment method сонгож, `cpOrdersAdd` дуудна → `activeOrderAtom`-д хадгална
 2. `app/verify.tsx` — `useCallback + setInterval(5000)` auto-polling — invoice үүссэний дараа 5 секунд тутамд `invoicesCheck` дуудна
@@ -176,7 +259,7 @@ await Linking.openURL(redirectUrl);
 
 ---
 
-## 10. i18n Rules
+## 11. i18n Rules
 
 **Every user-facing string MUST use `i18n.t("key")`. Zero exceptions.**
 
@@ -198,7 +281,7 @@ Key naming convention: `section.key` — e.g. `product.addToCart`, `cart.empty`,
 
 ---
 
-## 11. Build Checklist
+## 12. Build Checklist
 
 - [ ] `expo-secure-store` installed — `SecureStore.setItemAsync/getItemAsync/deleteItemAsync`
 - [ ] Apollo `authLink` uses `async setContext` with `await SecureStore.getItemAsync("token")`
@@ -206,6 +289,7 @@ Key naming convention: `section.key` — e.g. `product.addToCart`, `cart.empty`,
 - [ ] `app/_layout.tsx` — `GestureHandlerRootView` хамгийн гадна, `SafeAreaProvider` дотор
 - [ ] `react-native-gesture-handler` import `app/_layout.tsx`-ийн хамгийн эхний мөрт байна
 - [ ] `store/order.store.ts` нь `cart.store`-аас import хийхгүй
+- [ ] Бүтцэд `src/` дор зөвхөн `src/messenger/` байна (`conventions.md` §5 — flat starter layout)
 - [ ] `useRouter`, `Link` нь `expo-router`-аас байна (`next/link`, `@/i18n/routing` биш)
 - [ ] `useCurrentUser` — `fetchPolicy: "network-only"`, `triggerRefetchUser: () => refetch()`
 - [ ] Login: mutation нэр `clientPortalUserLoginWithCredentials`, variables: `{ email, password }`
@@ -213,7 +297,9 @@ Key naming convention: `section.key` — e.g. `product.addToCart`, `cart.empty`,
 - [ ] Token хадгалсны ДАРАА `triggerRefetchUser()` дуудна
 - [ ] Register: mutation нэр `clientPortalUserRegister`, flat variables, token биш user object буцаана
 - [ ] Logout: `SecureStore.deleteItemAsync("token")` + `deleteItemAsync("refreshToken")`, `setCurrentUser(null)`, `router.replace("/")`
-- [ ] Apollo `authLink`: `x-app-token` = `EXPO_PUBLIC_ERXES_CP_TOKEN`, `erxes-pos-token` = `EXPO_PUBLIC_POS_TOKEN`
+- [ ] Apollo `authLink`: `x-app-token` = `EXPO_PUBLIC_CLIENT_PORTAL_TOKEN`, `erxes-pos-token` = `EXPO_PUBLIC_POS_TOKEN`
+- [ ] Apollo v4 imports: `useQuery`/`useMutation`/`ApolloProvider` from `@apollo/client/react`; `ApolloClient` non-generic
+- [ ] No `clientPortalId` passed in any query/mutation variables
 - [ ] `/verify` auto-polling: `useCallback` + `useEffect` + `setInterval(5000)` — `paymentStatus === "paid"` болмогц `clearInterval`
 - [ ] `useCreateInvoice` — destructured params (`paymentIds`, `amount`, `description`, `contentType`, `contentTypeId`, `customerId`, `customerType`)
 - [ ] `/verify` — `invoiceCreate` + `paymentTransactionsAdd` хоёуланг нэг handler дотор

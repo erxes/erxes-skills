@@ -23,10 +23,10 @@ import {
 } from "react-native";
 import { useAtom } from "jotai";
 import { useRouter } from "expo-router";
-import { cartItemsAtom, cartTotalAtom } from "@/store/cart.store";
-import { currentUserAtom } from "@/store/auth.store";
-import { useOrderCUD } from "@/hooks/order";
-import { usePayments } from "@/hooks/payment";
+import { cartItemsAtom, cartTotalAtom } from "store/cart.store";
+import { currentUserAtom } from "store/auth.store";
+import { useOrderCUD } from "hooks/order";
+import { usePayments } from "hooks/payment";
 import { PaymentType } from "@/components/payment/PaymentType";
 import { formatPrice } from "@/lib/utils";
 
@@ -205,14 +205,14 @@ import { Image } from "expo-image";
 import * as Linking from "expo-linking";
 import { useAtom } from "jotai";
 import { useRouter } from "expo-router";
-import { activeOrderAtom } from "@/store/order.store";
-import { selectedPaymentAtom, invoiceAtom } from "@/store/payment.store";
-import { currentUserAtom } from "@/store/auth.store";
+import { activeOrderAtom } from "store/order.store";
+import { selectedPaymentAtom, invoiceAtom } from "store/payment.store";
+import { currentUserAtom } from "store/auth.store";
 import {
   useCreateInvoice,
   useCheckInvoice,
   useAddPaymentTransaction,
-} from "@/hooks/payment";
+} from "hooks/payment";
 import { formatPrice } from "@/lib/utils";
 
 function StatusBadge({ status }: { status: string }) {

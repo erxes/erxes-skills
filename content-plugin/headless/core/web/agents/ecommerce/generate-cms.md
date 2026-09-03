@@ -251,11 +251,11 @@ No single-page-by-slug query exists — filter the array client-side after `cpPa
 
 ```typescript
 import { notFound } from "next/navigation";
-import { getApolloClient } from "@/lib/apollo/server-client";
+import { getServerApolloClient } from "@/lib/apollo/server-client";
 import { CP_PAGES } from "@/graphql/cms/queries/page";
 
 export default async function AboutPage() {
-  const client = getApolloClient();
+  const client = await getServerApolloClient();
 
   const { data } = await client.query({
     query: CP_PAGES,
@@ -287,11 +287,11 @@ Fetches `cpPosts` (status: "published"). Renders post cards with title, excerpt,
 
 ```typescript
 import { Link } from "@/i18n/routing";
-import { getApolloClient } from "@/lib/apollo/server-client";
+import { getServerApolloClient } from "@/lib/apollo/server-client";
 import { CP_POSTS } from "@/graphql/cms/queries/post";
 
 export default async function BlogPage() {
-  const client = getApolloClient();
+  const client = await getServerApolloClient();
 
   const { data } = await client.query({
     query: CP_POSTS,
@@ -341,21 +341,48 @@ export default async function BlogPage() {
 
 Fetches `cpPost` by slug using `CP_POST`. Calls `notFound()` if missing.
 
+Static export requirement: `output: "export"` only emits the dynamic `[slug]` pages listed in `generateStaticParams`. It must return every locale × published post slug; the fetch below happens at build time only.
+
 ```typescript
 import { notFound } from "next/navigation";
-import { getApolloClient } from "@/lib/apollo/server-client";
+import { getServerApolloClient } from "@/lib/apollo/server-client";
 import { CP_POST } from "@/graphql/cms/queries/post";
 
+// Static export: runs at build time only. Direct fetch, because
+// generateStaticParams cannot call cookies()/headers() — and the server
+// Apollo client uses cookies().
+export async function generateStaticParams() {
+  const uri =
+    process.env.NEXT_PUBLIC_ERXES_ENDPOINT || "http://localhost:4000/graphql";
+  const res = await fetch(uri, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "x-app-token": process.env.NEXT_PUBLIC_ERXES_CP_TOKEN || "",
+      "client-portal-id": process.env.NEXT_PUBLIC_ERXES_CP_TOKEN || "",
+    },
+    body: JSON.stringify({
+      query: `{ cpPosts(status: "published", limit: 200) { slug } }`,
+    }),
+  });
+  const json = await res.json();
+  const posts: { slug: string }[] = json?.data?.cpPosts || [];
+  return ["mn", "en"].flatMap((locale) =>
+    posts.map((post) => ({ locale, slug: post.slug }))
+  );
+}
+
 interface Props {
-  params: { slug: string; locale: string };
+  params: Promise<{ slug: string; locale: string }>;
 }
 
 export default async function BlogDetailPage({ params }: Props) {
-  const client = getApolloClient();
+  const { slug } = await params;
+  const client = await getServerApolloClient();
 
   const { data } = await client.query({
     query: CP_POST,
-    variables: { slug: params.slug },
+    variables: { slug },
   });
 
   const post = data?.cpPost;

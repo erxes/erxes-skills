@@ -105,7 +105,7 @@ mutation CpCreateTicket(
 Notes:
 
 - **No `customerId`/`cpUserId` argument** — the backend resolves the
-  authenticated `CPUser` from the `erxes-app-token` session automatically,
+  authenticated `CPUser` from the `x-app-token` portal session automatically,
   confirming §2's auth-gating is sufficient with no extra user-reference
   field to pass.
 - **Required (non-nullable):** `name`, `channelId`, `pipelineId`,
@@ -212,7 +212,7 @@ if the feedback form grows more fields.
 no-sensitive-logging pattern as `registerFcmToken` in `notification.md`:
 
 ```ts
-import { apolloClient } from "@/lib/apollo-client";
+import { getApolloClient } from "@/lib/apollo/client";
 import { CP_CREATE_TICKET } from "@/lib/graphql/mutations/tickets";
 
 export async function submitFeedbackAsTicket(
@@ -220,7 +220,7 @@ export async function submitFeedbackAsTicket(
   description: string,
 ): Promise<{ success: boolean }> {
   try {
-    await apolloClient.mutate({
+    await (await getApolloClient()).mutate({
       mutation: CP_CREATE_TICKET,
       variables: {
         name: title,
@@ -340,8 +340,10 @@ Pass criteria:
    log error objects/counts only.
 6. Use `_id` in all GraphQL selections, consistent with `connect-erxes.md`.
 7. If `channelId` / `pipelineId` / `statusId` are missing from config,
-   stop and ask the user for them (erxes Admin → Tickets → Settings) —
-   never guess or leave them empty, since all three are non-nullable.
+   STOP with a hard error naming the missing field(s) — they were required at
+   intake when the tickets flag was enabled (source: erxes Admin → Tickets →
+   Settings). Never prompt mid-run, never guess, never leave them empty,
+   since all three are non-nullable.
 
 ---
 

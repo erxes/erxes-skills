@@ -21,7 +21,7 @@ Do not start design exploration if setup is incomplete.
 
 ## Inputs
 
-Read `site.config.json` and use:
+Read `store.config.json` and use:
 
 - `name`
 - `template_type`
@@ -43,7 +43,7 @@ If any required input is missing, stop and send the flow back to setup instead o
 
 Required before design starts:
 
-- `site.config.json` exists
+- `store.config.json` exists
 - `ui_source` exists
 - `ui_source_ref` exists
 - `design_strategy` exists
@@ -148,7 +148,19 @@ Use the Figma link or exported assets in `ui_source_ref` as the visual source. R
 
 ### `screenshot`
 
-Extract screen layouts, navigation patterns, spacing, color energy, typography feel, and UI components from the screenshots. Rebuild the experience in Pencil.
+Your screenshot files were copied into `output/<slug>/screenshots/` during Step 0 intake, and `ui_source_ref` lists their persisted paths, one per line.
+
+1. Open every image with the same image-viewing capability you use to review Pencil exports (Pencil MCP tools / native image reader) to actually view each file listed in `ui_source_ref`. Never design from a path, a description, or assumptions about what an image shows.
+2. Before rebuilding anything, record an explicit screenshot inventory in `output/<slug>/HANDOFF.md`:
+   - screen flow and navigation pattern (tab/bottom bar, drawers, product flow)
+   - layout, hierarchy, and component types (cards, CTAs, forms, product rows)
+   - dominant colors (name them)
+   - typography feel
+   - spacing density, corner radius, shadow character
+3. If any region of a screenshot is blurred, cropped, low-contrast, or otherwise ambiguous, state your interpretation as an assumption in `HANDOFF.md` instead of silently guessing.
+4. Rebuild the design in Pencil from that observed inventory only. Unattended mode still applies — this is a "read first, then render" gate, not a user-interaction gate.
+
+Do not begin design work until every screenshot in `ui_source_ref` has been opened and its observed details are written into `HANDOFF.md`.
 
 ### `website`
 
@@ -245,7 +257,7 @@ Capture:
 - `price_point` — `luxury`, `mid-range`, or `budget`
 - `brand_personality` — a 2–3 word description (e.g. "bold and playful", "minimal and cold", "warm and handcrafted", "raw and rebellious")
 
-If these are not in `site.config.json` or `extra_notes`, infer them from the reference URL, store name, product images, or audit data. Do not ask unless the source gives no signal at all.
+If these are not in `store.config.json` or `extra_notes`, infer them from the reference URL, store name, product images, or audit data. Do not ask unless the source gives no signal at all.
 
 These three inputs are required before Phase 1. Direction choices that ignore `product_category` or `price_point` will produce generic output.
 
@@ -266,8 +278,8 @@ Available strategies:
 How to apply this:
 
 - Ask the strategy explicitly for every `ui_source` before presenting directions
-- If `design_strategy` is `copy-site` or `improve-site`, prefer `reference_url` from `site.config.json` instead of asking again
-- If `design_strategy` is `beat-competitors`, use `competitor_urls` from `site.config.json` and only ask again if the list is missing or too short
+- If `design_strategy` is `copy-site` or `improve-site`, prefer `reference_url` from `store.config.json` instead of asking again
+- If `design_strategy` is `beat-competitors`, use `competitor_urls` from `store.config.json` and only ask again if the list is missing or too short
 
 Strategy rules:
 
@@ -913,7 +925,7 @@ Allowed output values:
 - `menu`
 - `portfolio`
 
-Write the detected list back into `site.config.json` as `required_sections` or `sections`, following the current project flow.
+Write the detected list back into `store.config.json` as `required_sections` or `sections`, following the current project flow.
 
 Show the detected list to the user and get confirmation before Section C — Step 1.
 
@@ -924,7 +936,7 @@ Show the detected list to the user and get confirmation before Section C — Ste
 If `ui_source` is `pencil`, `figma`, `screenshot`, or `website`:
 
 - extract the dominant primary color from the source
-- write it back into `site.config.json` as `color_hint`
+- write it back into `store.config.json` as `color_hint`
 - do not ask the user for it unless the source is too ambiguous
 
 Use meaningful names like:

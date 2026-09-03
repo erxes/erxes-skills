@@ -42,9 +42,9 @@ const authLink = setContext(async (_, { headers }) => {
   };
 });
 
-let instance: ApolloClient<unknown> | undefined;
+let instance: ApolloClient | undefined;
 
-export function getApolloClient(): ApolloClient<unknown> {
+export function getApolloClient(): ApolloClient {
   if (!instance) {
     instance = new ApolloClient({
       link: authLink.concat(httpLink),
@@ -54,6 +54,10 @@ export function getApolloClient(): ApolloClient<unknown> {
   return instance;
 }
 ```
+
+> **Apollo Client v4:** `ApolloClient` is **NOT generic** — write
+> `ApolloClient`, never `ApolloClient<unknown>` or `ApolloClient<any>`.
+> The v3 generic parameter was removed in v4 and will fail typecheck.
 
 > **Do NOT** also export a top-level `client` constant alongside
 > `getApolloClient()` — that creates a second, separate `ApolloClient`
@@ -66,7 +70,10 @@ export function getApolloClient(): ApolloClient<unknown> {
 ### `lib/apollo/provider.tsx`
 
 ```typescript
-import { ApolloProvider } from "@apollo/client";
+// Apollo Client v4: ApolloProvider (and useQuery/useMutation in screens)
+// MUST come from "@apollo/client/react" — the root entrypoint no longer
+// exports them, and importing from "@apollo/client" crashes at runtime.
+import { ApolloProvider } from "@apollo/client/react";
 import { getApolloClient } from "./client";
 
 export default function ApolloClientProvider({
@@ -88,7 +95,7 @@ Jotai stores — web-тэй **бүрэн ижил**. Өөрчлөлт байхг
 
 ```typescript
 import { atom } from "jotai";
-import { IUser } from "@/types/auth.types";
+import { IUser } from "types/auth.types";
 
 export const currentUserAtom = atom<IUser | null>(null);
 export const isAuthenticatedAtom = atom((get) => !!get(currentUserAtom));
@@ -99,7 +106,7 @@ export const triggerRefetchUserAtom = atom(false);
 
 ```typescript
 import { atom } from "jotai";
-import { IOrder, IDeliveryInfo } from "@/types/order.types";
+import { IOrder, IDeliveryInfo } from "types/orders.types";
 
 export const activeOrderAtom = atom<IOrder | null>(null);
 export const orderLoadingAtom = atom(false);
@@ -119,7 +126,7 @@ export const orderTotalAtom = atom(
 
 ```typescript
 import { atom } from "jotai";
-import { ICartItem } from "@/types/order.types";
+import { ICartItem } from "types/orders.types";
 
 export const cartItemsAtom = atom<ICartItem[]>([]);
 export const cartTotalAtom = atom((get) =>
@@ -137,7 +144,7 @@ export const cartCountAtom = atom((get) =>
 
 ```typescript
 import { atom } from "jotai";
-import { IPayment, IInvoice } from "@/types/payment.types";
+import { IPayment, IInvoice } from "types/payment.types";
 
 export const selectedPaymentAtom = atom<IPayment | null>(null);
 export const paymentsAtom = atom<IPayment[]>([]);
@@ -167,53 +174,56 @@ export const wishlistCountAtom = atom((get) => get(wishlistItemsAtom).length);
 
 ### `tailwind.config.js` (globals.css-ийн орлуулга)
 
-Expo-д `globals.css` байхгүй — NativeWind `tailwind.config.js`-д CSS variables-ийн оронд token утгуудыг шууд бичнэ.
+Expo-д `globals.css` байхгүй — NativeWind `tailwind.config.js`-д token утгуудыг
+шууд бичнэ. **Утгуудыг гараар бичихгүй — `design-tokens.json`-ийг шууд require хий**
+(`lib/tokens.ts`-тэй адил нэг эх сурвалж; web-ийн CSS-variable pattern-ий RN
+ equivalents — semantic class нь цорын ганц тохиромжтой зам болно).
 
-​`js
+```js
+// tailwind.config.js — values come from design-tokens.json via require,
+// never hand-copied. Same source lib/tokens.ts is generated from.
+const designTokens = require("./design-tokens.json");
+const t = designTokens.colors.semantic;
+
 module.exports = {
-  content: ["./app/**/*.{js,jsx,ts,tsx}", "./components/**/*.{js,jsx,ts,tsx}", "./src/**/*.{js,jsx,ts,tsx}"],
+  content: ["./app/**/*.{js,jsx,ts,tsx}", "./components/**/*.{js,jsx,ts,tsx}"],
   presets: [require("nativewind/preset")],
   theme: {
     extend: {
       colors: {
-        background: "<from design-tokens.json colors.semantic.background>",
-        foreground: "<from design-tokens.json colors.semantic.foreground>",
-        card: "<from design-tokens.json colors.semantic.card>",
-        primary: {
-          DEFAULT: "<from colors.semantic.primary>",
-          foreground: "<from colors.semantic.primaryForeground>",
-        },
+        background: t.background,
+        foreground: t.foreground,
+        card: { DEFAULT: t.card, foreground: t.cardForeground },
+        primary: { DEFAULT: t.primary, foreground: t.primaryForeground },
         secondary: {
-          DEFAULT: "<from colors.semantic.secondary>",
-          foreground: "<from colors.semantic.secondaryForeground>",
+          DEFAULT: t.secondary,
+          foreground: t.secondaryForeground,
         },
-        muted: {
-          DEFAULT: "<from colors.semantic.muted>",
-          foreground: "<from colors.semantic.mutedForeground>",
-        },
-        accent: {
-          DEFAULT: "<from colors.semantic.accent>",
-          foreground: "<from colors.semantic.accentForeground>",
-        },
-        destructive: "<from colors.semantic.destructive>",
-        border: "<from colors.semantic.border>",
+        muted: { DEFAULT: t.muted, foreground: t.mutedForeground },
+        accent: { DEFAULT: t.accent, foreground: t.accentForeground },
+        destructive: t.destructive,
+        border: t.border,
       },
       borderRadius: {
-        sm: "<from radius.sm>px",
-        md: "<from radius.md>px",
-        lg: "<from radius.lg>px",
-        xl: "<from radius.xl>px",
-        "2xl": "<from radius['2xl']>px",
+        sm: `${designTokens.radius.sm}px`,
+        md: `${designTokens.radius.md}px`,
+        lg: `${designTokens.radius.lg}px`,
+        xl: `${designTokens.radius.xl}px`,
+        "2xl": `${designTokens.radius["2xl"]}px`,
       },
       fontFamily: {
-        display: ["<from typography.families.display>"],
-        body: ["<from typography.families.body>"],
+        display: [designTokens.typography.families.display],
+        body: [designTokens.typography.families.body],
       },
     },
   },
   plugins: [],
 };
-​`
+```
+
+**className-д хүрэхгүй гадаргуу** (navigator theme options, `placeholderTextColor`,
+`tintColor`, Reanimated styles): `import { tokens } from "@/lib/tokens"` ашигла —
+hex literal хаана ч бичихгүй (`generate-setup.md` → `lib/tokens.ts`).
 
 **Generation-ий дараа заавал хийх шалгалт (post-generation gate):**
 
@@ -223,8 +233,8 @@ module.exports = {
 grep -E "222\.2, 84%|222\.2, 47\.4%|hsl\(0, 0%, 100%\)|<from " output/<slug>/tailwind.config.js
 ​`
 
-- Match олдвол → placeholder эсвэл `<from ...>` тэмдэглэгээ хэвээр үлдсэн гэсэн үг. Файл **дутуу бичигдсэн, INVALID**. `output/<slug>/design-tokens.json`-г дахин уншиж, бүх утгыг бодит утгаар нөхөж дуусга.
-- Мөн `colors.*`, `borderRadius.*`, `fontFamily.*`-ийн утга бүрийг `design-tokens.json`-ийн харгалзах key-тэй нэг бүрчлэн харьцуулж баталгаажуул.
+- Match олдвол → placeholder эсвэл `<from ...>` тэмдэглэгээ хэвээр үлдсэн гэсэн үг. Файл **дутуу бичигдсэн, INVALID**. `output/<slug>/design-tokens.json`-г дахин уншиж, `const designTokens = require("./design-tokens.json")` мөр байхгүй бол INVALID — утгуудыг гараар бичсэн, drift хийнэ.
+- Мөн `colors.*`, `borderRadius.*`, `fontFamily.*`-ийн утга бүрийг `design-tokens.json`-ийн харгалзах key-тэй нэг бүрчлэн шалгаж — `t.<key>` reference-ээр ирж байгаа эсэхийг баталгаажуул (гар hex = drift).
 
 ### `app/_layout.tsx` (Root layout)
 
@@ -281,21 +291,36 @@ export default function RootLayout() {
 
 ## Agent Rules — Apollo Client
 
-1. Copy the `lib/apollo/client.ts` block above **verbatim** — do not re-derive the
+1. **Apollo Client v4 import map (mandatory everywhere):**
+
+   ```typescript
+   // ЗӨВ (v4)
+   import { useQuery, useMutation, ApolloProvider } from "@apollo/client/react";
+   import { ApolloClient, InMemoryCache } from "@apollo/client";
+   import { createHttpLink } from "@apollo/client";
+   import { setContext } from "@apollo/client/link/context";
+   import { gql } from "@apollo/client";
+
+   // БУРУУ (v3 pattern — breaks in v4)
+   import { useQuery, useMutation, ApolloProvider } from "@apollo/client";
+   ```
+
+2. Copy the `lib/apollo/client.ts` block above **verbatim** — do not re-derive the
    `createHttpLink` call or the header object from memory; a missing comma or
    closing brace here breaks bundling with obscure Metro errors, not a clear
    syntax error message.
-2. `setContext` **must** be declared `async` — a non-async callback will not
+3. `setContext` **must** be declared `async` — a non-async callback will not
    correctly await `SecureStore.getItemAsync`, silently sending a stale or
    empty session token.
-3. Export **only** `getApolloClient()` from `lib/apollo/client.ts`. Never add a
-   second top-level `ApolloClient` instance in the same file.
-4. All three headers are required and each serves a different purpose — do not
+4. Export **only** `getApolloClient()` from `lib/apollo/client.ts`. Never add a
+   second top-level `ApolloClient` instance in the same file. `ApolloClient`
+   itself is non-generic in v4 — never write `ApolloClient<unknown>`.
+5. All three headers are required and each serves a different purpose — do not
    drop any of them and do not conflate them:
    - `x-app-token` — static client-portal token, identifies the app/portal
    - `client-auth-token` — per-user session token from `SecureStore`, present only after login
    - `erxes-pos-token` — POS integration token from `pos_token` (Step 0 setup)
-5. `EXPO_PUBLIC_ERXES_API_URL`, `EXPO_PUBLIC_CLIENT_PORTAL_TOKEN`, and
+6. `EXPO_PUBLIC_ERXES_API_URL`, `EXPO_PUBLIC_CLIENT_PORTAL_TOKEN`, and
    `EXPO_PUBLIC_POS_TOKEN` must all be present in `.env.local` before this file
    is generated — verify against `store.config.json` / `reference.md` env var
    list rather than leaving any of them to silently resolve to `""`.

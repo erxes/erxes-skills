@@ -2,7 +2,11 @@
 
 > **Design rule:** Logic below is authoritative. All `className` values are reference only — apply your design tokens.
 >
-> **i18n rule:** All static UI copy (labels, buttons, empty states, error text) MUST use `i18n.t("key")` from `@/lib/i18n` — never hardcode Mongolian or English strings directly in JSX. Add every new key to BOTH `messages/mn.json` and `messages/en.json` before using it. Only CMS-sourced dynamic content (`page.name`, `post.title`, `post.content`, review `content` typed by users, etc.) may render as raw strings, since that data is already resolved by the `language` variable passed into the query.
+> **i18n rule:** All static UI copy (labels, buttons, empty states, error text) MUST use `i18n.t("key")` from `@/lib/i18n` — never hardcode Mongolian or English strings directly in JSX. Add every new key to BOTH `messages/mn.json` and `messages/en.json` before using it. Only CMS-sourced dynamic content (`page.name`, `post.title`, `post.content`, review `content` typed by users, etc.) may render as raw strings.
+>
+> **CMS-content language rule (two separate mechanisms — never conflate them):**
+> 1. Static UI strings → `messages/*.json` + `i18n.t()` (client-side only).
+> 2. CMS content (pages/posts) → seeded by `erxes-pages.ts` / `erxes-posts.ts` as ONE RECORD PER LANGUAGE via the gateway's native per-language records; the app fetches it with a `language` variable on every `cpPages` / `cpPosts` / `cpPost` call. NEVER copy CMS content into `messages/*.json`, NEVER store or translate it locally, and NEVER omit the `language` variable. Subscribe to `localeAtom` (not the static `i18n.locale` property) in query variables so switching language refetches CMS content in the selected language.
 
 ---
 
@@ -61,14 +65,15 @@ Add these to `messages/mn.json` and `messages/en.json` before generating the scr
 No changes — this file has no UI copy, only data logic. Keep as-is.
 
 ```typescript
-import { useMutation, useQuery } from "@apollo/client";
+// Apollo Client v4: hooks come from "@apollo/client/react" — NOT "@apollo/client"
+import { useMutation, useQuery } from "@apollo/client/react";
 import { useCallback } from "react";
-import { CP_PRODUCT_REVIEWS } from "@/graphql/ecommerce/queries/productReview";
+import { CP_PRODUCT_REVIEWS } from "graphql/ecommerce/queries/productReview";
 import {
   CP_PRODUCT_REVIEW_ADD,
   PRODUCT_REVIEW_UPDATE,
   PRODUCT_REVIEW_REMOVE,
-} from "@/graphql/ecommerce/mutations/productReview";
+} from "graphql/ecommerce/mutations/productReview";
 
 export function useProductReviews(productId: string) {
   const { data, loading, error, refetch } = useQuery(CP_PRODUCT_REVIEWS, {
@@ -145,7 +150,7 @@ export function useReviewCUD(productId: string) {
 ```typescript
 import { useState } from "react";
 import { View, Text, TextInput, Pressable } from "react-native";
-import { useProductReviews, useReviewCUD } from "@/hooks/review";
+import { useProductReviews, useReviewCUD } from "hooks/review";
 import { i18n } from "@/lib/i18n";
 
 function StarRating({
@@ -308,6 +313,30 @@ export function ReviewList({
 
 ## About Screen (`app/about.tsx`)
 
+### ⚠️ cpPages caveats (verified against the live gateway — read before using CP_PAGES)
+
+1. **No pagination arguments.** `cpPages` accepts ONLY `language`
+   (+ `status`). Passing `perPage`, `page`, `limit`, `slug`, or `cmsId` fails
+   GraphQL validation with "Unknown argument" — there is NO way to page
+   through or filter server-side, and **no single-page-by-slug query exists**.
+2. **Hard result cap (~20 items).** The gateway returns at most ~20 pages per
+   query regardless of how many exist.
+3. **Shared-portal scope issue.** One client portal can host several sites'
+   CMS content. Seeding mutations (`cpCmsPagesAdd`) succeed and return real
+   `_id`s even when the new pages will never surface in `cpPages`, because an
+   unrelated site's older content fills the ~20-item window. Symptom: the app's
+   About screen shows "page not found" although the content exists.
+
+   **Agent rules:**
+   - Seed CMS content EARLY, then immediately verify with a `cpPages(language)`
+     query that every seeded slug is visible in the returned list. If a seeded
+     page does not appear, STOP retrying the mutation (it already succeeded) —
+     report the portal-scope caveat to the user instead: the fix is a dedicated
+     client portal / separate CMS, or backend pagination support, not more seeding.
+   - Never "fix" this client-side by looping queries — there are no query
+     arguments to vary.
+4. Filter client-side by `slug` after fetch: `(data?.cpPages || []).find(p => p.slug === "about")`.
+
 **Changed:** `"Хуудас олдсонгүй"` → `i18n.t("cms.pageNotFound")`. `page.name` / `page.content` stay raw — they come from the CMS already resolved for `i18n.locale`.
 
 ```typescript
@@ -315,13 +344,15 @@ import { ScrollView, Text, ActivityIndicator, View } from "react-native";
 import { useWindowDimensions } from "react-native";
 import { useQuery } from "@apollo/client/react";
 import RenderHtml from "react-native-render-html";
-import { CP_PAGES } from "@/graphql/cms/queries/page";
-import { i18n } from "@/lib/i18n";
+import { useAtomValue } from "jotai";
+import { CP_PAGES } from "graphql/cms/queries/page";
+import { localeAtom } from "@/store/locale";
 
 export default function AboutScreen() {
   const { width } = useWindowDimensions();
+  const locale = useAtomValue(localeAtom);
   const { data, loading } = useQuery(CP_PAGES, {
-    variables: { language: i18n.locale },
+    variables: { language: locale },
   });
 
   if (loading) return <ActivityIndicator className="flex-1 mt-8" />;
@@ -355,13 +386,15 @@ import { FlatList, Text, Pressable, View, ActivityIndicator } from "react-native
 import { Image } from "expo-image";
 import { useQuery } from "@apollo/client/react";
 import { useRouter } from "expo-router";
-import { CP_POSTS } from "@/graphql/cms/queries/post";
-import { i18n } from "@/lib/i18n";
+import { useAtomValue } from "jotai";
+import { CP_POSTS } from "graphql/cms/queries/post";
+import { localeAtom } from "@/store/locale";
 
 export default function BlogScreen() {
   const router = useRouter();
+  const locale = useAtomValue(localeAtom);
   const { data, loading } = useQuery(CP_POSTS, {
-    variables: { status: "published", limit: 20, language: i18n.locale },
+    variables: { status: "published", limit: 20, language: locale },
   });
   const posts = data?.cpPosts || [];
 
@@ -423,14 +456,16 @@ import { useWindowDimensions } from "react-native";
 import { useQuery } from "@apollo/client/react";
 import { useLocalSearchParams } from "expo-router";
 import RenderHtml from "react-native-render-html";
-import { CP_POST } from "@/graphql/cms/queries/post";
-import { i18n } from "@/lib/i18n";
+import { useAtomValue } from "jotai";
+import { CP_POST } from "graphql/cms/queries/post";
+import { localeAtom } from "@/store/locale";
 
 export default function BlogDetailScreen() {
   const { slug } = useLocalSearchParams<{ slug: string }>();
   const { width } = useWindowDimensions();
+  const locale = useAtomValue(localeAtom);
   const { data, loading } = useQuery(CP_POST, {
-    variables: { slug, language: i18n.locale },
+    variables: { slug, language: locale },
     skip: !slug,
   });
 

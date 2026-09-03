@@ -552,9 +552,12 @@ export const CP_ORDERS_EDIT = gql`
   }
 `;
 
+// VERIFIED: the gateway exposes the cancel field as `ordersRemove` — there is
+// NO `cpOrdersCancel` field. The export name stays CP_ORDERS_CANCEL for hook
+// compatibility, but the document must alias the real field.
 export const CP_ORDERS_CANCEL = gql`
-  mutation CpOrdersCancel($_id: String!) {
-    cpOrdersCancel(_id: $_id)
+  mutation OrdersRemove($_id: String!) {
+    ordersRemove(_id: $_id)
   }
 `;
 
@@ -613,9 +616,10 @@ export const INVOICE_CREATE = gql`
 `;
 
 // Returns: String ("paid", "pending", "failed", "cancelled")
+// VERIFIED: parameter name is `id` — writing invoicesCheck(_id:) fails validation
 export const INVOICES_CHECK = gql`
   mutation InvoicesCheck($id: String!) {
-    invoicesCheck(_id: $id)
+    invoicesCheck(id: $id)
   }
 `;
 
@@ -775,42 +779,34 @@ export const CP_WISHLIST_REMOVE = gql`
 
 ## Environment Variables
 
-| Variable                      | Source               | Header            | Usage            |
-| ----------------------------- | -------------------- | ----------------- | ---------------- |
-| `NEXT_PUBLIC_ERXES_API_URL`   | Setup                | —                 | GraphQL endpoint |
-| `NEXT_PUBLIC_ERXES_CP_TOKEN`  | Client Portal        | `x-app-token`     | Client portal ID |
-| `NEXT_PUBLIC_POS_TOKEN`       | POS Config           | `erxes-pos-token` | POS token        |
-| `NEXT_PUBLIC_POS_TOKEN`       | POS settings         | cookie            | POS config       |
-| `NEXT_PUBLIC_MAIN_API_DOMAIN` | Derived from API URL | —                 | CORS / images    |
-| `NEXT_PUBLIC_STORE_NAME`      | store.config.json    | —                 | Site title       |
-| `NEXT_PUBLIC_SITE_URL`        | Deploy target        | —                 | Metadata         |
-| `NEXT_PUBLIC_CMS_ID`          | Created by script    | —                 | CMS queries      |
-| `NEXT_PUBLIC_CP_ID`           | Client Portal ID     | —                 | Order mutations  |
+| Variable                          | Source               | Header            | Usage            |
+| --------------------------------- | -------------------- | ----------------- | ---------------- |
+| `EXPO_PUBLIC_ERXES_API_URL`       | Setup                | —                 | GraphQL endpoint |
+| `EXPO_PUBLIC_CLIENT_PORTAL_TOKEN` | Client Portal        | `x-app-token`     | Client portal JWT (legacy name `EXPO_PUBLIC_ERXES_CP_TOKEN` / `NEXT_PUBLIC_*` is OBSOLETE — never use) |
+| `EXPO_PUBLIC_POS_TOKEN`           | POS Config           | `erxes-pos-token` | POS token        |
+| `EXPO_PUBLIC_CLIENT_PORTAL_ID`    | Client Portal ID     | —                 | Order/CMS mutations |
+| `ERXES_CMS_ID` / `EXPO_PUBLIC_CMS_ID` | Created by script | —                | CMS queries      |
 
 ---
 
 ## Checklist
 
-- [ ] All GraphQL files in `src/graphql/`
-- [ ] Auth token in `sessionStorage` (not localStorage)
-- [ ] Apollo `authLink` reads sessionStorage per request
+- [ ] All GraphQL files in `graphql/`
+- [ ] Auth token in `SecureStore` (expo-secure-store — NOT `sessionStorage`)
+- [ ] Apollo `authLink` reads SecureStore per request (`async setContext`)
 - [ ] `client-auth-token` header for authenticated requests
-- [ ] `x-app-token` = `NEXT_PUBLIC_ERXES_CP_TOKEN` (client portal ID)
-- [ ] `erxes-pos-token` = `NEXT_PUBLIC_POS_TOKEN` (POS token)
-- [ ] POS token in cookie header
+- [ ] `x-app-token` = `EXPO_PUBLIC_CLIENT_PORTAL_TOKEN` (client portal JWT)
+- [ ] `erxes-pos-token` = `EXPO_PUBLIC_POS_TOKEN` (POS token)
 - [ ] `useCreateInvoice` accepts destructured params
-- [ ] `usePaymentPoller` is no-op
-- [ ] `handleCreateInvoice({ paymentIds: [p._id] })` for method override
 - [ ] Checkout waits for order `_id` before navigating to `/verify`
-- [ ] `useOrderCUD` patches `_id` into `activeOrder` after `cpOrdersAdd`
-- [ ] CartDrawer redirects guest to `/login` with `redirectAfterLogin`
+- [ ] `useOrderCUD` stores `{ ...order, totalAmount }` into `activeOrderAtom` after `cpOrdersAdd`
+- [ ] CartDrawer redirects guest to `/(auth)/login` with `redirectAfterLogin`
 - [ ] `useLogin` checks `redirectAfterLogin` after success
-- [ ] `Link` and `useRouter` from `@/i18n/routing`
+- [ ] `Link` and `useRouter` from `expo-router`
 - [ ] `useCurrentUser` with `fetchPolicy: "network-only"`
-- [ ] Login handler handles both string and object token responses
-- [ ] Token saved BEFORE `triggerRefetchUser(true)`
+- [ ] Login response is a JSON scalar: read `raw?.token` + `raw?.refreshToken`
+- [ ] Token saved BEFORE `triggerRefetchUser()`
 - [ ] No circular dependency between `order.store` and `cart.store`
-- [ ] `app/layout.tsx` only returns children
-- [ ] `app/[locale]/layout.tsx` has html/body, Header, Footer
+- [ ] `app/_layout.tsx` is the single root layout (Expo Router — no `html`/`body`, no `[locale]` layout)
 - [ ] UI components created manually (no shadcn init)
 - [ ] Image URLs validated with `isValidUrl`

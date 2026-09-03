@@ -13,22 +13,18 @@ Run this after generic setup (`agents/setup.md`) is complete. Only ask fields th
 
 ## Fields already collected by generic setup (agents/setup.md)
 
-These should already exist in `site.config.json`. Do NOT re-ask if they exist:
+These should already exist in `store.config.json`. Do NOT re-ask if they exist:
 
 1. **Store name** → `name`
 2. **Languages** → `language`, `languages`
 3. **Tone** → `tone`
 4. **Sections** → `sections`
-5. **Design strategy** → `design_strategy`
-6. **UI source** → `ui_source`
-7. **UI source ref** → `ui_source_ref`
-8. **Color hint** → `color_hint`
-9. **Extra notes** → `extra_notes`
-10. **Deploy target** → `eas`
-11. **erxes API URL** → `erxes_api_url`, `erxes_main_domain`
-12. **erxes app token** → `erxes_app_token`
-13. **Client Portal ID** → `client_portal_id`
-14. **Client portal TOKEN** → `EXPO_PUBLIC_ERXES_CP_TOKEN` (in .env)
+5. **Design reference** → `ui_source`, `ui_source_ref`, `color_hint` (set by the single design question in intake)
+6. **Deploy target** → `deploy_target`
+7. **erxes API URL** → `erxes_api_url`, `erxes_main_domain`
+8. **erxes app token** → `erxes_app_token`
+9. **Client Portal ID** → `client_portal_id`
+10. **Client portal TOKEN** → `EXPO_PUBLIC_CLIENT_PORTAL_TOKEN` (in .env.local)
 
 ## Ecommerce-specific fields (ask ONLY if missing)
 
@@ -74,18 +70,15 @@ Write `store.config.json`:
   "tone": "<answer>",
   "delivery_types": ["<delivery|pickup|eat>"],
   "allow_guest": true,
-  "ui_source": "<words|pencil|figma|screenshot|website>",
+  "ui_source": "<words|pencil|figma|screenshot>",
   "ui_source_ref": "<description, .pen path, figma url, screenshot paths, or website url>",
   "color_hint": "<answer or null>",
-  "design_strategy": "<from-scratch|copy-site|improve-site|brand-first|beat-competitors>",
-  "reference_url": "<website url or null>",
-  "competitor_urls": ["<url-1>", "<url-2>"],
+  "design_strategy": "<from-scratch|brand-first>",
   "sections": [
     "<about|services|blog|contact|gallery|pricing|team|testimonials|faq|menu|portfolio>"
   ],
   "cms_sections": ["<about|contact|blog|faq>"],
-  "extra_notes": "<answer or null>",
-  "deploy_target": "eas",
+  "deploy_target": "none",
   "erxes_api_url": "<full graphql url>",
   "erxes_main_domain": "<base domain derived from api url>",
   "erxes_app_token": "<answer>",
@@ -99,10 +92,16 @@ Update `.env` — preserve existing lines, only add/update collected fields.
 Write `output/<slug>/.env.local` with these values:
 
 ```bash
-EXPO_PUBLIC_ERXES_CP_TOKEN=<client_portal_token>
-EXPO_PUBLIC_POS_TOKEN=<pos_token>
 EXPO_PUBLIC_ERXES_API_URL=<erxes_api_url>
+EXPO_PUBLIC_CLIENT_PORTAL_TOKEN=<client_portal_token>
+EXPO_PUBLIC_POS_TOKEN=<pos_token>
 ```
+
+> Variable names MUST match `lib/apollo/client.ts` exactly
+> (`generate-core.md`). Never write the legacy name
+> `EXPO_PUBLIC_ERXES_CP_TOKEN` — code reads
+> `EXPO_PUBLIC_CLIENT_PORTAL_TOKEN`, and a mismatch silently sends an empty
+> `x-app-token` header.
 
 **IMPORTANT:** Ensure `STARTER_REPO_URL` in `.env` points to the Expo mobile starter:
 

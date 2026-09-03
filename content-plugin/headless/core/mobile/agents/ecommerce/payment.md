@@ -88,7 +88,8 @@ const createOrder = useCallback(async (variables) => {
 `activeOrderAtom`-аас order, `selectedPaymentAtom`-аас payment уншина. Route-д ID байхгүй — `/verify` (flat route).
 
 ```typescript
-// src/app/[locale]/verify/page.tsx
+// app/verify.tsx
+import * as Linking from "expo-linking";
 const [activeOrder] = useAtom(activeOrderAtom);
 const [selectedPayment] = useAtom(selectedPaymentAtom);
 const [invoice] = useAtom(invoiceAtom);
@@ -149,7 +150,8 @@ const handleCreateInvoice = async () => {
   }
 
   if (result.invoice?.redirectUrl) {
-    window.location.href = result.invoice.redirectUrl;
+    // RN: external redirect via expo-linking — window.location.href ашиглахгүй
+    await Linking.openURL(result.invoice.redirectUrl);
   }
 };
 ```
@@ -380,7 +382,7 @@ mutation InvoiceCreate($input: InvoiceInput!) {
 }
 
 mutation InvoicesCheck($id: String!) {
-  invoicesCheck(_id: $id)
+  invoicesCheck(id: $id)
 }
 
 mutation PaymentTransactionsAdd($input: PaymentTransactionInput!) {
@@ -405,4 +407,4 @@ mutation PaymentTransactionsAdd($input: PaymentTransactionInput!) {
 2. **Invoice үүсгэхэд алдаа** — `selectedPayment` null байна, checkout дээр payment сонгоогүй
 3. **activeOrder.\_id байхгүй** — `createOrder` амжилтгүй болсон, checkout-ийн error state шалга
 4. **totalAmount = 0** — items-аас fallback тооцоол: `items.reduce((s, i) => s + i.unitPrice * i.count, 0)`
-5. **redirectUrl байгаа бол** — `window.location.href` ашиглан redirect хий (QR харуулахгүй)
+5. **redirectUrl байгаа бол** — `Linking.openURL(redirectUrl)` ашиглан гадагшаа шилжүүл (`expo-linking`; `window.location.href` болон router хэрэглэхгүй — conventions.md §10)

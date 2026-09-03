@@ -89,7 +89,7 @@ Before implementing any animation library, read the matching reference:
 Pencil.dev MCP  → Read component specs, layout, spacing, animation annotations
                   Read BEFORE implementing every component. Every time.
                   Use mobile viewport (390×844) for all previews.
-Context7 MCP    → Verify Expo SDK 55 / React Native / NativeWind API patterns
+Context7 MCP    → Verify Expo SDK 57 / React Native / NativeWind API patterns
 Web Search      → Find correct library APIs, TypeScript types, breaking changes
 ```
 

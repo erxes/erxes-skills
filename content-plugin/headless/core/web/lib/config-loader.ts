@@ -1,5 +1,5 @@
-import { readFileSync, existsSync } from "fs";
-import { join } from "path";
+import { copyFileSync, existsSync, mkdirSync, readFileSync } from "fs";
+import { basename, join } from "path";
 import { createInterface } from "readline";
 import type { SiteConfig, SiteIntent } from "../types.js";
 
@@ -57,6 +57,77 @@ function getUiSourcePrompt(uiSource: string): string {
   }
 }
 
+function parsePathList(input: string): string[] {
+  return input
+    .split(/[\n,]/)
+    .map((p) => p.trim())
+    .filter(Boolean);
+}
+
+/**
+ * Collect screenshot file paths (one per line, pressed on Enter twice to
+ * finish, commas also split entries), verify each exists on disk, then copy
+ * them into output/<slug>/screenshots/ so the design stage reads persisted
+ * copies. Returns the persisted absolute paths joined by newlines.
+ */
+async function collectAndCopyScreenshots(
+  rl: ReturnType<typeof createInterface>,
+  slug: string,
+  existingRef: string
+): Promise<string> {
+  const initial = existingRef.trim() ? parsePathList(existingRef) : [];
+  let candidates = initial;
+
+  if (initial.length === 0) {
+    console.log(
+      "Enter each screenshot file path one per line. Press Enter on an empty line when you are done."
+    );
+    for (;;) {
+      const line = await ask(rl, "");
+      if (!line.trim()) break;
+      candidates.push(...parsePathList(line));
+    }
+  }
+
+  if (candidates.length === 0) {
+    throw new Error('At least one screenshot file path is required when ui_source is "screenshot"');
+  }
+
+  // De-duplicate, keep the original order.
+  candidates = [...new Set(candidates)];
+
+  let valid = candidates.filter((p) => existsSync(p));
+  const missing = candidates.filter((p) => !existsSync(p));
+
+  if (missing.length) {
+    console.log(`Not found on disk: ${missing.join(", ")} — re-enter these paths.`);
+    const retried = parsePathList(await ask(rl, `Paths for: ${missing.join(", ")}`));
+    const retriedValid = retried.filter((p) => existsSync(p));
+    const retriedMissing = retried.filter((p) => !existsSync(p));
+    if (retriedMissing.length || retriedValid.length === 0) {
+      throw new Error(
+        `Screenshot file(s) still not found on disk: ${[...missing, ...retriedMissing].join(", ")}`
+      );
+    }
+    valid = [...new Set([...valid, ...retriedValid])];
+  }
+
+  const screenshotsDir = join(process.cwd(), "output", slug, "screenshots");
+  mkdirSync(screenshotsDir, { recursive: true });
+
+  const persisted: string[] = [];
+  for (const src of valid) {
+    const dest = join(screenshotsDir, basename(src));
+    if (!existsSync(dest)) {
+      copyFileSync(src, dest);
+    }
+    persisted.push(dest);
+  }
+
+  console.log(`Saved ${persisted.length} screenshot(s) to ${screenshotsDir}`);
+  return persisted.join("\n");
+}
+
 async function collectMissing(raw: Partial<SiteConfig>): Promise<SiteConfig> {
   const rl = createInterface({ input: process.stdin, output: process.stdout });
   try {
@@ -88,7 +159,13 @@ async function collectMissing(raw: Partial<SiteConfig>): Promise<SiteConfig> {
         `UI source (${VALID_UI_SOURCES.join(" | ")}): `
       )) as SiteConfig["ui_source"];
     }
-    if (!raw.ui_source_ref?.trim()) {
+    if (raw.ui_source === "screenshot") {
+      raw.ui_source_ref = await collectAndCopyScreenshots(
+        rl,
+        toSlug(raw.name),
+        raw.ui_source_ref ?? ""
+      );
+    } else if (!raw.ui_source_ref?.trim()) {
       raw.ui_source_ref = await ask(rl, getUiSourcePrompt(raw.ui_source ?? ""));
     }
     if (!raw.design_strategy || !VALID_DESIGN_STRATEGIES.includes(raw.design_strategy)) {
@@ -157,6 +234,9 @@ export async function configLoader(): Promise<SiteIntent> {
     erxes_endpoint?: string;
     erxes_app_token?: string;
     erxes_cms_id?: string;
+    // Legacy aliases read as fallbacks below — keep for older config files.
+    erxes_api_url?: string;
+    clientPortalId?: string;
   };
 
   let raw: Partial<SiteConfig> = {};
