@@ -12,6 +12,10 @@
  * explicit `categoryIds` value are passed through verbatim; `"categoryIds": []`
  * forces an uncategorized post.
  *
+ * Post handling: posts are looked up per language (cpPosts) before each
+ * cpCmsPostsAdd — a post whose (slug, language) pair already exists is skipped
+ * instead of re-created, so repeated runs are idempotent.
+ *
  * Field mapping notes (gateway-proven field names only):
  * - docs' `description` is sent as PostInput `excerpt` (the field web's
  *   post-seeder uses against the same gateway); `publishedDate` and
@@ -50,6 +54,15 @@ const CATEGORIES_QUERY = `
         name
         slug
       }
+    }
+  }
+`;
+
+const POSTS_QUERY = `
+  query CpPosts($language: String, $status: PostStatus, $limit: Int) {
+    cpPosts(language: $language, status: $status, limit: $limit) {
+      _id
+      slug
     }
   }
 `;
@@ -125,6 +138,29 @@ export async function ensureDefaultCategoryId(
   return id;
 }
 
+/** Returns existing posts (slug -> _id) for a language, cached per language. */
+export async function findExistingPostsForLang(
+  lang: string,
+  intent: ErxesContext,
+  headers: Record<string, string>,
+  cache = new Map<string, Map<string, string>>()
+): Promise<Map<string, string>> {
+  const cached = cache.get(lang);
+  if (cached) return cached;
+  const data = await fetchJson(intent.erxes_endpoint, headers, {
+    query: POSTS_QUERY,
+    variables: { language: lang, status: "published", limit: 200 },
+  });
+  const posts =
+    (data.data as { cpPosts?: { _id: string; slug?: string }[] } | undefined)?.cpPosts ?? [];
+  const map = new Map<string, string>();
+  for (const p of posts) {
+    if (p.slug) map.set(p.slug, p._id);
+  }
+  cache.set(lang, map);
+  return map;
+}
+
 export async function postSeeder(
   posts: SeedPost[],
   intent: ErxesContext
@@ -143,10 +179,25 @@ export async function postSeeder(
     defaultCategoryId = await ensureDefaultCategoryId(intent, headers);
   }
 
-  console.log(`→ [post-seeder] Creating ${posts.length} posts...`);
+  console.log(`→ [post-seeder] Processing ${posts.length} posts...`);
+  const existingCache = new Map<string, Map<string, string>>();
+  let created = 0;
+  let skipped = 0;
   for (const post of posts) {
+    const lang = post.lang || intent.language;
     const categoryIds =
       post.categoryIds !== undefined ? post.categoryIds : defaultCategoryId ? [defaultCategoryId] : [];
+
+    // Skip (slug, language) pairs that already exist so re-runs don't duplicate.
+    const existing = await findExistingPostsForLang(lang, intent, headers, existingCache);
+    const existingId = existing.get(post.slug);
+    if (existingId) {
+      post_ids.push(existingId);
+      skipped++;
+      console.log(`  ≐ "${post.title}" (${lang}) already exists (${existingId}), skipping`);
+      continue;
+    }
+
     const res = await fetch(intent.erxes_endpoint, {
       method: "POST",
       headers,
@@ -158,7 +209,7 @@ export async function postSeeder(
             slug: post.slug,
             content: post.content,
             excerpt: post.excerpt ?? post.description ?? "",
-            language: post.lang || intent.language,
+            language: lang,
             status: post.status ?? "published",
             publishedDate:
               post.publishedDate ?? new Date().toISOString().split("T")[0],
@@ -173,15 +224,22 @@ export async function postSeeder(
     };
     if (data.data?.cpCmsPostsAdd?._id) {
       const id = data.data.cpCmsPostsAdd._id;
+      existing.set(post.slug, id);
       post_ids.push(id);
-      console.log(`  ✓ "${post.title}" (${post.lang || intent.language}) → ${id}`);
+      created++;
+      console.log(`  ✓ "${post.title}" (${lang}) → ${id}`);
     } else if (data.errors?.length) {
       console.warn(
-        `  ✗ "${post.title}" (${post.lang || intent.language}):`,
+        `  ✗ "${post.title}" (${lang}):`,
         data.errors[0].message
       );
     }
   }
 
+  if (skipped > 0) {
+    console.log(
+      `→ [post-seeder] Done: ${created} created, ${skipped} already existed (skipped)`
+    );
+  }
   return { post_ids, category_id: defaultCategoryId };
 }

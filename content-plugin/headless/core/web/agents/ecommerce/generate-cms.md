@@ -300,11 +300,17 @@ export default async function BlogPage() {
 
   const posts = data?.cpPosts || [];
 
+  // Deduplicate by slug — repeated seeding can leave duplicate rows in the CMS;
+  // the slug is the page key, so keep the first record per slug.
+  const uniquePosts = Array.from(
+    new Map((posts as any[]).map((post: any) => [post.slug, post])).values()
+  );
+
   return (
     <div className="container py-12">
       <h1 className="mb-8 text-3xl font-bold">Блог</h1>
       <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-        {posts.map((post: any) => (
+        {uniquePosts.map((post: any) => (
           <Link key={post._id} href={`/blog/${post.slug}`} className="group block">
             <article className="rounded-xl border p-5 transition-shadow hover:shadow-md">
               {post.featuredImage?.url && (
@@ -339,14 +345,14 @@ export default async function BlogPage() {
 
 ## Blog Detail (`app/[locale]/blog/[slug]/page.tsx`) — Server
 
-Fetches `cpPost` by slug using `CP_POST`. Calls `notFound()` if missing.
+Fetches `cpPosts` and picks the most recently created record matching the slug (deduplicated). Calls `notFound()` if missing.
 
 Static export requirement: `output: "export"` only emits the dynamic `[slug]` pages listed in `generateStaticParams`. It must return every locale × published post slug; the fetch below happens at build time only.
 
 ```typescript
 import { notFound } from "next/navigation";
 import { getServerApolloClient } from "@/lib/apollo/server-client";
-import { CP_POST } from "@/graphql/cms/queries/post";
+import { CP_POSTS } from "@/graphql/cms/queries/post";
 
 // Static export: runs at build time only. Direct fetch, because
 // generateStaticParams cannot call cookies()/headers() — and the server
@@ -367,8 +373,11 @@ export async function generateStaticParams() {
   });
   const json = await res.json();
   const posts: { slug: string }[] = json?.data?.cpPosts || [];
+  // Deduplicate slugs so duplicate CMS rows can't produce conflicting static
+  // params for the same output path under `output: "export"`.
+  const uniqueSlugs = Array.from(new Set(posts.map((post) => post.slug)));
   return ["mn", "en"].flatMap((locale) =>
-    posts.map((post) => ({ locale, slug: post.slug }))
+    uniqueSlugs.map((slug) => ({ locale, slug }))
   );
 }
 
@@ -381,11 +390,20 @@ export default async function BlogDetailPage({ params }: Props) {
   const client = await getServerApolloClient();
 
   const { data } = await client.query({
-    query: CP_POST,
-    variables: { slug },
+    query: CP_POSTS,
+    variables: { status: "published", limit: 200 },
   });
 
-  const post = data?.cpPost;
+  // The CMS can hold duplicate rows for one slug. Deterministically pick the
+  // most recently created record instead of relying on a single cpPost(slug)
+  // resolver that may return an arbitrary/first match.
+  const post = (data?.cpPosts || ([] as any[]))
+    .filter((p: any) => p.slug === slug)
+    .sort((a: any, b: any) => {
+      const aDate = a.publishedDate || a.createdAt || "";
+      const bDate = b.publishedDate || b.createdAt || "";
+      return bDate < aDate ? -1 : bDate > aDate ? 1 : 0;
+    })[0];
   if (!post) notFound();
 
   return (

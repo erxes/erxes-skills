@@ -212,7 +212,6 @@ async function collectMissing(raw: Partial<SiteConfig>): Promise<SiteConfig> {
 }
 
 export async function configLoader(): Promise<SiteIntent> {
-  const configPath = join(process.cwd(), "site.config.json");
   type RawConfig = {
     name?: string;
     template_type?: string;
@@ -242,11 +241,21 @@ export async function configLoader(): Promise<SiteIntent> {
   let raw: Partial<SiteConfig> = {};
   let configErxes = { endpoint: "", app_token: "", cms_id: "", client_portal_id: "" };
 
-  if (existsSync(configPath)) {
-    console.log("→ [config-loader] Loading site.config.json...");
+  const configCandidates = [
+    join(process.cwd(), "site.config.json"),
+    join(process.cwd(), "store.config.json"),
+  ];
+  const configPath = configCandidates.find((candidate) => existsSync(candidate));
+
+  if (configPath) {
+    console.log(`→ [config-loader] Loading ${configPath.split("/").pop()}...`);
     const parsed = JSON.parse(readFileSync(configPath, "utf-8")) as RawConfig;
     raw.name = parsed.name;
-    raw.site_type = (parsed.site_type ?? parsed.template_type) as SiteConfig["site_type"];
+    raw.site_type = (
+      parsed.site_type ??
+      parsed.template_type ??
+      (configPath.endsWith("store.config.json") ? "ecommerce" : undefined)
+    ) as SiteConfig["site_type"];
     raw.language = parsed.language as SiteConfig["language"];
     raw.languages = (parsed.languages ?? (parsed.language ? [parsed.language] : [])) as SiteConfig["language"][];
     raw.tone = parsed.tone as SiteConfig["tone"];
@@ -264,7 +273,9 @@ export async function configLoader(): Promise<SiteIntent> {
     configErxes.cms_id = parsed.erxes_cms_id ?? "";
     configErxes.client_portal_id = parsed.client_portal_id ?? parsed.clientPortalId ?? "";
   } else {
-    console.log("→ [config-loader] site.config.json not found, collecting via CLI...");
+    console.log(
+      "→ [config-loader] site.config.json / store.config.json not found, collecting via CLI..."
+    );
   }
 
   const config = await collectMissing(raw);

@@ -327,14 +327,25 @@ export function ReviewList({
    unrelated site's older content fills the ~20-item window. Symptom: the app's
    About screen shows "page not found" although the content exists.
 
-   **Agent rules:**
-   - Seed CMS content EARLY, then immediately verify with a `cpPages(language)`
-     query that every seeded slug is visible in the returned list. If a seeded
-     page does not appear, STOP retrying the mutation (it already succeeded) —
-     report the portal-scope caveat to the user instead: the fix is a dedicated
-     client portal / separate CMS, or backend pagination support, not more seeding.
-   - Never "fix" this client-side by looping queries — there are no query
-     arguments to vary.
+   **HARD RULES (enforced — not guidance):**
+   1. A create mutation (`cpCmsPagesAdd`, `cpCmsPostsAdd`, `cpCmsCategoriesAdd`,
+      `cpCmsAddMenu`) that returns a real `_id` is COMPLETE. NEVER re-run that
+      mutation, NEVER retry it, and NEVER treat a missing entry in `cpPages` (or
+      any other list query) as a signal that the create failed and must be
+      repeated. Even when the entity does not surface because of the ~20-item
+      cap or shared-portal scope, a successful `_id` means the record exists.
+   2. Re-seeding a slug that already exists creates duplicate CMS records.
+      Duplicates break page output: duplicate slugs in `generateStaticParams`
+      conflict, blog/archive lists double up, and the single-post resolver can
+      render the WRONG record. The seeding scripts now dedupe by slug before
+      creating, but that only protects NEW runs — it cannot remove rows already
+      created by a retried mutation.
+   3. If a seeded entity is missing from the list after a successful create,
+      STOP and report the portal-scope / backend-limit caveat to the user. The
+      fix is a dedicated client portal / separate CMS, or backend pagination
+      support — NOT another create call.
+   4. Never "fix" this client-side by looping queries or varying arguments —
+      there are no query arguments to vary.
 4. Filter client-side by `slug` after fetch: `(data?.cpPages || []).find(p => p.slug === "about")`.
 
 **Changed:** `"Хуудас олдсонгүй"` → `i18n.t("cms.pageNotFound")`. `page.name` / `page.content` stay raw — they come from the CMS already resolved for `i18n.locale`.

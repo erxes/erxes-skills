@@ -52,6 +52,8 @@ export const config = {
 };
 ```
 
+> **Deploy consequence — middleware blocks static export:** any `middleware.ts`/`middleware.js` (and Next 15.5+/16 `proxy.ts`/`proxy.js`) at the project root or under `src/` is incompatible with `output: "export"`. The deploy step (`next-config-writer.ts`) refuses static export for any site that ships a middleware/proxy file and deploys it as a normal SSR Next.js app instead. If the site must be deployed as a static export, do NOT create a middleware/proxy file — use the alternative next-intl locale handling that does not require middleware (locale from the URL on a `[locale]` segment with `generateStaticParams` returning the configured locales on `[locale]/layout.tsx`, and `setRequestLocale` in each page/layout).
+
 ---
 
 ## `messages/mn.json`

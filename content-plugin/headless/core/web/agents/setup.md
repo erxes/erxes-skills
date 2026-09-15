@@ -198,11 +198,37 @@ Write `site.config.json`:
 }
 ```
 
-Update `.env` — preserve existing lines, only add/update the collected fields.
+Persist every collected credential to `.env` deterministically with the env-writer helper (`lib/env-writer.ts` — upserts key/value pairs, preserves every other line and comment). Call it like this, with the exact key per credential:
+
+```bash
+npx tsx -e "import { writeEnvFields } from './lib/env-writer.ts'; (async () => { await writeEnvFields({
+  ERXES_ENDPOINT: '<saas-url>/gateway/graphql',    // Q11 — always append /gateway/graphql
+  ERXES_APP_TOKEN: '<q12 client portal token>',     // Q12
+  ERXES_CLIENT_PORTAL_ID: '<q13 client portal id>', // Q13 — key config-loader.ts actually reads
+  GITHUB_USERNAME: '<q14>',                        // Q14
+  GITHUB_TOKEN: '<q15>',                           // Q15
+  VERCEL_TOKEN: '<q17>',                           // Q17 — only if deploy_target is vercel
+  VERCEL_ORG_ID: '<q18>'                           // Q18 — only if deploy_target is vercel
+}) })()"
+```
+
+Field-to-key map (do NOT use informal names or guess):
+
+| Collected field (question #) | Exact `.env` key |
+|---|---|
+| erxes SaaS URL (Q11) | `ERXES_ENDPOINT` — append `/gateway/graphql` |
+| Client Portal Token — JWT (Q12) | `ERXES_APP_TOKEN` |
+| Client Portal ID (Q13) | `ERXES_CLIENT_PORTAL_ID` |
+| GitHub username (Q14) | `GITHUB_USERNAME` |
+| GitHub token (Q15) | `GITHUB_TOKEN` |
+| Vercel token (Q17, vercel only) | `VERCEL_TOKEN` |
+| Vercel org ID (Q18, vercel only) | `VERCEL_ORG_ID` |
+
+Never write the portal ID under `CLIENT_PORTAL_ID` or `ERXES_CP_TOKEN` — those are not read by `config-loader.ts`. The ecommerce frontend's `NEXT_PUBLIC_ERXES_CP_TOKEN` is derived from the Client Portal ID value, not collected separately.
 
 After saving config, create the CMS with `cpContentCreateCMS`, then write the returned `_id` into:
 - `site.config.json` as `erxes_cms_id`
-- `.env` as `ERXES_CMS_ID`
+- `.env` as `ERXES_CMS_ID` (via the same `writeEnvFields({ ERXES_CMS_ID: ... })` call — never hand-edit)
 
 ---
 

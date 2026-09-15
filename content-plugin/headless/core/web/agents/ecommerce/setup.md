@@ -30,7 +30,7 @@ These should already exist in `site.config.json`. Do NOT re-ask if they exist:
 11. **erxes API URL** → `erxes_api_url`, `erxes_main_domain`
 12. **erxes app token** → `erxes_app_token`
 13. **Client Portal ID** → `client_portal_id`
-14. **Client portal TOKEN** → `NEXT_PUBLIC_ERXES_CP_TOKEN` (in .env)
+14. **Client portal TOKEN** → `NEXT_PUBLIC_ERXES_CP_TOKEN` — **derive automatically from the Client Portal ID already collected in item 13; do NOT ask again.** `NEXT_PUBLIC_ERXES_CP_TOKEN` holds the raw Client Portal ID (see `agents/ecommerce/generate-setup.md:111`), not the JWT app token.
 
 ## Ecommerce-specific fields (ask ONLY if missing)
 
@@ -87,12 +87,23 @@ Write `store.config.json`:
 }
 ```
 
-Update `.env` — preserve existing lines, only add/update collected fields.
+Persist the collected credential values to `.env` with the env-writer (upserts, preserves every other line/comment) — same `npx tsx -e "import { writeEnvFields } from './lib/env-writer.ts'; (async () => { await writeEnvFields({ ...mapping below... }) })()"` pattern as `agents/setup.md`. Use these exact keys:
+
+| Collected field | Env key |
+|---|---|
+| erxes SaaS URL | `ERXES_ENDPOINT` (append `/gateway/graphql`) |
+| erxes app token (JWT) | `ERXES_APP_TOKEN` |
+| Client Portal ID | `ERXES_CLIENT_PORTAL_ID` |
+| POS token | `POS_TOKEN` |
+| GitHub username / token | `GITHUB_USERNAME` / `GITHUB_TOKEN` |
+| Vercel token / org ID | `VERCEL_TOKEN` / `VERCEL_ORG_ID` (when `deploy_target` is `vercel`) |
+
+Do NOT invent or guess key names — use exactly the table above. `NEXT_PUBLIC_ERXES_CP_TOKEN` is NOT asked or collected; it is derived from `client_portal_id` in `.env.local` only.
 
 Write `output/<slug>/.env.local` with these values:
 
 ```bash
-NEXT_PUBLIC_ERXES_CP_TOKEN=<client_portal_token>
+NEXT_PUBLIC_ERXES_CP_TOKEN=<same value as client_portal_id — copy, never re-ask>
 NEXT_PUBLIC_POS_TOKEN=<pos_token>
 NEXT_PUBLIC_ERXES_API_URL=<erxes_api_url>
 ```

@@ -9,7 +9,9 @@
     "erxes:posts": "tsx scripts/erxes-posts.ts",
     "erxes:menu": "tsx scripts/erxes-menu.ts",
     "site:audit": "tsx scripts/site-audit.ts",
-    "deploy": "tsx scripts/deploy.ts"
+    "deploy": "tsx scripts/deploy.ts",
+    "test:config-writer": "tsx scripts/test-next-config-writer.ts",
+    "test:env-writer": "tsx scripts/test-env-writer.ts"
   },
   "dependencies": {
     "@gsap/react": "^2.1.2",

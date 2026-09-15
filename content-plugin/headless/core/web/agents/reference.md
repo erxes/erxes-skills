@@ -36,6 +36,22 @@ Menu `kind` values: `"header"` · `"footer"` · `"link"` (fallback)
 | `NEXT_PUBLIC_VISUAL_DIRECTION` | e.g. `glass-future`, `editorial-luxury` |
 | `REVALIDATE_SECRET` | Secret for ISR on-demand revalidation (`/api/revalidate`) |
 
+### Setup credential → env key mapping (single source of truth)
+
+Persisted by `lib/env-writer.ts` (`writeEnvFields`, upsert) at Step 0 — never by hand, never under invented names.
+
+| Collected field (agents/setup.md) | Exact env key | Notes |
+|---|---|---|
+| erxes SaaS URL (Q11) | `ERXES_ENDPOINT` | Always append `/gateway/graphql` |
+| Client Portal Token — JWT (Q12) | `ERXES_APP_TOKEN` | `x-app-token` header for mutations |
+| Client Portal ID (Q13) | `ERXES_CLIENT_PORTAL_ID` | Key `config-loader.ts` reads at CMS creation |
+| GitHub username (Q14) | `GITHUB_USERNAME` | |
+| GitHub token (Q15) | `GITHUB_TOKEN` | `repo` scope |
+| Vercel token (Q17, `vercel` only) | `VERCEL_TOKEN` | |
+| Vercel org ID (Q18, `vercel` only) | `VERCEL_ORG_ID` | |
+
+`NEXT_PUBLIC_ERXES_CP_TOKEN` (ecommerce frontend) is **derived from the Client Portal ID** — the raw ID value, NOT the JWT app token — and written only into `output/<slug>/.env.local`. It is never collected or asked for separately. See `agents/ecommerce/generate-setup.md:111`.
+
 ---
 
 ## File ownership rules
@@ -49,7 +65,7 @@ Menu `kind` values: `"header"` · `"footer"` · `"link"` (fallback)
 | `lib/apollo-wrapper.tsx` | CMS seeding | Client Apollo provider |
 | `components/**` | Frontend build | Never overwritten by CMS seeding |
 | `types/cms.ts` | Frontend build | Shared — neither layer modifies after creation |
-| `next.config.mjs` | Deploy | Rewritten by `next-config-writer.ts` before every deploy |
+| `next.config.mjs` | Deploy | Rewritten by `next-config-writer.ts` before every deploy — rewritten to `output: "export"` + `distDir: "dist"` ONLY when the site is export-compatible (no `middleware.ts`/`proxy.ts` AND every `[dynamic]/` route segment exports `generateStaticParams`); otherwise left as a standard SSR Next.js config |
 
 ---
 

@@ -10,6 +10,43 @@ const MUTATION = `
   }
 `;
 
+const PAGES_QUERY = `
+  query CpPages($language: String) {
+    cpPages(language: $language) {
+      _id
+      slug
+    }
+  }
+`;
+
+async function fetchJson(
+  endpoint: string,
+  headers: Record<string, string>,
+  body: Record<string, unknown>
+): Promise<{ data?: unknown; errors?: { message: string }[] }> {
+  const res = await fetch(endpoint, {
+    method: "POST",
+    headers,
+    body: JSON.stringify(body),
+  });
+  return res.json();
+}
+
+/** Looks up an existing page _id by slug (reuses the first match). */
+export async function findPageIdBySlug(
+  slug: string,
+  intent: ErxesContext,
+  headers: Record<string, string>
+): Promise<string | null> {
+  const data = await fetchJson(intent.erxes_endpoint, headers, {
+    query: PAGES_QUERY,
+    variables: { language: intent.language },
+  });
+  const pages =
+    (data.data as { cpPages?: { _id: string; slug?: string }[] } | undefined)?.cpPages ?? [];
+  return pages.find((p) => p.slug === slug)?._id ?? null;
+}
+
 export async function pageCreator(
   pages: SeedPage[],
   intent: ErxesContext
@@ -18,13 +55,23 @@ export async function pageCreator(
 
   console.log(`→ [page-creator] Creating ${pages.length} pages...`);
 
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+    "x-app-token": intent.erxes_app_token,
+  };
+
   for (const page of pages) {
+    // Skip pages that already exist so re-runs don't create duplicates.
+    const existingId = await findPageIdBySlug(page.slug, intent, headers);
+    if (existingId) {
+      map[page.section] = existingId;
+      console.log(`  ≐ page "${page.section}" already exists (${existingId}), skipping`);
+      continue;
+    }
+
     const response = await fetch(intent.erxes_endpoint, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "x-app-token": intent.erxes_app_token,
-      },
+      headers,
       body: JSON.stringify({
         query: MUTATION,
         variables: {
@@ -41,7 +88,7 @@ export async function pageCreator(
       }),
     });
 
-    const data = await response.json() as {
+    const data = (await response.json()) as {
       data?: { cpCmsPagesAdd?: { _id: string } };
       errors?: { message: string }[];
     };

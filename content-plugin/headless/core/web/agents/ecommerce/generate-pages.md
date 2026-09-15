@@ -545,6 +545,8 @@ Auth guard. Uses `useOrders(currentUser?._id)`. Shows order list with status + t
 
 **Export fallback behavior — document this, the agent must not guess:** with `output: "export"`, Next forces `dynamicParams = false`. Only the params returned by `generateStaticParams` are emitted as on-disk HTML, and the function is REQUIRED for every dynamic segment (a `[id]` page without it fails the build). Return a single inert placeholder (`[{ id: "placeholder" }]`) so the route graph exists and builds. Real order ids are never pre-rendered — a hard browser load of `/orders/<real-id>` on the static host falls through to `out/404.html` (no server, no fallback rendering). That is the documented deep-link limitation; the page still works when reached by in-app navigation from `/orders` (the router has the page chunk). NEVER put a real per-customer order id in `generateStaticParams` — it would bake auth-gated data into a public static file.
 
+**Deployment decision — the agent must know this:** the deploy step (`next-config-writer.ts` via `deploy.ts`) only applies `output: "export"` after checking the whole site is export-compatible (NO middleware/proxy file AND every `[dynamic]` route segment exports `generateStaticParams`). Static-export deployment therefore REQUIRES both conditions site-wide. Sites that ship a `middleware.ts`/`proxy.ts` (e.g. next-intl middleware) or any dynamic route missing `generateStaticParams` are deployed as a normal SSR Next.js app instead of a static export. `generateStaticParams` must exist for the `[locale]` segment (on `[locale]/layout.tsx`) and for every segment of every dynamic page.
+
 ```typescript
 "use client";
 
