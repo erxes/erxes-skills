@@ -35,8 +35,8 @@ import {
   stateDirCandidates,
   writeConfig,
   writeSession,
-} from './store.mjs';
-import { collectSecrets, redactText } from './redact.mjs';
+} from "./store.mjs";
+import { collectSecrets, redactText } from "./redact.mjs";
 
 const ACCESS_TOKEN_SKEW_MS = 60_000;
 const DEFAULT_ACCESS_TOKEN_TTL_MS = 8 * 60 * 60 * 1000; // erxes confidential default: 28800s
@@ -44,22 +44,24 @@ const DEFAULT_ACCESS_TOKEN_TTL_MS = 8 * 60 * 60 * 1000; // erxes confidential de
 export class AuthError extends Error {
   constructor(message, code) {
     super(message);
-    this.name = 'AuthError';
+    this.name = "AuthError";
     this.code = code; // CONFIG_MISSING | LOGIN_REQUIRED | OAUTH_ERROR | REQUEST_ERROR
   }
 }
 
 export function normalizeBaseUrl(url) {
-  return String(url || '').trim().replace(/\/+$/, '');
+  return String(url || "")
+    .trim()
+    .replace(/\/+$/, "");
 }
 
 export function subdomainFromBaseUrl(baseUrl) {
   const match = /^https?:\/\/([^./:]+)/.exec(baseUrl);
-  return match ? match[1] : '';
+  return match ? match[1] : "";
 }
 
 function pickToken(json) {
-  if (!json || typeof json !== 'object') return null;
+  if (!json || typeof json !== "object") return null;
   const accessToken = json.accessToken ?? json.access_token;
   if (!accessToken) return null;
   return {
@@ -72,7 +74,7 @@ function pickToken(json) {
 // Only ever surface the OAuth error code (e.g. invalid_client), never the body.
 function safeOauthErrorCode(res) {
   const code = res.json?.error;
-  return typeof code === 'string' && code ? code : `http ${res.status}`;
+  return typeof code === "string" && code ? code : `http ${res.status}`;
 }
 
 export function createAuthManager(options = {}) {
@@ -80,21 +82,28 @@ export function createAuthManager(options = {}) {
   const fetchImpl = options.fetchImpl ?? globalThis.fetch;
   const now = options.now ?? (() => Date.now());
   const log = options.log ?? ((message) => console.error(message)); // safe messages only
-  const sleep = options.sleep ?? ((ms) => new Promise((resolve) => setTimeout(resolve, ms)));
+  const sleep =
+    options.sleep ??
+    ((ms) => new Promise((resolve) => setTimeout(resolve, ms)));
   const printUrl =
     options.printUrl ??
-    ((url) => console.error(`Open this URL in your browser to approve access:\n${url}`));
+    ((url) =>
+      console.error(
+        `Open this URL in your browser to approve access:\n${url}`
+      ));
   const stateDir = options.stateDir ?? resolveStateDir(env);
   // Reads search every plausible location; writes go to the primary dir.
-  const readDirs = options.stateDir ? [options.stateDir] : stateDirCandidates(env);
+  const readDirs = options.stateDir
+    ? [options.stateDir]
+    : stateDirCandidates(env);
 
   // Resolve the client config. Base URL + client id come from the environment,
   // falling back to the remembered non-secret config so later turns work with
   // no env at all. The secret is only required for a fresh OAuth login.
   function clientConfig({ requireSecret = false } = {}) {
     let baseUrl = normalizeBaseUrl(env.ERXES_BASE_URL);
-    let clientId = (env.ERXES_CLIENT_ID || '').trim();
-    const clientSecret = (env.ERXES_CLIENT_SECRET || '').trim();
+    let clientId = (env.ERXES_CLIENT_ID || "").trim();
+    const clientSecret = (env.ERXES_CLIENT_SECRET || "").trim();
 
     if (!baseUrl || !clientId) {
       const stored = readDefaultClient(readDirs);
@@ -105,13 +114,13 @@ export function createAuthManager(options = {}) {
     }
 
     const missing = [];
-    if (!baseUrl) missing.push('ERXES_BASE_URL');
-    if (!clientId) missing.push('ERXES_CLIENT_ID');
-    if (requireSecret && !clientSecret) missing.push('ERXES_CLIENT_SECRET');
+    if (!baseUrl) missing.push("ERXES_BASE_URL");
+    if (!clientId) missing.push("ERXES_CLIENT_ID");
+    if (requireSecret && !clientSecret) missing.push("ERXES_CLIENT_SECRET");
     if (missing.length) {
       throw new AuthError(
-        `missing required erxes config: ${missing.join(', ')}`,
-        'CONFIG_MISSING',
+        `missing required erxes config: ${missing.join(", ")}`,
+        "CONFIG_MISSING"
       );
     }
     return {
@@ -136,15 +145,18 @@ export function createAuthManager(options = {}) {
     let res;
     try {
       res = await fetchImpl(url, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),
       });
     } catch (err) {
       const secrets = collectSecrets(env);
       throw new AuthError(
-        `erxes request failed: ${redactText(err?.message || 'network error', secrets)}`,
-        'REQUEST_ERROR',
+        `erxes request failed: ${redactText(
+          err?.message || "network error",
+          secrets
+        )}`,
+        "REQUEST_ERROR"
       );
     }
     const text = await res.text();
@@ -168,12 +180,18 @@ export function createAuthManager(options = {}) {
       subdomain: cfg.subdomain,
       clientId: cfg.clientId,
       clientSecret,
-      secretHash: clientSecret ? secretFingerprint(clientSecret) : existing?.secretHash ?? null,
+      secretHash: clientSecret
+        ? secretFingerprint(clientSecret)
+        : existing?.secretHash ?? null,
       createdAt: existing?.createdAt ?? t,
       updatedAt: t,
       accessToken: token.accessToken,
       refreshToken: token.refreshToken ?? existing?.refreshToken ?? null,
-      accessTokenExpiresAt: t + (token.expiresInSec ? token.expiresInSec * 1000 : DEFAULT_ACCESS_TOKEN_TTL_MS),
+      accessTokenExpiresAt:
+        t +
+        (token.expiresInSec
+          ? token.expiresInSec * 1000
+          : DEFAULT_ACCESS_TOKEN_TTL_MS),
     };
   }
 
@@ -196,14 +214,14 @@ export function createAuthManager(options = {}) {
     if (!deviceCode || !verificationUri) {
       throw new AuthError(
         `failed to start oauth device flow (${safeOauthErrorCode(start)})`,
-        'OAUTH_ERROR',
+        "OAUTH_ERROR"
       );
     }
     verificationUri = verificationUri.replace(/<subdomain>/g, cfg.subdomain);
     const intervalSec = Number(start.json?.interval) || 5;
     const deadline = now() + (Number(start.json?.expires_in) || 600) * 1000;
 
-    log('oauth device flow started');
+    log("oauth device flow started");
     printUrl(verificationUri);
     if (openUrl) {
       try {
@@ -216,7 +234,7 @@ export function createAuthManager(options = {}) {
     while (now() < deadline) {
       await sleep(intervalSec * 1000);
       const res = await postJson(`${cfg.baseUrl}/oauth/token`, {
-        grant_type: 'urn:ietf:params:oauth:grant-type:device_code',
+        grant_type: "urn:ietf:params:oauth:grant-type:device_code",
         device_code: deviceCode,
         client_id: cfg.clientId,
         client_secret: cfg.clientSecret,
@@ -225,21 +243,31 @@ export function createAuthManager(options = {}) {
       if (token) {
         const session = buildSession(cfg, token);
         persistSession(session, cfg);
-        log('oauth login succeeded; session saved');
+        log("oauth login succeeded; session saved");
         return status();
       }
-      const code = res.json?.error ?? '';
-      if (code === 'authorization_pending' || code === 'slow_down' || res.text.includes('authorization_pending')) {
+      const code = res.json?.error ?? "";
+      if (
+        code === "authorization_pending" ||
+        code === "slow_down" ||
+        res.text.includes("authorization_pending")
+      ) {
         continue;
       }
-      throw new AuthError(`oauth login failed (${safeOauthErrorCode(res)})`, 'OAUTH_ERROR');
+      throw new AuthError(
+        `oauth login failed (${safeOauthErrorCode(res)})`,
+        "OAUTH_ERROR"
+      );
     }
-    throw new AuthError('oauth device flow timed out after 10 minutes; run login again', 'OAUTH_ERROR');
+    throw new AuthError(
+      "oauth device flow timed out after 10 minutes; run login again",
+      "OAUTH_ERROR"
+    );
   }
 
   async function postRefresh(cfg, refreshToken, secret) {
     const res = await postJson(`${cfg.baseUrl}/oauth/token`, {
-      grant_type: 'refresh_token',
+      grant_type: "refresh_token",
       refresh_token: refreshToken,
       client_id: cfg.clientId,
       client_secret: secret,
@@ -251,15 +279,19 @@ export function createAuthManager(options = {}) {
     const secret = effectiveSecret(cfg, session);
     if (!secret) {
       throw new AuthError(
-        'erxes access token expired and no client secret is available to refresh it; provide ERXES_CLIENT_SECRET once or re-login',
-        'LOGIN_REQUIRED',
+        "erxes access token expired and no client secret is available to refresh it; provide ERXES_CLIENT_SECRET once or re-login",
+        "LOGIN_REQUIRED"
       );
     }
     const token = await postRefresh(cfg, session.refreshToken, secret);
     if (token) {
-      const updated = buildSession({ ...cfg, clientSecret: secret }, token, session);
+      const updated = buildSession(
+        { ...cfg, clientSecret: secret },
+        token,
+        session
+      );
       persistSession(updated, cfg);
-      log('oauth refresh succeeded');
+      log("oauth refresh succeeded");
       return updated;
     }
 
@@ -278,22 +310,30 @@ export function createAuthManager(options = {}) {
         latest.accessToken &&
         now() < latest.accessTokenExpiresAt - ACCESS_TOKEN_SKEW_MS
       ) {
-        log('oauth refresh superseded by concurrent refresh; reusing session');
+        log("oauth refresh superseded by concurrent refresh; reusing session");
         return latest;
       }
-      const retryToken = await postRefresh(cfg, latest.refreshToken, effectiveSecret(cfg, latest));
+      const retryToken = await postRefresh(
+        cfg,
+        latest.refreshToken,
+        effectiveSecret(cfg, latest)
+      );
       if (retryToken) {
-        const updated = buildSession({ ...cfg, clientSecret: effectiveSecret(cfg, latest) }, retryToken, latest);
+        const updated = buildSession(
+          { ...cfg, clientSecret: effectiveSecret(cfg, latest) },
+          retryToken,
+          latest
+        );
         persistSession(updated, cfg);
-        log('oauth refresh succeeded on retry');
+        log("oauth refresh succeeded on retry");
         return updated;
       }
     }
 
-    log('oauth refresh failed');
+    log("oauth refresh failed");
     throw new AuthError(
-      'erxes oauth refresh failed; re-login required (run scripts/login.sh)',
-      'LOGIN_REQUIRED',
+      "erxes oauth refresh failed; re-login required (run scripts/login.sh)",
+      "LOGIN_REQUIRED"
     );
   }
 
@@ -303,7 +343,11 @@ export function createAuthManager(options = {}) {
     if (!cfg.clientSecret) return session;
     const hash = secretFingerprint(cfg.clientSecret);
     if (session.secretHash === hash && session.clientSecret) return session;
-    const updated = { ...session, clientSecret: cfg.clientSecret, secretHash: hash };
+    const updated = {
+      ...session,
+      clientSecret: cfg.clientSecret,
+      secretHash: hash,
+    };
     writeSession(stateDir, updated.fingerprint, updated);
     return updated;
   }
@@ -315,25 +359,26 @@ export function createAuthManager(options = {}) {
     let session = findSession(readDirs, fingerprintFor(cfg));
     if (!session) {
       throw new AuthError(
-        'no saved erxes oauth session for this base URL/client; first-time OAuth login required (run scripts/login.sh)',
-        'LOGIN_REQUIRED',
+        "no saved erxes oauth session for this base URL/client; first-time OAuth login required (run scripts/login.sh)",
+        "LOGIN_REQUIRED"
       );
     }
     session = syncStoredSecret(cfg, session);
     const duration = resolveDuration(env, readDirs);
     if (now() >= session.createdAt + durationMs(duration)) {
-      log('oauth session expired');
+      log("oauth session expired");
       throw new AuthError(
         `erxes oauth session expired (older than configured ${duration} duration); re-login required (run scripts/login.sh)`,
-        'LOGIN_REQUIRED',
+        "LOGIN_REQUIRED"
       );
     }
-    log('oauth session loaded');
-    if (now() < session.accessTokenExpiresAt - ACCESS_TOKEN_SKEW_MS) return session;
+    log("oauth session loaded");
+    if (now() < session.accessTokenExpiresAt - ACCESS_TOKEN_SKEW_MS)
+      return session;
     if (!session.refreshToken) {
       throw new AuthError(
-        'erxes access token expired and no refresh token saved; re-login required (run scripts/login.sh)',
-        'LOGIN_REQUIRED',
+        "erxes access token expired and no refresh token saved; re-login required (run scripts/login.sh)",
+        "LOGIN_REQUIRED"
       );
     }
     return refreshSession(cfg, session);
@@ -345,14 +390,14 @@ export function createAuthManager(options = {}) {
     if (!Array.isArray(errors)) return false;
     return errors.some((e) =>
       /unauthorized|not authenticated|unauthenticated|token expired|invalid token/i.test(
-        `${e?.message ?? ''} ${e?.extensions?.code ?? ''}`,
-      ),
+        `${e?.message ?? ""} ${e?.extensions?.code ?? ""}`
+      )
     );
   }
 
   async function graphql({ query, variables, operationName } = {}) {
-    if (!query || typeof query !== 'string') {
-      throw new AuthError('graphql query string is required', 'REQUEST_ERROR');
+    if (!query || typeof query !== "string") {
+      throw new AuthError("graphql query string is required", "REQUEST_ERROR");
     }
     let session = await ensureSession();
     const cfg = clientConfig();
@@ -361,10 +406,10 @@ export function createAuthManager(options = {}) {
       let res;
       try {
         res = await fetchImpl(`${cfg.baseUrl}/graphql`, {
-          method: 'POST',
+          method: "POST",
           headers: {
-            'Content-Type': 'application/json',
-            'erxes-subdomain': s.subdomain,
+            "Content-Type": "application/json",
+            "erxes-subdomain": s.subdomain,
             Authorization: `Bearer ${s.accessToken}`,
           },
           body: JSON.stringify({ query, variables, operationName }),
@@ -372,8 +417,11 @@ export function createAuthManager(options = {}) {
       } catch (err) {
         const secrets = collectSecrets(env, s);
         throw new AuthError(
-          `erxes graphql request failed: ${redactText(err?.message || 'network error', secrets)}`,
-          'REQUEST_ERROR',
+          `erxes graphql request failed: ${redactText(
+            err?.message || "network error",
+            secrets
+          )}`,
+          "REQUEST_ERROR"
         );
       }
       const text = await res.text();
@@ -394,9 +442,105 @@ export function createAuthManager(options = {}) {
       res = await doRequest(session);
     }
     if (res.json == null) {
-      throw new AuthError(`erxes graphql request failed with http ${res.status}`, 'REQUEST_ERROR');
+      throw new AuthError(
+        `erxes graphql request failed with http ${res.status}`,
+        "REQUEST_ERROR"
+      );
     }
     return res.json;
+  }
+
+  /**
+   * Call a permission-filtered erxes gateway endpoint without exposing the
+   * bearer token to the OpenClaw agent. OAuth login/refresh behavior is shared
+   * with graphql(), but the device flow itself remains unchanged.
+   */
+  async function apiRequest({ path, method = "GET", body } = {}) {
+    let parsedPath;
+    try {
+      parsedPath = new URL(path, "https://agent-tools.invalid");
+    } catch {
+      parsedPath = null;
+    }
+
+    if (
+      typeof path !== "string" ||
+      !parsedPath ||
+      parsedPath.origin !== "https://agent-tools.invalid" ||
+      !["/agent-tools/manifest", "/agent-tools/call"].includes(
+        parsedPath.pathname
+      )
+    ) {
+      throw new AuthError(
+        "only declared erxes agent-tool gateway paths are allowed",
+        "REQUEST_ERROR"
+      );
+    }
+
+    const normalizedMethod = String(method).toUpperCase();
+    const expectedMethod =
+      parsedPath.pathname === "/agent-tools/manifest" ? "GET" : "POST";
+    if (normalizedMethod !== expectedMethod) {
+      throw new AuthError(
+        `${parsedPath.pathname} requires ${expectedMethod}`,
+        "REQUEST_ERROR"
+      );
+    }
+
+    let session = await ensureSession();
+    const cfg = clientConfig();
+
+    const doRequest = async (currentSession) => {
+      let response;
+      try {
+        response = await fetchImpl(
+          `${cfg.baseUrl}${parsedPath.pathname}${parsedPath.search}`,
+          {
+            method: normalizedMethod,
+            headers: {
+              "Content-Type": "application/json",
+              "erxes-subdomain": currentSession.subdomain,
+              Authorization: `Bearer ${currentSession.accessToken}`,
+            },
+            ...(body === undefined ? {} : { body: JSON.stringify(body) }),
+          }
+        );
+      } catch (err) {
+        const secrets = collectSecrets(env, currentSession);
+        throw new AuthError(
+          `erxes request failed: ${redactText(
+            err?.message || "network error",
+            secrets
+          )}`,
+          "REQUEST_ERROR"
+        );
+      }
+
+      const text = await response.text();
+      let json = null;
+      try {
+        json = JSON.parse(text);
+      } catch {
+        // Keep non-JSON bodies out of agent output; only report the status.
+      }
+
+      return { status: response.status, json, text };
+    };
+
+    let response = await doRequest(session);
+    if (isAuthFailure(response) && session.refreshToken) {
+      session = await refreshSession(cfg, session);
+      response = await doRequest(session);
+    }
+
+    if (response.json === null) {
+      throw new AuthError(
+        `erxes request failed with http ${response.status}`,
+        "REQUEST_ERROR"
+      );
+    }
+
+    return { httpStatus: response.status, body: response.json };
   }
 
   // Safe status report: never includes token or secret values.
@@ -412,7 +556,8 @@ export function createAuthManager(options = {}) {
       return {
         authenticated: false,
         authDuration: duration,
-        reason: 'missing ERXES_BASE_URL / ERXES_CLIENT_ID configuration and no saved session',
+        reason:
+          "missing ERXES_BASE_URL / ERXES_CLIENT_ID configuration and no saved session",
       };
     }
     const session = findSession(readDirs, fingerprintFor(cfg));
@@ -422,7 +567,7 @@ export function createAuthManager(options = {}) {
         baseUrl: cfg.baseUrl,
         clientId: cfg.clientId,
         authDuration: duration,
-        reason: 'no saved oauth session; login required',
+        reason: "no saved oauth session; login required",
       };
     }
     const sessionExpiresAt = session.createdAt + durationMs(duration);
@@ -435,30 +580,37 @@ export function createAuthManager(options = {}) {
       authDuration: duration,
       sessionCreatedAt: new Date(session.createdAt).toISOString(),
       sessionExpiresAt: new Date(sessionExpiresAt).toISOString(),
-      accessTokenExpiresAt: new Date(session.accessTokenExpiresAt).toISOString(),
-      canRefresh: Boolean(session.refreshToken && (session.clientSecret || cfg.clientSecret)),
+      accessTokenExpiresAt: new Date(
+        session.accessTokenExpiresAt
+      ).toISOString(),
+      canRefresh: Boolean(
+        session.refreshToken && (session.clientSecret || cfg.clientSecret)
+      ),
     };
-    if (expired) result.reason = 'session older than configured duration; login required';
+    if (expired)
+      result.reason = "session older than configured duration; login required";
     return result;
   }
 
   function logout({ all = false } = {}) {
     if (all) {
       const cleared = deleteAllSessions(readDirs);
-      log('oauth sessions cleared');
+      log("oauth sessions cleared");
       return { cleared };
     }
     const cfg = clientConfig();
     const removed = deleteSession(readDirs, fingerprintFor(cfg));
-    log(removed ? 'oauth session cleared' : 'no saved oauth session to clear');
+    log(removed ? "oauth session cleared" : "no saved oauth session to clear");
     return { cleared: removed };
   }
 
   function setDuration(key) {
     if (!isValidDuration(key)) {
       throw new AuthError(
-        `invalid auth duration "${key}"; supported values: ${Object.keys(DURATION_CHOICES).join(', ')}`,
-        'REQUEST_ERROR',
+        `invalid auth duration "${key}"; supported values: ${Object.keys(
+          DURATION_CHOICES
+        ).join(", ")}`,
+        "REQUEST_ERROR"
       );
     }
     const config = readConfig(readDirs);
@@ -469,14 +621,14 @@ export function createAuthManager(options = {}) {
   }
 
   function getDuration() {
-    const fromEnv = (env.ERXES_AUTH_DURATION || '').trim();
+    const fromEnv = (env.ERXES_AUTH_DURATION || "").trim();
     const fromConfig = readConfig(readDirs).authDuration;
     const duration = resolveDuration(env, readDirs);
     const source = isValidDuration(fromEnv)
-      ? 'env'
+      ? "env"
       : isValidDuration(fromConfig)
-        ? 'config'
-        : 'default';
+      ? "config"
+      : "default";
     return { authDuration: duration, source, default: DEFAULT_DURATION };
   }
 
@@ -485,6 +637,7 @@ export function createAuthManager(options = {}) {
     login,
     ensureSession,
     graphql,
+    apiRequest,
     status,
     logout,
     setDuration,

@@ -1,29 +1,29 @@
-import { test } from 'node:test';
-import assert from 'node:assert/strict';
-import fs from 'node:fs';
-import os from 'node:os';
-import path from 'node:path';
-import { execFileSync } from 'node:child_process';
-import { fileURLToPath } from 'node:url';
+import { test } from "node:test";
+import assert from "node:assert/strict";
+import fs from "node:fs";
+import os from "node:os";
+import path from "node:path";
+import { execFileSync } from "node:child_process";
+import { fileURLToPath } from "node:url";
 
-import { AuthError, createAuthManager } from '../lib/auth.mjs';
-import { redactObject, redactText } from '../lib/redact.mjs';
+import { AuthError, createAuthManager } from "../lib/auth.mjs";
+import { redactObject, redactText } from "../lib/redact.mjs";
 import {
   DURATION_CHOICES,
   fingerprint,
   resolveStateDir,
   secretFingerprint,
   stateDirCandidates,
-} from '../lib/store.mjs';
+} from "../lib/store.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const CLI = path.join(__dirname, '..', 'scripts', 'erxes-auth.mjs');
+const CLI = path.join(__dirname, "..", "scripts", "erxes-auth.mjs");
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 const BASE_ENV = {
-  ERXES_BASE_URL: 'https://demo.next.erxes.io/gateway',
-  ERXES_CLIENT_ID: 'test-client',
-  ERXES_CLIENT_SECRET: 'super-secret-value',
+  ERXES_BASE_URL: "https://demo.next.erxes.io/gateway",
+  ERXES_CLIENT_ID: "test-client",
+  ERXES_CLIENT_SECRET: "super-secret-value",
 };
 
 // Deterministic mock of the erxes OAuth + GraphQL endpoints.
@@ -32,59 +32,86 @@ function makeMockServer() {
     tokenCounter: 0,
     approved: true,
     refreshValid: true,
-    calls: { deviceCode: 0, deviceGrant: 0, refreshGrant: 0, graphql: 0 },
+    calls: {
+      deviceCode: 0,
+      deviceGrant: 0,
+      refreshGrant: 0,
+      graphql: 0,
+      agentTools: 0,
+    },
     lastGraphqlHeaders: null,
     validAccessTokens: new Set(),
     expiresInSec: 28800,
   };
 
   const fetchImpl = async (url, opts) => {
-    const body = JSON.parse(opts.body);
+    const body = opts.body ? JSON.parse(opts.body) : undefined;
     const respond = (status, json) => ({
       status,
       text: async () => JSON.stringify(json),
     });
 
-    if (url.endsWith('/oauth/device/code')) {
+    if (url.endsWith("/oauth/device/code")) {
       state.calls.deviceCode += 1;
       return respond(200, {
-        device_code: 'dev-code-1',
-        verification_uri_complete: 'https://<subdomain>.next.erxes.io/oauth/approve?code=1',
+        device_code: "dev-code-1",
+        verification_uri_complete:
+          "https://<subdomain>.next.erxes.io/oauth/approve?code=1",
         interval: 0,
         expires_in: 600,
       });
     }
 
-    if (url.endsWith('/oauth/token')) {
-      if (body.grant_type === 'refresh_token') {
+    if (url.endsWith("/oauth/token")) {
+      if (body.grant_type === "refresh_token") {
         state.calls.refreshGrant += 1;
-        if (!state.refreshValid || body.refresh_token !== `refresh-${state.tokenCounter}`) {
-          return respond(400, { error: 'invalid_grant' });
+        if (
+          !state.refreshValid ||
+          body.refresh_token !== `refresh-${state.tokenCounter}`
+        ) {
+          return respond(400, { error: "invalid_grant" });
         }
       } else {
         state.calls.deviceGrant += 1;
-        if (!state.approved) return respond(400, { error: 'authorization_pending' });
+        if (!state.approved)
+          return respond(400, { error: "authorization_pending" });
       }
       state.tokenCounter += 1;
       const accessToken = `access-${state.tokenCounter}`;
       state.validAccessTokens.add(accessToken);
       return respond(200, {
-        tokenType: 'Bearer',
+        tokenType: "Bearer",
         accessToken,
         refreshToken: `refresh-${state.tokenCounter}`,
         expiresIn: state.expiresInSec,
       });
     }
 
-    if (url.endsWith('/graphql')) {
+    if (url.endsWith("/graphql")) {
       state.calls.graphql += 1;
       state.lastGraphqlHeaders = opts.headers;
-      const auth = opts.headers.Authorization || '';
-      const token = auth.replace('Bearer ', '');
+      const auth = opts.headers.Authorization || "";
+      const token = auth.replace("Bearer ", "");
       if (!state.validAccessTokens.has(token)) {
-        return respond(200, { errors: [{ message: 'Not authenticated' }] });
+        return respond(200, { errors: [{ message: "Not authenticated" }] });
       }
-      return respond(200, { data: { customers: [{ _id: 'c1', firstName: 'Bat' }] } });
+      return respond(200, {
+        data: { customers: [{ _id: "c1", firstName: "Bat" }] },
+      });
+    }
+
+    if (url.includes("/agent-tools/")) {
+      state.calls.agentTools += 1;
+      state.lastGraphqlHeaders = opts.headers;
+      const auth = opts.headers.Authorization || "";
+      const token = auth.replace("Bearer ", "");
+      if (!state.validAccessTokens.has(token)) {
+        return respond(401, { error: { code: "OAUTH_REQUIRED" } });
+      }
+      return respond(200, {
+        tools: [{ id: "core.trpc.customers.find", plugin: "core" }],
+        requestBody: body,
+      });
     }
 
     throw new Error(`unexpected url: ${url}`);
@@ -94,7 +121,7 @@ function makeMockServer() {
 }
 
 function makeHarness({ env = {}, server = makeMockServer() } = {}) {
-  const stateDir = fs.mkdtempSync(path.join(os.tmpdir(), 'erxes-auth-test-'));
+  const stateDir = fs.mkdtempSync(path.join(os.tmpdir(), "erxes-auth-test-"));
   const clock = { now: 1_750_000_000_000 };
   const logs = [];
   const manager = createAuthManager({
@@ -108,18 +135,54 @@ function makeHarness({ env = {}, server = makeMockServer() } = {}) {
   return { manager, stateDir, clock, logs, server };
 }
 
-test('first request without a saved session requires oauth login', async () => {
+test("first request without a saved session requires oauth login", async () => {
   const { manager } = makeHarness();
   await assert.rejects(
-    () => manager.graphql({ query: 'query { customers { _id } }' }),
-    (err) => err instanceof AuthError && err.code === 'LOGIN_REQUIRED' && /login required/i.test(err.message),
+    () => manager.graphql({ query: "query { customers { _id } }" }),
+    (err) =>
+      err instanceof AuthError &&
+      err.code === "LOGIN_REQUIRED" &&
+      /login required/i.test(err.message)
   );
   const status = manager.status();
   assert.equal(status.authenticated, false);
   assert.match(status.reason, /login required/);
 });
 
-test('successful oauth login persists the session with strict permissions', async () => {
+test("agent capability requests reuse the persisted OAuth session without exposing tokens", async () => {
+  const { manager, server } = makeHarness();
+  await manager.login();
+
+  const result = await manager.apiRequest({
+    path: "/agent-tools/manifest?query=customers",
+  });
+
+  assert.equal(result.httpStatus, 200);
+  assert.equal(result.body.tools[0].plugin, "core");
+  assert.equal(server.state.calls.agentTools, 1);
+  assert.match(server.state.lastGraphqlHeaders.Authorization, /^Bearer /);
+  assert.equal(JSON.stringify(result).includes("access-"), false);
+});
+
+test("agent capability transport rejects arbitrary external paths", async () => {
+  const { manager } = makeHarness();
+  await manager.login();
+
+  await assert.rejects(
+    () => manager.apiRequest({ path: "https://example.com/private" }),
+    (err) => err instanceof AuthError && err.code === "REQUEST_ERROR"
+  );
+  await assert.rejects(
+    () => manager.apiRequest({ path: "/agent-tools/../oauth/token" }),
+    (err) => err instanceof AuthError && err.code === "REQUEST_ERROR"
+  );
+  await assert.rejects(
+    () => manager.apiRequest({ path: "/agent-tools/call", method: "GET" }),
+    (err) => err instanceof AuthError && err.code === "REQUEST_ERROR"
+  );
+});
+
+test("successful oauth login persists the session with strict permissions", async () => {
   const { manager, stateDir, server } = makeHarness();
   const result = await manager.login();
   assert.equal(result.authenticated, true);
@@ -127,33 +190,50 @@ test('successful oauth login persists the session with strict permissions', asyn
 
   const dirMode = fs.statSync(stateDir).mode & 0o777;
   assert.equal(dirMode, 0o700);
-  const files = fs.readdirSync(stateDir).filter((f) => f.startsWith('session-'));
+  const files = fs
+    .readdirSync(stateDir)
+    .filter((f) => f.startsWith("session-"));
   assert.equal(files.length, 1);
   const fileMode = fs.statSync(path.join(stateDir, files[0])).mode & 0o777;
   assert.equal(fileMode, 0o600);
 
-  const saved = JSON.parse(fs.readFileSync(path.join(stateDir, files[0]), 'utf8'));
-  assert.equal(saved.accessToken, 'access-1');
-  assert.equal(saved.refreshToken, 'refresh-1');
+  const saved = JSON.parse(
+    fs.readFileSync(path.join(stateDir, files[0]), "utf8")
+  );
+  assert.equal(saved.accessToken, "access-1");
+  assert.equal(saved.refreshToken, "refresh-1");
   // The client secret is persisted (in the mode-600 file, outside the source
   // tree) so the access token can be refreshed silently in later turns without
   // the user re-supplying it — this is what prevents repeated OAuth prompts.
   assert.equal(saved.clientSecret, BASE_ENV.ERXES_CLIENT_SECRET);
-  assert.equal(saved.secretHash, secretFingerprint(BASE_ENV.ERXES_CLIENT_SECRET));
+  assert.equal(
+    saved.secretHash,
+    secretFingerprint(BASE_ENV.ERXES_CLIENT_SECRET)
+  );
 });
 
-test('subsequent requests reuse the saved session without re-running oauth', async () => {
+test("subsequent requests reuse the saved session without re-running oauth", async () => {
   const { manager, server } = makeHarness();
   await manager.login();
-  const first = await manager.graphql({ query: 'query { customers { _id } }' });
-  const second = await manager.graphql({ query: 'query { customers { _id } }' });
-  assert.equal(first.data.customers[0]._id, 'c1');
-  assert.equal(second.data.customers[0]._id, 'c1');
-  assert.equal(server.state.calls.deviceCode, 1, 'device flow must run only once');
-  assert.equal(server.state.calls.refreshGrant, 0, 'no refresh needed while token is fresh');
+  const first = await manager.graphql({ query: "query { customers { _id } }" });
+  const second = await manager.graphql({
+    query: "query { customers { _id } }",
+  });
+  assert.equal(first.data.customers[0]._id, "c1");
+  assert.equal(second.data.customers[0]._id, "c1");
+  assert.equal(
+    server.state.calls.deviceCode,
+    1,
+    "device flow must run only once"
+  );
+  assert.equal(
+    server.state.calls.refreshGrant,
+    0,
+    "no refresh needed while token is fresh"
+  );
 });
 
-test('a fresh manager instance (runtime restart) reuses the persisted session', async () => {
+test("a fresh manager instance (runtime restart) reuses the persisted session", async () => {
   const { manager, stateDir, clock, server } = makeHarness();
   await manager.login();
 
@@ -164,36 +244,40 @@ test('a fresh manager instance (runtime restart) reuses the persisted session', 
     sleep: async () => {},
     log: () => {},
   });
-  const result = await restarted.graphql({ query: 'query { customers { _id } }' });
-  assert.equal(result.data.customers[0]._id, 'c1');
+  const result = await restarted.graphql({
+    query: "query { customers { _id } }",
+  });
+  assert.equal(result.data.customers[0]._id, "c1");
   assert.equal(server.state.calls.deviceCode, 1);
 });
 
-test('expired access token with valid refresh token refreshes silently', async () => {
+test("expired access token with valid refresh token refreshes silently", async () => {
   const { manager, clock, server, logs } = makeHarness();
   await manager.login();
   clock.now += 9 * 60 * 60 * 1000; // past the 8h access token TTL
-  const result = await manager.graphql({ query: 'query { customers { _id } }' });
-  assert.equal(result.data.customers[0]._id, 'c1');
+  const result = await manager.graphql({
+    query: "query { customers { _id } }",
+  });
+  assert.equal(result.data.customers[0]._id, "c1");
   assert.equal(server.state.calls.refreshGrant, 1);
-  assert.equal(server.state.calls.deviceCode, 1, 'no new oauth prompt');
-  assert.ok(logs.includes('oauth refresh succeeded'));
+  assert.equal(server.state.calls.deviceCode, 1, "no new oauth prompt");
+  assert.ok(logs.includes("oauth refresh succeeded"));
 });
 
-test('refresh rotates and persists both tokens', async () => {
+test("refresh rotates and persists both tokens", async () => {
   const { manager, stateDir, clock } = makeHarness();
   await manager.login();
   clock.now += 9 * 60 * 60 * 1000;
-  await manager.graphql({ query: 'query { customers { _id } }' });
-  const file = fs.readdirSync(stateDir).find((f) => f.startsWith('session-'));
-  const saved = JSON.parse(fs.readFileSync(path.join(stateDir, file), 'utf8'));
-  assert.equal(saved.accessToken, 'access-2');
-  assert.equal(saved.refreshToken, 'refresh-2');
+  await manager.graphql({ query: "query { customers { _id } }" });
+  const file = fs.readdirSync(stateDir).find((f) => f.startsWith("session-"));
+  const saved = JSON.parse(fs.readFileSync(path.join(stateDir, file), "utf8"));
+  assert.equal(saved.accessToken, "access-2");
+  assert.equal(saved.refreshToken, "refresh-2");
 });
 
-test('concurrent refresh rotation is recovered without forcing re-login', async () => {
+test("concurrent refresh rotation is recovered without forcing re-login", async () => {
   const server = makeMockServer();
-  const stateDir = fs.mkdtempSync(path.join(os.tmpdir(), 'erxes-auth-test-'));
+  const stateDir = fs.mkdtempSync(path.join(os.tmpdir(), "erxes-auth-test-"));
   const clock = { now: 1_750_000_000_000 };
   const env = { ...BASE_ENV, ERXES_AUTH_STATE_DIR: stateDir };
   const base = { now: () => clock.now, sleep: async () => {}, log: () => {} };
@@ -209,77 +293,103 @@ test('concurrent refresh rotation is recovered without forcing re-login', async 
   const racingFetch = async (url, opts) => {
     const body = JSON.parse(opts.body);
     if (
-      url.endsWith('/oauth/token') &&
-      body.grant_type === 'refresh_token' &&
+      url.endsWith("/oauth/token") &&
+      body.grant_type === "refresh_token" &&
       !raced
     ) {
       raced = true;
-      const other = createAuthManager({ env, fetchImpl: server.fetchImpl, ...base });
+      const other = createAuthManager({
+        env,
+        fetchImpl: server.fetchImpl,
+        ...base,
+      });
       await other.ensureSession(); // performs the rotation + persists newer session
     }
     return server.fetchImpl(url, opts);
   };
 
   const manager = createAuthManager({ env, fetchImpl: racingFetch, ...base });
-  const result = await manager.graphql({ query: 'query { customers { _id } }' });
-  assert.equal(result.data.customers[0]._id, 'c1');
-  assert.equal(server.state.calls.deviceCode, 1, 'must not re-run oauth on a rotation race');
+  const result = await manager.graphql({
+    query: "query { customers { _id } }",
+  });
+  assert.equal(result.data.customers[0]._id, "c1");
+  assert.equal(
+    server.state.calls.deviceCode,
+    1,
+    "must not re-run oauth on a rotation race"
+  );
 });
 
-test('session older than the configured duration requires oauth again', async () => {
-  const { manager, clock } = makeHarness({ env: { ERXES_AUTH_DURATION: '3m' } });
+test("session older than the configured duration requires oauth again", async () => {
+  const { manager, clock } = makeHarness({
+    env: { ERXES_AUTH_DURATION: "3m" },
+  });
   await manager.login();
   clock.now += 91 * DAY_MS;
   await assert.rejects(
-    () => manager.graphql({ query: 'query { customers { _id } }' }),
-    (err) => err.code === 'LOGIN_REQUIRED' && /expired/.test(err.message) && /3m/.test(err.message),
+    () => manager.graphql({ query: "query { customers { _id } }" }),
+    (err) =>
+      err.code === "LOGIN_REQUIRED" &&
+      /expired/.test(err.message) &&
+      /3m/.test(err.message)
   );
   assert.equal(manager.status().authenticated, false);
 });
 
-test('duration defaults to 6m and can be set to 3m/6m/1y via config', async () => {
+test("duration defaults to 6m and can be set to 3m/6m/1y via config", async () => {
   const { manager, clock } = makeHarness();
-  assert.deepEqual(manager.getDuration(), { authDuration: '6m', source: 'default', default: '6m' });
+  assert.deepEqual(manager.getDuration(), {
+    authDuration: "6m",
+    source: "default",
+    default: "6m",
+  });
 
-  manager.setDuration('1y');
-  assert.equal(manager.getDuration().authDuration, '1y');
-  assert.equal(manager.getDuration().source, 'config');
-  assert.throws(() => manager.setDuration('2y'), /invalid auth duration/);
+  manager.setDuration("1y");
+  assert.equal(manager.getDuration().authDuration, "1y");
+  assert.equal(manager.getDuration().source, "config");
+  assert.throws(() => manager.setDuration("2y"), /invalid auth duration/);
 
   await manager.login();
   clock.now += 200 * DAY_MS; // past 6m but inside 1y
   assert.equal(manager.status().authenticated, true);
   clock.now += 200 * DAY_MS; // past 1y
   assert.equal(manager.status().authenticated, false);
-  assert.deepEqual(Object.keys(DURATION_CHOICES), ['3m', '6m', '1y']);
+  assert.deepEqual(Object.keys(DURATION_CHOICES), ["3m", "6m", "1y"]);
 });
 
-test('env ERXES_AUTH_DURATION overrides stored config', () => {
-  const { manager } = makeHarness({ env: { ERXES_AUTH_DURATION: '1y' } });
-  manager.setDuration('3m');
-  assert.deepEqual(manager.getDuration(), { authDuration: '1y', source: 'env', default: '6m' });
+test("env ERXES_AUTH_DURATION overrides stored config", () => {
+  const { manager } = makeHarness({ env: { ERXES_AUTH_DURATION: "1y" } });
+  manager.setDuration("3m");
+  assert.deepEqual(manager.getDuration(), {
+    authDuration: "1y",
+    source: "env",
+    default: "6m",
+  });
 });
 
-test('logout deletes the persisted session and the next request requires oauth', async () => {
+test("logout deletes the persisted session and the next request requires oauth", async () => {
   const { manager, stateDir } = makeHarness();
   await manager.login();
   const result = manager.logout();
   assert.equal(result.cleared, 1);
-  assert.equal(fs.readdirSync(stateDir).filter((f) => f.startsWith('session-')).length, 0);
+  assert.equal(
+    fs.readdirSync(stateDir).filter((f) => f.startsWith("session-")).length,
+    0
+  );
   await assert.rejects(
-    () => manager.graphql({ query: 'query { customers { _id } }' }),
-    (err) => err.code === 'LOGIN_REQUIRED',
+    () => manager.graphql({ query: "query { customers { _id } }" }),
+    (err) => err.code === "LOGIN_REQUIRED"
   );
 });
 
-test('changing base URL or client id separates sessions safely', async () => {
+test("changing base URL or client id separates sessions safely", async () => {
   const server = makeMockServer();
   const { manager, stateDir, clock } = makeHarness({ server });
   await manager.login();
 
   for (const change of [
-    { ERXES_BASE_URL: 'https://other.next.erxes.io/gateway' },
-    { ERXES_CLIENT_ID: 'another-client' },
+    { ERXES_BASE_URL: "https://other.next.erxes.io/gateway" },
+    { ERXES_CLIENT_ID: "another-client" },
   ]) {
     const changed = createAuthManager({
       env: { ...BASE_ENV, ERXES_AUTH_STATE_DIR: stateDir, ...change },
@@ -289,143 +399,174 @@ test('changing base URL or client id separates sessions safely', async () => {
       log: () => {},
     });
     await assert.rejects(
-      () => changed.graphql({ query: 'query { customers { _id } }' }),
-      (err) => err.code === 'LOGIN_REQUIRED',
-      `changed ${Object.keys(change)[0]} must not reuse the old session`,
+      () => changed.graphql({ query: "query { customers { _id } }" }),
+      (err) => err.code === "LOGIN_REQUIRED",
+      `changed ${Object.keys(change)[0]} must not reuse the old session`
     );
   }
   // The original session is untouched and still works.
-  const original = await manager.graphql({ query: 'query { customers { _id } }' });
-  assert.equal(original.data.customers[0]._id, 'c1');
+  const original = await manager.graphql({
+    query: "query { customers { _id } }",
+  });
+  assert.equal(original.data.customers[0]._id, "c1");
 });
 
-test('a rotated client secret reuses the session and is adopted for refresh', async () => {
+test("a rotated client secret reuses the session and is adopted for refresh", async () => {
   const { manager, stateDir, clock, server } = makeHarness();
   await manager.login();
   clock.now += 9 * 60 * 60 * 1000; // access token now stale
 
   // Same base URL + client id, but the confidential secret was rotated.
   const rotated = createAuthManager({
-    env: { ...BASE_ENV, ERXES_AUTH_STATE_DIR: stateDir, ERXES_CLIENT_SECRET: 'rotated-secret' },
+    env: {
+      ...BASE_ENV,
+      ERXES_AUTH_STATE_DIR: stateDir,
+      ERXES_CLIENT_SECRET: "rotated-secret",
+    },
     fetchImpl: server.fetchImpl,
     now: () => clock.now,
     sleep: async () => {},
     log: () => {},
   });
-  const result = await rotated.graphql({ query: 'query { customers { _id } }' });
-  assert.equal(result.data.customers[0]._id, 'c1');
-  assert.equal(server.state.calls.deviceCode, 1, 'a rotated secret must not force a new OAuth');
+  const result = await rotated.graphql({
+    query: "query { customers { _id } }",
+  });
+  assert.equal(result.data.customers[0]._id, "c1");
+  assert.equal(
+    server.state.calls.deviceCode,
+    1,
+    "a rotated secret must not force a new OAuth"
+  );
 
-  const file = fs.readdirSync(stateDir).find((f) => f.startsWith('session-'));
-  const saved = JSON.parse(fs.readFileSync(path.join(stateDir, file), 'utf8'));
-  assert.equal(saved.clientSecret, 'rotated-secret');
+  const file = fs.readdirSync(stateDir).find((f) => f.startsWith("session-"));
+  const saved = JSON.parse(fs.readFileSync(path.join(stateDir, file), "utf8"));
+  assert.equal(saved.clientSecret, "rotated-secret");
 });
 
-test('graphql sends the saved bearer token and subdomain header', async () => {
+test("graphql sends the saved bearer token and subdomain header", async () => {
   const { manager, server } = makeHarness();
   await manager.login();
-  await manager.graphql({ query: 'query { customers { _id } }', variables: { page: 1 } });
-  assert.equal(server.state.lastGraphqlHeaders.Authorization, 'Bearer access-1');
-  assert.equal(server.state.lastGraphqlHeaders['erxes-subdomain'], 'demo');
+  await manager.graphql({
+    query: "query { customers { _id } }",
+    variables: { page: 1 },
+  });
+  assert.equal(
+    server.state.lastGraphqlHeaders.Authorization,
+    "Bearer access-1"
+  );
+  assert.equal(server.state.lastGraphqlHeaders["erxes-subdomain"], "demo");
 });
 
-test('mid-life auth rejection triggers one silent refresh and retry', async () => {
+test("mid-life auth rejection triggers one silent refresh and retry", async () => {
   const { manager, server } = makeHarness();
   await manager.login();
   server.state.validAccessTokens.clear(); // server-side invalidation before TTL
-  const result = await manager.graphql({ query: 'query { customers { _id } }' });
-  assert.equal(result.data.customers[0]._id, 'c1');
+  const result = await manager.graphql({
+    query: "query { customers { _id } }",
+  });
+  assert.equal(result.data.customers[0]._id, "c1");
   assert.equal(server.state.calls.refreshGrant, 1);
 });
 
-test('invalid refresh token yields a safe reauth message without secrets', async () => {
+test("invalid refresh token yields a safe reauth message without secrets", async () => {
   const { manager, clock, server } = makeHarness();
   await manager.login();
   server.state.refreshValid = false;
   clock.now += 9 * 60 * 60 * 1000;
   await assert.rejects(
-    () => manager.graphql({ query: 'query { customers { _id } }' }),
+    () => manager.graphql({ query: "query { customers { _id } }" }),
     (err) =>
-      err.code === 'LOGIN_REQUIRED' &&
+      err.code === "LOGIN_REQUIRED" &&
       /re-login required/.test(err.message) &&
-      !/access-|refresh-|super-secret/.test(err.message),
+      !/access-|refresh-|super-secret/.test(err.message)
   );
 });
 
-test('logs and status output never contain secrets or token values', async () => {
+test("logs and status output never contain secrets or token values", async () => {
   const { manager, clock, logs, server } = makeHarness();
   await manager.login();
-  await manager.graphql({ query: 'query { customers { _id } }' });
+  await manager.graphql({ query: "query { customers { _id } }" });
   clock.now += 9 * 60 * 60 * 1000;
-  await manager.graphql({ query: 'query { customers { _id } }' });
+  await manager.graphql({ query: "query { customers { _id } }" });
   server.state.refreshValid = false;
   clock.now += 9 * 60 * 60 * 1000;
-  await manager.graphql({ query: 'query { customers { _id } }' }).catch(() => {});
+  await manager
+    .graphql({ query: "query { customers { _id } }" })
+    .catch(() => {});
   manager.logout();
 
   const sensitive = /access-\d|refresh-\d|super-secret-value|Bearer /;
   for (const line of logs) {
     assert.ok(!sensitive.test(line), `log line leaks secrets: ${line}`);
   }
-  assert.ok(logs.includes('oauth session loaded'));
-  assert.ok(logs.includes('oauth refresh succeeded'));
-  assert.ok(logs.includes('oauth refresh failed'));
-  assert.ok(logs.includes('oauth session cleared'));
+  assert.ok(logs.includes("oauth session loaded"));
+  assert.ok(logs.includes("oauth refresh succeeded"));
+  assert.ok(logs.includes("oauth refresh failed"));
+  assert.ok(logs.includes("oauth session cleared"));
 
   const statusText = JSON.stringify(manager.status());
-  assert.ok(!sensitive.test(statusText), 'status output leaks secrets');
+  assert.ok(!sensitive.test(statusText), "status output leaks secrets");
 });
 
-test('redaction helpers scrub keys, values, and bearer headers', () => {
+test("redaction helpers scrub keys, values, and bearer headers", () => {
   const redacted = redactObject({
-    accessToken: 'a1',
-    refresh_token: 'r1',
-    clientSecret: 's1',
-    Authorization: 'Bearer xyz',
-    nested: { password: 'p', safe: 'ok' },
+    accessToken: "a1",
+    refresh_token: "r1",
+    clientSecret: "s1",
+    Authorization: "Bearer xyz",
+    nested: { password: "p", safe: "ok" },
   });
   assert.deepEqual(redacted, {
-    accessToken: '[redacted]',
-    refresh_token: '[redacted]',
-    clientSecret: '[redacted]',
-    Authorization: '[redacted]',
-    nested: { password: '[redacted]', safe: 'ok' },
+    accessToken: "[redacted]",
+    refresh_token: "[redacted]",
+    clientSecret: "[redacted]",
+    Authorization: "[redacted]",
+    nested: { password: "[redacted]", safe: "ok" },
   });
   assert.equal(
-    redactText('error super-secret-value with Bearer abc.def', ['super-secret-value']),
-    'error [redacted] with Bearer [redacted]',
+    redactText("error super-secret-value with Bearer abc.def", [
+      "super-secret-value",
+    ]),
+    "error [redacted] with Bearer [redacted]"
   );
 });
 
-test('state dir resolution prefers explicit env, then a durable home path', () => {
-  assert.equal(resolveStateDir({ ERXES_AUTH_STATE_DIR: '/tmp/x' }), '/tmp/x');
+test("state dir resolution prefers explicit env, then a durable home path", () => {
+  assert.equal(resolveStateDir({ ERXES_AUTH_STATE_DIR: "/tmp/x" }), "/tmp/x");
   // The primary (write) dir is home-based and durable, independent of the
   // possibly-ephemeral runtime state dir.
   assert.equal(
-    resolveStateDir({ HOME: '/home/u', OPENCLAW_STATE_DIR: '/srv/run-123' }),
-    path.join('/home/u', '.openclaw', 'erxes-next-plugin'),
+    resolveStateDir({ HOME: "/home/u", OPENCLAW_STATE_DIR: "/srv/run-123" }),
+    path.join("/home/u", ".openclaw", "erxes-next-plugin")
   );
   // ...but the runtime state dir is still searched on read for migration.
-  const candidates = stateDirCandidates({ HOME: '/home/u', OPENCLAW_STATE_DIR: '/srv/run-123' });
+  const candidates = stateDirCandidates({
+    HOME: "/home/u",
+    OPENCLAW_STATE_DIR: "/srv/run-123",
+  });
   assert.deepEqual(candidates.slice(0, 2), [
-    path.join('/home/u', '.openclaw', 'erxes-next-plugin'),
-    path.join('/srv/run-123', 'erxes-next-plugin'),
+    path.join("/home/u", ".openclaw", "erxes-next-plugin"),
+    path.join("/srv/run-123", "erxes-next-plugin"),
   ]);
 });
 
-test('session key ignores the client secret; base URL and client id separate it', () => {
-  const fp = fingerprint('https://a/gateway', 'c1');
-  assert.equal(fp, fingerprint('https://a/gateway', 'c1'), 'secret is not part of the key');
-  assert.notEqual(fp, fingerprint('https://a/gateway', 'c2'));
-  assert.notEqual(fp, fingerprint('https://b/gateway', 'c1'));
+test("session key ignores the client secret; base URL and client id separate it", () => {
+  const fp = fingerprint("https://a/gateway", "c1");
+  assert.equal(
+    fp,
+    fingerprint("https://a/gateway", "c1"),
+    "secret is not part of the key"
+  );
+  assert.notEqual(fp, fingerprint("https://a/gateway", "c2"));
+  assert.notEqual(fp, fingerprint("https://b/gateway", "c1"));
   assert.notEqual(
-    secretFingerprint('s1'),
-    secretFingerprint('s2'),
-    'secret fingerprints differ so rotation is detectable',
+    secretFingerprint("s1"),
+    secretFingerprint("s2"),
+    "secret fingerprints differ so rotation is detectable"
   );
 });
 
-test('saved session is reused with no environment variables at all', async () => {
+test("saved session is reused with no environment variables at all", async () => {
   const { manager, stateDir, clock, server } = makeHarness();
   await manager.login();
 
@@ -441,13 +582,13 @@ test('saved session is reused with no environment variables at all', async () =>
   });
   const status = bare.status();
   assert.equal(status.authenticated, true);
-  const result = await bare.graphql({ query: 'query { customers { _id } }' });
-  assert.equal(result.data.customers[0]._id, 'c1');
+  const result = await bare.graphql({ query: "query { customers { _id } }" });
+  assert.equal(result.data.customers[0]._id, "c1");
   assert.equal(server.state.calls.deviceCode, 1);
   assert.equal(server.state.calls.refreshGrant, 0);
 });
 
-test('expired access token refreshes with no env using the secret saved at login', async () => {
+test("expired access token refreshes with no env using the secret saved at login", async () => {
   const { manager, stateDir, clock, server } = makeHarness();
   await manager.login();
   clock.now += 9 * 60 * 60 * 1000; // access token expired
@@ -459,14 +600,18 @@ test('expired access token refreshes with no env using the secret saved at login
     sleep: async () => {},
     log: () => {},
   });
-  const result = await bare.graphql({ query: 'query { customers { _id } }' });
-  assert.equal(result.data.customers[0]._id, 'c1');
-  assert.equal(server.state.calls.refreshGrant, 1, 'silent refresh used the stored secret');
-  assert.equal(server.state.calls.deviceCode, 1, 'no new OAuth prompt');
+  const result = await bare.graphql({ query: "query { customers { _id } }" });
+  assert.equal(result.data.customers[0]._id, "c1");
+  assert.equal(
+    server.state.calls.refreshGrant,
+    1,
+    "silent refresh used the stored secret"
+  );
+  assert.equal(server.state.calls.deviceCode, 1, "no new OAuth prompt");
 });
 
-test('session survives an ephemeral runtime state dir (durable home storage)', async () => {
-  const home = fs.mkdtempSync(path.join(os.tmpdir(), 'erxes-home-'));
+test("session survives an ephemeral runtime state dir (durable home storage)", async () => {
+  const home = fs.mkdtempSync(path.join(os.tmpdir(), "erxes-home-"));
   const server = makeMockServer();
   const clock = { now: 1_750_000_000_000 };
   const base = {
@@ -478,7 +623,7 @@ test('session survives an ephemeral runtime state dir (durable home storage)', a
   };
 
   const firstRun = createAuthManager({
-    env: { ...BASE_ENV, HOME: home, OPENCLAW_STATE_DIR: '/tmp/openclaw-run-A' },
+    env: { ...BASE_ENV, HOME: home, OPENCLAW_STATE_DIR: "/tmp/openclaw-run-A" },
     ...base,
   });
   await firstRun.login();
@@ -486,35 +631,45 @@ test('session survives an ephemeral runtime state dir (durable home storage)', a
   // Next run: the runtime hands the plugin a different OPENCLAW_STATE_DIR, but
   // HOME is stable, so the durable home-based session is still found.
   const secondRun = createAuthManager({
-    env: { ...BASE_ENV, HOME: home, OPENCLAW_STATE_DIR: '/tmp/openclaw-run-B' },
+    env: { ...BASE_ENV, HOME: home, OPENCLAW_STATE_DIR: "/tmp/openclaw-run-B" },
     ...base,
   });
-  const result = await secondRun.graphql({ query: 'query { customers { _id } }' });
-  assert.equal(result.data.customers[0]._id, 'c1');
-  assert.equal(server.state.calls.deviceCode, 1, 'must not OAuth again after the state dir moves');
+  const result = await secondRun.graphql({
+    query: "query { customers { _id } }",
+  });
+  assert.equal(result.data.customers[0]._id, "c1");
+  assert.equal(
+    server.state.calls.deviceCode,
+    1,
+    "must not OAuth again after the state dir moves"
+  );
 
   fs.rmSync(home, { recursive: true, force: true });
 });
 
-test('CLI: status without a session exits 0 and reports unauthenticated', () => {
-  const stateDir = fs.mkdtempSync(path.join(os.tmpdir(), 'erxes-auth-cli-'));
-  const out = execFileSync(process.execPath, [CLI, 'status'], {
+test("CLI: status without a session exits 0 and reports unauthenticated", () => {
+  const stateDir = fs.mkdtempSync(path.join(os.tmpdir(), "erxes-auth-cli-"));
+  const out = execFileSync(process.execPath, [CLI, "status"], {
     env: { ...process.env, ...BASE_ENV, ERXES_AUTH_STATE_DIR: stateDir },
-    encoding: 'utf8',
+    encoding: "utf8",
   });
   const status = JSON.parse(out);
   assert.equal(status.authenticated, false);
   assert.ok(!out.includes(BASE_ENV.ERXES_CLIENT_SECRET));
 });
 
-test('CLI: graphql without a session exits 2 with a safe login message', () => {
-  const stateDir = fs.mkdtempSync(path.join(os.tmpdir(), 'erxes-auth-cli-'));
+test("CLI: graphql without a session exits 2 with a safe login message", () => {
+  const stateDir = fs.mkdtempSync(path.join(os.tmpdir(), "erxes-auth-cli-"));
   try {
-    execFileSync(process.execPath, [CLI, 'graphql', '--query', 'query { customers { _id } }'], {
-      env: { ...process.env, ...BASE_ENV, ERXES_AUTH_STATE_DIR: stateDir },
-      encoding: 'utf8',
-    });
-    assert.fail('expected non-zero exit');
+    execFileSync(
+      process.execPath,
+      [CLI, "graphql", "--query", "query { customers { _id } }"],
+      {
+        env: { ...process.env, ...BASE_ENV, ERXES_AUTH_STATE_DIR: stateDir },
+        encoding: "utf8",
+      }
+    );
+    assert.fail("expected non-zero exit");
   } catch (err) {
     assert.equal(err.status, 2);
     assert.match(String(err.stderr), /login required/i);
@@ -522,26 +677,33 @@ test('CLI: graphql without a session exits 2 with a safe login message', () => {
   }
 });
 
-test('CLI: missing config exits 3 and set/get-duration round-trips', () => {
-  const stateDir = fs.mkdtempSync(path.join(os.tmpdir(), 'erxes-auth-cli-'));
+test("CLI: missing config exits 3 and set/get-duration round-trips", () => {
+  const stateDir = fs.mkdtempSync(path.join(os.tmpdir(), "erxes-auth-cli-"));
   const cleanEnv = { ...process.env, ERXES_AUTH_STATE_DIR: stateDir };
   delete cleanEnv.ERXES_BASE_URL;
   delete cleanEnv.ERXES_CLIENT_ID;
   delete cleanEnv.ERXES_CLIENT_SECRET;
   try {
-    execFileSync(process.execPath, [CLI, 'logout'], { env: cleanEnv, encoding: 'utf8' });
-    assert.fail('expected non-zero exit');
+    execFileSync(process.execPath, [CLI, "logout"], {
+      env: cleanEnv,
+      encoding: "utf8",
+    });
+    assert.fail("expected non-zero exit");
   } catch (err) {
     assert.equal(err.status, 3);
   }
-  const set = execFileSync(process.execPath, [CLI, 'set-duration', '1y'], {
+  const set = execFileSync(process.execPath, [CLI, "set-duration", "1y"], {
     env: cleanEnv,
-    encoding: 'utf8',
+    encoding: "utf8",
   });
-  assert.equal(JSON.parse(set).authDuration, '1y');
-  const get = execFileSync(process.execPath, [CLI, 'get-duration'], {
+  assert.equal(JSON.parse(set).authDuration, "1y");
+  const get = execFileSync(process.execPath, [CLI, "get-duration"], {
     env: cleanEnv,
-    encoding: 'utf8',
+    encoding: "utf8",
   });
-  assert.deepEqual(JSON.parse(get), { authDuration: '1y', source: 'config', default: '6m' });
+  assert.deepEqual(JSON.parse(get), {
+    authDuration: "1y",
+    source: "config",
+    default: "6m",
+  });
 });

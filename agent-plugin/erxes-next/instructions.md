@@ -78,6 +78,26 @@ Use [erxes-app-token-auth.md](./erxes-app-token-auth.md) only when you need the 
 
 ## API calls
 
+For normal erxes work, prefer the native capability tools:
+
+1. Call `erxes_tools_search` with the user's workflow, and optionally a plugin
+   or module filter. The live result contains only tools allowed by both the
+   user's current erxes permissions and the scopes selected during OAuth.
+2. Use the returned tool id and input schema with `erxes_tool_call`.
+3. If the call returns `CONFIRMATION_REQUIRED`, show the exact proposed action
+   to the user and stop. Resubmit the returned `confirmationId` only after the
+   user explicitly confirms it.
+4. Never guess a tool id, schema, required field, or permission scope.
+
+The live catalog covers core plus enabled accounting, content, frontline,
+insurance, loyalty, mongolian, operation, payment, posclient, sales, and tourism
+services when those services expose agent capabilities. An unavailable plugin
+does not make other plugin tools unavailable.
+
+The GraphQL runner below remains a compatibility fallback for the existing
+core, block, and operation references. Do not use arbitrary GraphQL to bypass a
+missing capability or an OAuth permission decision.
+
 Make every erxes GraphQL call through the session manager. Never handle, read, or print raw tokens yourself. Once a session is saved, no env vars are needed:
 
 ```bash
@@ -91,15 +111,14 @@ node scripts/erxes-auth.mjs graphql \
 - Exit code 2 means OAuth login is genuinely required (no session, refresh failed, or session older than the configured duration). Only then run the login flow.
 - Long queries can be passed with `--query-file <path>` or piped on stdin.
 - Use [erxes-graphql-api.md](./erxes-graphql-api.md) only when you need query or mutation examples.
-- Assume OpenClaw is operating as the erxes owner unless the live API proves otherwise.
-- Do not stop a normal workflow just because the backend source defines permission names. Treat those as implementation detail, not a user-facing blocker.
-- If GraphQL rejects a call because a scope or permission is missing, report the missing scope and ask the user to update the OAuth client. Do not rerun OAuth until the user confirms the client scopes changed.
+- Never assume owner access. The live capability catalog and call-time checks are the authority.
+- If a call is denied because a scope was not selected, report the required scope and ask the user whether they want to run OAuth once to approve additional access.
 
 On `Unauthorized`, `invalid_grant`, expired token, or a GraphQL auth error:
 
 1. The session manager already refreshes once and retries automatically; a request that was rejected for auth never executed, so the retry is safe for reads and writes.
 2. If the command exits with code 2, the refresh failed or the session expired — run the device login flow again.
-3. If scopes were changed in erxes Settings > OAuth Clients, run the device login flow once to grant the new scopes.
+3. If the customer wants additional scopes, run the device login flow once so they can select them on the erxes approval screen.
 
 ## Auth Session Persistence
 

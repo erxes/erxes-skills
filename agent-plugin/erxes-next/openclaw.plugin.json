@@ -3,9 +3,23 @@
   "kind": "agent-plugin",
   "slug": "erxes-next-plugin",
   "name": "erxes-next-plugin",
-  "version": "1.0.23",
+  "version": "1.1.0",
   "entry": "instructions.md",
-  "description": "Confidential OAuth plugin for operating erxes data through GraphQL with strict anti-hallucination rules.",
+  "description": "Permission-filtered OpenClaw tools for operating every enabled erxes plugin through confidential OAuth.",
+  "activation": {
+    "onStartup": true
+  },
+  "contracts": {
+    "tools": ["erxes_tools_search", "erxes_tool_call"]
+  },
+  "toolMetadata": {
+    "erxes_tools_search": {
+      "optional": false
+    },
+    "erxes_tool_call": {
+      "optional": false
+    }
+  },
   "requiredEnv": [
     {
       "label": "erxes gateway URL",
@@ -73,11 +87,7 @@
     "persistence": {
       "store": "openclaw-runtime-state-dir",
       "manager": "scripts/erxes-auth.mjs",
-      "durationOptions": [
-        "3m",
-        "6m",
-        "1y"
-      ],
+      "durationOptions": ["3m", "6m", "1y"],
       "defaultDuration": "6m",
       "secretsInRepo": false
     }
@@ -112,11 +122,7 @@
       },
       "authDuration": {
         "type": "string",
-        "enum": [
-          "3m",
-          "6m",
-          "1y"
-        ],
+        "enum": ["3m", "6m", "1y"],
         "default": "6m",
         "description": "How long the persisted OAuth session stays valid before the user must OAuth again."
       }
