@@ -78,8 +78,8 @@ Write `hotel.config.json`:
   "booking_stage_id": "<first stage id>",
   "paid_stage_id": "<paid stage id>",
   "payment_ids": ["<payment-method-id>"],
-  "ui_source": "<words|pencil|screenshot|website>",
-  "ui_source_ref": "<description, .pen path, screenshot paths, or website url>",
+  "ui_source": "<words|pencil|figma|screenshot|website>",
+  "ui_source_ref": "<description, .pen path, figma url, screenshot paths, or website url>",
   "color_hint": "<answer or null>",
   "design_strategy": "<from-scratch|copy-site|improve-site|brand-first|beat-competitors>",
   "reference_url": "<website url or null>",
@@ -95,18 +95,25 @@ Write `hotel.config.json`:
 }
 ```
 
+`design_brief` and `source_observation` are **not** collected here. `agents/hotel/generate-design.md` writes both blocks into `hotel.config.json` during Step 3.5. This file is the only place the hotel flow asks the user anything.
+
 Update `.env` — preserve existing lines, only add/update collected fields.
 
 Write `output/<slug>/.env.local`:
 
 ```bash
-NEXT_PUBLIC_ERXES_ENDPOINT=<erxes_endpoint>
+NEXT_PUBLIC_GRAPHQL_URL=<erxes_endpoint>
 NEXT_PUBLIC_ERXES_APP_TOKEN=<erxes_app_token>
+ERXES_APP_TOKEN=<erxes_app_token>
 NEXT_PUBLIC_CMS_ID=<erxes_cms_id>
 NEXT_PUBLIC_PMS_PIPELINE_ID=<pipeline_id>
 NEXT_PUBLIC_BOOKING_STAGE_ID=<booking_stage_id>
 NEXT_PUBLIC_PAID_STAGE_ID=<paid_stage_id>
 NEXT_PUBLIC_PAYMENT_IDS=<comma-separated payment_ids>
 ```
+
+> `NEXT_PUBLIC_GRAPHQL_URL` is the gateway URI the starter's Apollo client reads.
+> `client_portal_id` stays in `hotel.config.json` for CMS creation only — it is
+> not a request header and not a GraphQL variable.
 
 Then say: **"Config saved. Ready to build — shall I start?"** and wait for confirmation.

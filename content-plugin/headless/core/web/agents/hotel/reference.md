@@ -190,14 +190,29 @@ mutation CpDealsEdit($_id: String!, $input: DealInput!) {
 
 Call `cpDealsAdd` on booking form submit. Store the returned `deal._id`.
 
-### Step 2 — Create invoice → `cpInvoiceCreate`
+### Step 2 — Create invoice → `invoiceCreate` (starter operation)
+
+Hotel imports this from `@/graphql/ecommerce/mutations/payment`; it is not
+re-authored. The selection includes `transactions`:
 
 ```graphql
-mutation CpInvoiceCreate($input: InvoiceInput!) {
-  cpInvoiceCreate(input: $input) {
+mutation InvoiceCreate($input: InvoiceInput!) {
+  invoiceCreate(input: $input) {
     _id
+    invoiceNumber
+    amount
+    remainingAmount
     status
-    redirectUri
+    data
+    contentTypeId
+    transactions {
+      _id
+      paymentId
+      paymentKind
+      status
+      details
+      response
+    }
   }
 }
 ```
@@ -211,72 +226,67 @@ mutation CpInvoiceCreate($input: InvoiceInput!) {
     "contentType": "sales:deals",
     "contentTypeId": "<deal._id>",
     "paymentIds": ["<NEXT_PUBLIC_PAYMENT_IDS split by comma>"],
-    "description": "<room name> booking",
-    "redirectUri": "<site-url>/booking/verify?invoiceId=<invoice._id>"
+    "description": "<room name> booking"
   }
 }
 ```
 
-### Step 3 — Subscribe for real-time updates
+> **UNVERIFIED — not to be implemented.** There is no `redirectUrl` field on
+> `Invoice` and no `redirectUri` in `InvoiceInput`. Do not select, send, or branch
+> on either. Payment is QR / `transactions`-based. See `agents/hotel/payment.md`.
+
+### Step 3 — Subscribe for real-time updates (starter operations)
 
 ```graphql
-subscription InvoiceUpdated($_id: String!) {
-  invoiceUpdated(_id: $_id) {
-    _id
-    status
-  }
+subscription InvoiceUpdated($invoiceId: String!) {
+  invoiceUpdated(_id: $invoiceId)
 }
 
 subscription TransactionUpdated($invoiceId: String!) {
-  transactionUpdated(invoiceId: $invoiceId) {
-    _id
-    status
-  }
+  transactionUpdated(invoiceId: $invoiceId)
 }
 ```
 
-Listen while the user completes payment on the confirm page.
+Listen while the user completes payment on the confirm page. Both are scalar
+subscriptions imported from `@/graphql/ecommerce/queries/payment`.
 
-### Step 4 — Verify payment → `cpInvoicesCheck`
+### Step 4 — Verify payment → `invoicesCheck` (starter mutation, Boolean)
 
 ```graphql
-query CpInvoicesCheck($_id: String!) {
-  cpInvoicesCheck(_id: $_id) {
-    _id
-    status
-    resolvedAt
-  }
+mutation InvoicesCheck($id: String!) {
+  invoicesCheck(_id: $id)
 }
 ```
 
-Call this on the verify page (after redirect) and also as a fallback if the subscription doesn't fire.
+Returns a plain **Boolean** (`true` = paid). There is **no** `cpInvoicesCheck`
+query and no `{ _id, status, resolvedAt }` object. Call it on the verify page and
+as a fallback if the subscription doesn't fire. Use the starter's
+`useInvoice().check(invoiceId)`.
 
 ### Step 5 — Advance deal stage → `cpDealsEdit`
 
-Call `cpDealsEdit` with `stageId: NEXT_PUBLIC_PAID_STAGE_ID` once `cpInvoicesCheck` returns a confirmed status.
+Call `cpDealsEdit` with `stageId: NEXT_PUBLIC_PAID_STAGE_ID` once `invoicesCheck`
+returns `true`.
 
-### Step 6 — (Optional) Record manual transaction → `cpPaymentTransactionsAdd`
+### Step 6 — (Optional) Record manual transaction → `paymentTransactionsAdd`
 
 ```graphql
-mutation CpPaymentTransactionsAdd($input: TransactionInput!) {
-  cpPaymentTransactionsAdd(input: $input) {
+mutation PaymentTransactionsAdd($input: PaymentTransactionInput!) {
+  paymentTransactionsAdd(input: $input) {
     _id
+    amount
+    invoiceId
+    paymentId
+    paymentKind
+    status
+    response
+    details
   }
 }
 ```
 
-**Variables:**
-
-```json
-{
-  "input": {
-    "invoiceId": "<invoice._id>",
-    "paymentId": "<payment method _id>",
-    "amount": "<amount>",
-    "details": {}
-  }
-}
-```
+Imported from `@/graphql/ecommerce/mutations/payment`; do not author a `cp`-
+prefixed copy.
 
 ---
 
@@ -284,10 +294,9 @@ mutation CpPaymentTransactionsAdd($input: TransactionInput!) {
 
 | Variable | Source | Used in |
 | -------- | ------ | ------- |
-| `NEXT_PUBLIC_ERXES_ENDPOINT` | `erxes_endpoint` from hotel.config.json | Apollo client URI |
-| `NEXT_PUBLIC_ERXES_APP_TOKEN` | `erxes_app_token` from hotel.config.json | Apollo `erxes-app-token` header |
-| `NEXT_PUBLIC_CMS_ID` | `erxes_cms_id` from hotel.config.json | CMS queries |
-| `NEXT_PUBLIC_PMS_PIPELINE_ID` | `pipeline_id` from hotel.config.json | `cpPmsRooms`, `cpPmsCheckRooms` |
-| `NEXT_PUBLIC_BOOKING_STAGE_ID` | `booking_stage_id` from hotel.config.json | `cpDealsAdd` stageId |
+| `NEXT_PUBLIC_GRAPHQL_URL` | `erxes_endpoint` from hotel.config.json | Apollo client URI (starter) |
+| `NEXT_PUBLIC_ERXES_APP_TOKEN` | `erxes_app_token` from hotel.config.json | Apollo `x-app-token` header (starter) |
+| `ERXES_APP_TOKEN` | `erxes_app_token` from hotel.config.json | server-side `x-app-token` header (starter) |
+| `NEXT_PUBLIC_CMS_ID` | `erxes_cms_id` from hotel.config.json | record-keeping only — NOT a header, NOT a GraphQL variable |
 | `NEXT_PUBLIC_PAID_STAGE_ID` | `paid_stage_id` from hotel.config.json | `cpDealsEdit` stageId |
-| `NEXT_PUBLIC_PAYMENT_IDS` | `payment_ids` (comma-separated) | `cpInvoiceCreate` paymentIds |
+| `NEXT_PUBLIC_PAYMENT_IDS` | `payment_ids` (comma-separated) | `invoiceCreate` paymentIds |

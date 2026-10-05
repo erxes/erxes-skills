@@ -1,0 +1,54 @@
+{
+  "name": "test-web",
+  "language": "en",
+  "languages": ["en", "mn"],
+  "tone": "formal",
+  "allow_guest": true,
+  "pipeline_id": "",
+  "booking_stage_id": "",
+  "paid_stage_id": "",
+  "payment_ids": [],
+  "ui_source": "website",
+  "ui_source_ref": "https://www.tivolihotels.com/en/tivoli-alvor/rooms",
+  "color_hint": "navy",
+  "design_strategy": "copy-site",
+  "reference_url": "https://www.tivolihotels.com/en/tivoli-alvor/rooms",
+  "competitor_urls": [],
+  "sections": ["about"],
+  "cms_sections": ["about"],
+  "extra_notes": null,
+  "deploy_target": "github",
+  "erxes_endpoint": "https://dent.next.erxes.io/gateway/graphql",
+  "erxes_app_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJjbGllbnRQb3J0YWxJZCI6Ik9ZZkhlSVd2VENQQ2E0SjBLUjhGMiIsImlhdCI6MTc4MDk3ODU0N30.TW1umhOGO3I92uyedmMfUOpUh4cNmOStegz6ng3yUAg",
+  "client_portal_id": "OYfHeIWvTCPCa4J0KR8F2",
+  "erxes_cms_id": "6a7ecc27ed3454d67095df66",
+  "design_brief": {
+    "hotel_type": "business",
+    "positioning": "Modern luxury business hotel with four room types led by the Executive Suite",
+    "brand": {
+      "has_identity": false,
+      "logo_path": "",
+      "colors": "",
+      "fonts": "",
+      "needs_suggestions": true
+    },
+    "reference_sites": ["https://www.tivolihotels.com/en/tivoli-alvor/rooms"],
+    "competitor_sites": [],
+    "pages": ["home", "rooms", "room-detail", "booking", "about"],
+    "rooms": [
+      { "type": "Standard", "count": 20, "centerpiece": false },
+      { "type": "Deluxe", "count": 12, "centerpiece": false },
+      { "type": "Executive Suite", "count": 6, "centerpiece": true },
+      { "type": "Presidential Suite", "count": 2, "centerpiece": false }
+    ],
+    "booking_widget": {
+      "dates": true,
+      "guest_count": true,
+      "filters": ["price-range", "room-capacity"],
+      "special_rates": false,
+      "guest_booking": true
+    },
+    "tone_mood": "modern",
+    "must_have_sections": []
+  }
+}

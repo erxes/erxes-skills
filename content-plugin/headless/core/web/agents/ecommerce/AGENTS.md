@@ -151,6 +151,8 @@ Clones starter repo into `output/<slug>/`. Skips if already exists.
 
 Before running `clone.ts`, ensure `.env` has the correct `STARTER_REPO_URL` for ecommerce.
 
+After cloning, `clone.ts` prunes the inactive vertical GraphQL layers: it detects ecommerce from `store.config.json` and removes `src/graphql/{hotel,tour}`, keeping only `src/graphql/auth/` + `src/graphql/cms/` + `src/graphql/ecommerce/`.
+
 ### Step 3.5 — UI design source
 
 Read `ui_source`, `ui_source_ref`, `design_strategy`, `reference_url`, and `competitor_urls` from `store.config.json`.

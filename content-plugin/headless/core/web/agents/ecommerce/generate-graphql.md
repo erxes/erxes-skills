@@ -2,6 +2,8 @@
 
 **IMPORTANT:** These files already exist in the cloned starter repo (`src/graphql/`). Do NOT recreate them. Import from the paths shown below.
 
+**Prune-aware:** after cloning, `scripts/clone.ts` retains only `src/graphql/auth/`, `src/graphql/cms/`, and `src/graphql/ecommerce/` (inactive `hotel`/`tour` folders are removed based on `template_type` / `store.config.json`). Every path below is guaranteed present — never import from `graphql/hotel` or `graphql/tour`.
+
 ---
 
 ## Auth GraphQL (`src/graphql/auth/`)

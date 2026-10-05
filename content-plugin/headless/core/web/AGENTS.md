@@ -111,6 +111,8 @@ tsx scripts/clone.ts "<site-name>"
 
 Clones `erxes-web-starter` into `output/<slug>/`. Skips if already exists.
 
+After cloning, `clone.ts` prunes the inactive vertical GraphQL layers: it reads `template_type` from the config (or infers hotel/store from the config file name) and removes `src/graphql/{ecommerce,tour,hotel}` for every vertical except the active one, keeping only `src/graphql/auth/` + `src/graphql/cms/` (plus the active vertical's folder). `business` sites keep `auth/` + `cms/` only.
+
 ### Step 3 — Read starter files
 
 Read `output/<slug>/` — understand `app/`, `components/`, `lib/apollo/`, `tailwind.config.*` before writing anything.

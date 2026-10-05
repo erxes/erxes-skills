@@ -14,7 +14,8 @@ The cloned starter already contains these. **Import from them — do not recreat
 | Payment hook | `import { useInvoice } from "@/lib/hooks/useInvoice"` — **only for `has_auth = true`** |
 | Image component | `import Image from "@/components/common/Image"` — **always use this, never `<img>` or `next/image`** |
 | Loader / EmptyState / Pagination | `@/components/common/Loader`, `EmptyState`, `Pagination` |
-| All GraphQL operations + types | `@/graphql/auth/*`, `@/graphql/cms/*`, `@/graphql/ecommerce/*`, `@/graphql/hotel/*`, `@/graphql/tour/*` |
+| Shared GraphQL layers | `@/graphql/auth/*`, `@/graphql/cms/*` — always present (auth only for `has_auth = true`) |
+| Active vertical GraphQL | `@/graphql/<template_type>/*` only — `@/graphql/hotel/*`, `@/graphql/ecommerce/*`, or `@/graphql/tour/*`; `business` sites have no vertical folder |
 | i18n routing | `@/i18n/routing` — only update `locales` + `defaultLocale`, never rewrite the file |
 | Root locale layout | `src/app/[locale]/layout.tsx` — update it, do not replace it |
 

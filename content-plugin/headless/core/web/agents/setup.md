@@ -236,12 +236,14 @@ After saving config, create the CMS with `cpContentCreateCMS`, then write the re
 
 After `site.config.json` is saved and CMS is created, route to the correct template pipeline based on `template_type`:
 
+**Clone-time prune (applies at the Step 2/3 clone step in the routed pipeline):** the starter repo ships `src/graphql/` layers for every vertical. `scripts/clone.ts` reads `template_type` (or infers hotel/store from the migrated config file name) and removes `src/graphql/{ecommerce,tour,hotel}` for every vertical except the active one, keeping only `src/graphql/auth/` + `src/graphql/cms/` plus the active vertical's folder. `business` sites keep `auth/` + `cms/` only.
+
 | `template_type` | Next Step | Read These Files |
 |---|---|---|
 | `business` | Proceed to **Section A — Step 2 (Business Analysis)** | `agents/business-analyst.md`, then `agents/ux-ui-researcher.md` |
 | `ecommerce` | **Switch to ecommerce pipeline** | `agents/ecommerce/AGENTS.md` — this replaces the rest of this pipeline |
 | `tour` | Proceed to **Section A — Step 2 (Business Analysis)** | `agents/business-analyst.md`, then `agents/ux-ui-researcher.md` |
-| `hotel` | Proceed to **Section A — Step 2 (Business Analysis)** | `agents/business-analyst.md`, then `agents/ux-ui-researcher.md` |
+| `hotel` | **Switch to hotel pipeline** | `agents/hotel/AGENTS.md` — this replaces the rest of this pipeline, including Business Analysis and UX Research (hotel uses `agents/hotel/generate-design.md` instead) |
 
 ### Ecommerce Pipeline (`template_type === "ecommerce"`)
 

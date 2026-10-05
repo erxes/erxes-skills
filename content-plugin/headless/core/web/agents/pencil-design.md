@@ -21,7 +21,15 @@ Do not start design exploration if setup is incomplete.
 
 ## Inputs
 
-Read `site.config.json` and use:
+Read the **active pipeline config** for the current site and use its fields:
+
+| Pipeline | Config file to read |
+| -------- | ------------------- |
+| Generic business / tour | `site.config.json` |
+| Ecommerce | `store.config.json` (renamed from `site.config.json` at routing) |
+| Hotel | `hotel.config.json` (carries the generic fields from `site.config.json` at routing) |
+
+The config file lives in the same working folder as this file's pipeline. Read the fields common to all of them:
 
 - `name`
 - `template_type`
@@ -37,13 +45,22 @@ Read `site.config.json` and use:
 - `color_hint`
 - `extra_notes`
 
+**Hotel pipeline inputs (hotel only):** when the active pipeline is `hotel` and `agents/hotel/generate-design.md` ran, also read:
+
+- `output/<slug>/source-observation.md` and the `source_observation` block inside `hotel.config.json`
+- `output/<slug>/design-brief.md` and the `design_brief` block inside `hotel.config.json`
+
+The hotel pipeline is autonomous: these are already-answered design intake. Phase 0 and Phase 0.5 below must not ask the hotel user any intake question — the observed source and the brief supply it. Resolve any remaining gap by choosing a default and recording it as an assumption, never by asking. Other pipelines (generic business, tour, ecommerce) keep the existing intake behavior.
+
+**`HANDOFF.md` inventory rule (hotel only):** when writing `HANDOFF.md` for a hotel site, its observed-inventory section must be a **verbatim lift** of the `## Observed Source Inventory` section from `output/<slug>/source-observation.md`, and its assumptions section must be a verbatim lift of the `## Assumptions` table from `output/<slug>/design-brief.md`. Do not summarize, reword, reorder, or re-derive them — the files must not be able to diverge.
+
 Also read the starter structure in `output/<slug>/` before designing so the handoff fits the real frontend target.
 
 If any required input is missing, stop and send the flow back to setup instead of guessing.
 
 Required before design starts:
 
-- `site.config.json` exists
+- the active pipeline config file exists (`site.config.json`, `store.config.json`, or `hotel.config.json`)
 - `ui_source` exists
 - `ui_source_ref` exists
 - `design_strategy` exists
@@ -185,6 +202,8 @@ Read the resulting `source-audit.json` before deciding homepage sections, copy s
 
 If the user already gave enough direction, do not slow the flow with unnecessary questions.
 
+**Pre-loaded intake (hotel pipeline only):** if `output/<slug>/source-observation.md`, `output/<slug>/design-brief.md`, and the `source_observation` / `design_brief` config blocks exist, read them first. They carry the observed section order, components, routes, colors, and static copy, plus the hotel type/positioning, brand, pages, rooms, booking widget scope, languages, tone/mood, and must-have sections this phase would otherwise ask about. **This phase asks the hotel user nothing.** Resolve any gap with a documented default recorded in the brief's `## Assumptions` table, not a question. Non-hotel pipelines keep the existing behavior.
+
 Capture:
 
 - site type
@@ -212,8 +231,8 @@ Available strategies:
 How to apply this:
 
 - Ask the strategy explicitly for every `ui_source` before presenting directions
-- If `design_strategy` is `copy-site` or `improve-site`, prefer `reference_url` from `site.config.json` instead of asking again
-- If `design_strategy` is `beat-competitors`, use `competitor_urls` from `site.config.json` and only ask again if the list is missing or too short
+- If `design_strategy` is `copy-site` or `improve-site`, prefer `reference_url` from the active config instead of asking again
+- If `design_strategy` is `beat-competitors`, use `competitor_urls` from the active config and only ask again if the list is missing or too short
 
 Strategy rules:
 
@@ -677,7 +696,7 @@ Allowed output values:
 - `menu`
 - `portfolio`
 
-Write the detected list back into `site.config.json` as `required_sections` or `sections`, following the current project flow.
+Write the detected list back into the **active pipeline config** (`site.config.json`, `store.config.json`, or `hotel.config.json`) as `required_sections` or `sections`, following the current project flow.
 
 Show the detected list to the user and get confirmation before Section C — Step 1.
 
@@ -688,7 +707,7 @@ Show the detected list to the user and get confirmation before Section C — Ste
 If `ui_source` is `pencil`, `figma`, `screenshot`, or `website`:
 
 - extract the dominant primary color from the source
-- write it back into `site.config.json` as `color_hint`
+- write it back into the **active pipeline config** (`site.config.json`, `store.config.json`, or `hotel.config.json`) as `color_hint`
 - do not ask the user for it unless the source is too ambiguous
 
 Use meaningful names like:

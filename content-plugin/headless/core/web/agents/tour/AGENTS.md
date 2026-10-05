@@ -117,6 +117,8 @@ tsx scripts/clone.ts "<tour-name>"
 
 Clones starter repo into `output/<slug>/`. Skips if already exists.
 
+After cloning, `clone.ts` prunes the inactive vertical GraphQL layers: it reads `template_type` from `site.config.json` (or the config file name when migrated) and removes `src/graphql/{ecommerce,hotel}`, keeping only `src/graphql/auth/` + `src/graphql/cms/` + `src/graphql/tour/`.
+
 ### Step 3.5 — UI design source + direction
 
 Read `ui_source`, `ui_source_ref`, `design_strategy`, `reference_url`, and `competitor_urls` from `tour.config.json`.

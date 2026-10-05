@@ -18,7 +18,7 @@ Follow these in every file you write.
 - **Client Components** (interactive only): use Apollo `useQuery`
 - Always include `context: { fetchOptions: { next: { revalidate: 60 } } }` in every `getClient().query()` call
 - Always use `_id` (not `id`) in all GraphQL selections
-- **Never send `clientPortalId` in query or mutation variables** — the gateway resolves it from the `x-app-token` header
+- **Never manually pass `clientPortalId` in `cp*` query or mutation variables** — the Apollo link layer injects it automatically (ecommerce `cmsLink` → variables; hotel `authLink` → headers), and server clients set it directly (`client-portal-id` header). Passing it by hand for a `cp*` operation duplicates the link injection and is not supported. Exceptions where the input explicitly requires it: CMS creation (`cpContentCreateCMS`) and non-`cp` auth mutations (`clientPortalUserLoginWithCredentials`, `clientPortalUserForgotPassword`, etc.) that resolve the portal from it.
 
 ## Tailwind CSS
 - Match `color_hint` from config as the primary color throughout
