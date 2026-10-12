@@ -7,6 +7,19 @@ interface SiteConfigJson {
   erxes_cms_id?: string;
   erxes_app_token?: string;
   erxes_endpoint?: string;
+  pms_token?: string;
+  branch_id?: string;
+  tms_branch_id?: string;
+  pipeline_id?: string;
+  booking_stage_id?: string;
+  request_stage_id?: string;
+  pending_stage_id?: string;
+  paid_stage_id?: string;
+  pay_at_property_stage_id?: string;
+  approved_stage_id?: string;
+  payment_ids?: string[];
+  google_maps_api_key?: string;
+  google_place_id?: string;
 }
 
 interface DynamicSegmentCheck {
@@ -35,6 +48,7 @@ const APP_DIRS = ["app", "src/app"];
 
 function readSiteConfigJson(): SiteConfigJson {
   const candidates = [
+    join(process.cwd(), "hotel.config.json"),
     join(process.cwd(), "store.config.json"),
     join(process.cwd(), "site.config.json"),
   ];
@@ -169,6 +183,19 @@ function buildConfigContent(opts: {
   clientPortalId: string;
   posToken: string;
   publicCmsId: string;
+  pmsToken: string;
+  branchId: string;
+  tmsBranchId: string;
+  pmsPipelineId: string;
+  bookingStageId: string;
+  requestStageId: string;
+  pendingStageId: string;
+  paidStageId: string;
+  payAtPropertyStageId: string;
+  approvedStageId: string;
+  paymentIds: string;
+  googleMapsApiKey: string;
+  googlePlaceId: string;
 }): string {
   const {
     staticExport,
@@ -178,6 +205,19 @@ function buildConfigContent(opts: {
     clientPortalId,
     posToken,
     publicCmsId,
+    pmsToken,
+    branchId,
+    tmsBranchId,
+    pmsPipelineId,
+    bookingStageId,
+    requestStageId,
+    pendingStageId,
+    paidStageId,
+    payAtPropertyStageId,
+    approvedStageId,
+    paymentIds,
+    googleMapsApiKey,
+    googlePlaceId,
   } = opts;
 
   const exportBlock = staticExport ? "  output: \"export\",\n  distDir: \"dist\",\n" : "";
@@ -201,6 +241,19 @@ ${exportBlock}  images: {
     NEXT_PUBLIC_POS_TOKEN: "${posToken}",
     NEXT_PUBLIC_CMS_ID: "${publicCmsId}",
     NEXT_PUBLIC_GRAPHQL_URL: "${erxesEndpoint}",
+    NEXT_PUBLIC_PMS_TOKEN: "${pmsToken}",
+    NEXT_PUBLIC_BRANCH_ID: "${branchId}",
+    NEXT_PUBLIC_TMS_BRANCH_ID: "${tmsBranchId}",
+    NEXT_PUBLIC_PMS_PIPELINE_ID: "${pmsPipelineId}",
+    NEXT_PUBLIC_BOOKING_STAGE_ID: "${bookingStageId}",
+    NEXT_PUBLIC_REQUEST_STAGE_ID: "${requestStageId}",
+    NEXT_PUBLIC_PENDING_STAGE_ID: "${pendingStageId}",
+    NEXT_PUBLIC_PAID_STAGE_ID: "${paidStageId}",
+    NEXT_PUBLIC_PAY_AT_PROPERTY_STAGE_ID: "${payAtPropertyStageId}",
+    NEXT_PUBLIC_APPROVED_STAGE_ID: "${approvedStageId}",
+    NEXT_PUBLIC_PAYMENT_IDS: "${paymentIds}",
+    GOOGLE_MAPS_API_KEY: "${googleMapsApiKey}",
+    GOOGLE_PLACE_ID: "${googlePlaceId}",
   },
 };
 
@@ -228,6 +281,55 @@ export function nextConfigWriter(outputDir: string): void {
     process.env.NEXT_PUBLIC_CMS_ID?.trim() ||
     erxesCmsId ||
     siteConfig.erxes_cms_id ||
+    "";
+
+  // Hotel (PMS) values: .env wins, then the hotel config file.
+  const pmsToken =
+    process.env.NEXT_PUBLIC_PMS_TOKEN?.trim() || siteConfig.pms_token || "";
+  const branchId =
+    process.env.NEXT_PUBLIC_BRANCH_ID?.trim() || siteConfig.branch_id || "";
+  const tmsBranchId =
+    process.env.NEXT_PUBLIC_TMS_BRANCH_ID?.trim() ||
+    siteConfig.tms_branch_id ||
+    "";
+  const pmsPipelineId =
+    process.env.NEXT_PUBLIC_PMS_PIPELINE_ID?.trim() ||
+    siteConfig.pipeline_id ||
+    "";
+  const bookingStageId =
+    process.env.NEXT_PUBLIC_BOOKING_STAGE_ID?.trim() ||
+    siteConfig.booking_stage_id ||
+    "";
+  const requestStageId =
+    process.env.NEXT_PUBLIC_REQUEST_STAGE_ID?.trim() ||
+    siteConfig.request_stage_id ||
+    "";
+  const pendingStageId =
+    process.env.NEXT_PUBLIC_PENDING_STAGE_ID?.trim() ||
+    siteConfig.pending_stage_id ||
+    "";
+  const paidStageId =
+    process.env.NEXT_PUBLIC_PAID_STAGE_ID?.trim() ||
+    siteConfig.paid_stage_id ||
+    "";
+  const payAtPropertyStageId =
+    process.env.NEXT_PUBLIC_PAY_AT_PROPERTY_STAGE_ID?.trim() ||
+    siteConfig.pay_at_property_stage_id ||
+    "";
+  const approvedStageId =
+    process.env.NEXT_PUBLIC_APPROVED_STAGE_ID?.trim() ||
+    siteConfig.approved_stage_id ||
+    "";
+  const paymentIds =
+    process.env.NEXT_PUBLIC_PAYMENT_IDS?.trim() ||
+    (siteConfig.payment_ids ?? []).join(",");
+  const googleMapsApiKey =
+    process.env.GOOGLE_MAPS_API_KEY?.trim() ||
+    siteConfig.google_maps_api_key ||
+    "";
+  const googlePlaceId =
+    process.env.GOOGLE_PLACE_ID?.trim() ||
+    siteConfig.google_place_id ||
     "";
 
   const { compatible, middlewareFiles, missingParamsRoutes } =
@@ -266,6 +368,19 @@ export function nextConfigWriter(outputDir: string): void {
     clientPortalId,
     posToken,
     publicCmsId,
+    pmsToken,
+    branchId,
+    tmsBranchId,
+    pmsPipelineId,
+    bookingStageId,
+    requestStageId,
+    pendingStageId,
+    paidStageId,
+    payAtPropertyStageId,
+    approvedStageId,
+    paymentIds,
+    googleMapsApiKey,
+    googlePlaceId,
   });
 
   const configPath = join(outputDir, "next.config.mjs");

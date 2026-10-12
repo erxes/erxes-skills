@@ -20,7 +20,7 @@ Domain-specific rules for hotel files only. Generic rules live in `agents/conven
 
 ## 4. Deal-Based Payment Flow
 
-- Flow: `cpDealsAdd (BOOKING_STAGE_ID) -> invoiceCreate -> QR (invoice.transactions) -> invoicesCheck (Boolean) -> cpDealsEdit (PAID_STAGE_ID)`.
+- Flow: `cpDealsAdd (NEXT_PUBLIC_BOOKING_STAGE_ID) -> invoiceCreate -> QR (invoice.transactions) -> invoicesCheck (Boolean) -> cpDealsEdit (NEXT_PUBLIC_PAID_STAGE_ID)`.
 - **One payment path only.** The starter's `invoiceCreate` selects `transactions`; there is no redirect field. See §5.
 - Invoice `contentType` `"sales:deals"`, `contentTypeId` = deal `_id`. Amount = room price × nights via `calcNights()` — never the `nights * 100` placeholder.
 - Deposits: invoice for `full × depositPercent`; display cancellation-policy copy (design brief / FAQ) — no silent auto-fee.

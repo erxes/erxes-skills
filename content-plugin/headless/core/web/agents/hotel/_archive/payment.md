@@ -14,11 +14,11 @@ payment is attached to a **deal** (booking), and the gateway methods come from
 ## Overview
 
 ```
-Room detail -> cpDealsAdd (BOOKING_STAGE_ID)
+Room detail -> cpDealsAdd (NEXT_PUBLIC_BOOKING_STAGE_ID)
   -> /booking/confirm -> invoiceCreate (paymentIds from env, contentType "sales:deals")
   -> QR displayed on confirm page (transactions[].response / .details qrData)
   -> /booking/verify -> invoicesCheck (mutation -> Boolean)
-  -> onPaid -> cpDealsEdit -> PAID_STAGE_ID  (done)
+  -> onPaid -> cpDealsEdit -> NEXT_PUBLIC_PAID_STAGE_ID  (done)
 ```
 
 Hotel vs ecommerce differences — only the **domain** differs. The payment
@@ -31,7 +31,7 @@ operations are the starter's, shared with ecommerce:
 | Invoice check | `invoicesCheck` (mutation -> Boolean) | `invoicesCheck` — **same, Boolean** |
 | Payment selection | `selectedPaymentAtom` (user picks) | `paymentIds` array from env |
 | Landing target | `/verify` | `/booking/verify?invoiceId=...` (navigated in-app) |
-| Completion | invoice paid | invoice paid **AND** deal advanced to `PAID_STAGE_ID` |
+| Completion | invoice paid | invoice paid **AND** deal advanced to `NEXT_PUBLIC_PAID_STAGE_ID` |
 
 ---
 
@@ -46,7 +46,7 @@ invoice, and the starter's `useInvoice` reads QR data out of the transaction
 1. `create()` -> invoice returned with `transactions[]`.
 2. Render the QR from `transaction.response` / `transaction.details`.
 3. `check(invoiceId)` -> `invoicesCheck` mutation returns `true` when paid.
-4. `onPaid` -> advance the deal to `PAID_STAGE_ID`.
+4. `onPaid` -> advance the deal to `NEXT_PUBLIC_PAID_STAGE_ID`.
 
 > **UNVERIFIED — NOT to be implemented.** The starter selects **no redirect
 > field**. `redirectUrl` does not exist on `Invoice`; `redirectUri` is not in the
@@ -131,7 +131,7 @@ useEffect(() => {
 
 Map the Boolean:
 
-- `true` -> `onPaid(invoiceId)` -> advance deal to `PAID_STAGE_ID` via `cpDealsEdit` -> success screen
+- `true` -> `onPaid(invoiceId)` -> advance deal to `NEXT_PUBLIC_PAID_STAGE_ID` via `cpDealsEdit` -> success screen
 - `false` -> `onFailed()` -> retry screen
 - hook still `pending` -> show "verifying" until a terminal state
 
@@ -146,7 +146,7 @@ Deal advancement is the hotel-specific step that ecommerce does not have.
 On `onPaid(invoiceId)`:
 
 ```typescript
-await cpDealsEdit({ variables: { _id: dealId, stageId: PAID_STAGE_ID } });
+await cpDealsEdit({ variables: { _id: dealId, stageId: NEXT_PUBLIC_PAID_STAGE_ID } });
 router.push(`/booking/verify?invoiceId=${invoiceId}`);
 ```
 
@@ -160,7 +160,7 @@ This moves the booking into the paid stage of the PMS pipeline. Confirm page ord
 - **Deposit:** when the hotel takes a percentage upfront, create the invoice for
   the deposit amount (`amount = room.price * nights * depositPercent / 100`), show
   the remainder due at check-in on the summary, and still advance the deal to
-  `PAID_STAGE_ID` only on full-payment invoices. Keep the policy copy (deposit %,
+  `NEXT_PUBLIC_PAID_STAGE_ID` only on full-payment invoices. Keep the policy copy (deposit %,
   refund window) from `HANDOFF.md`, then `design-brief.md`/`source-observation.md`
   `observed_copy`, on the confirm page.
 - **Cancellation fee:** never a silent backend charge — display the cancellation
@@ -256,5 +256,5 @@ is no status string to parse and no `{ _id, status, resolvedAt }` object.
 2. **Invoice `_id` байхгүй** — `invoiceCreate` амжилтгүй; `paymentIds` хоосон (env `NEXT_PUBLIC_PAYMENT_IDS` уншигдаагүй)
 3. **`invoicesCheck`-ийг query гэж бодсон** — энэ бол **mutation**, `Boolean` буцаана: `true` = төлсөн. `.status` гэж уншвал алдаа
 4. **amount = 0 байна** — `nights`/`room.price` анхны утга 0; `calcNights` + бодит room price-оос тооцоол, `nights * 100` placeholder бүү хэрэглэ
-5. **validate BN: wrong stage** — deal-г буруу stage-руу зөөсөн; `BOOKING_STAGE_ID` → `PAID_STAGE_ID` дарааллыг шалга, `NEXT_PUBLIC_PAID_STAGE_ID` эрт хэрэглээгүй эсэхээ баталгаажуул
+5. **validate BN: wrong stage** — deal-г буруу stage-руу зөөсөн; `NEXT_PUBLIC_BOOKING_STAGE_ID` → `NEXT_PUBLIC_PAID_STAGE_ID` дарааллыг шалга, `NEXT_PUBLIC_PAID_STAGE_ID` эрт хэрэглээгүй эсэхээ баталгаажуул
 6. **verify дээр "pending" гацсан** — `onPaid` дотор `cpDealsEdit`-ийг invoice төлсөнөөс **өмнө** дуудсан бол deal paid буцаж ирнэ; дарааллыг `confirm → QR → check → advance → verify` гэж баримтал

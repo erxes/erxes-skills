@@ -214,6 +214,8 @@ async function collectMissing(raw: Partial<SiteConfig>): Promise<SiteConfig> {
 export async function configLoader(): Promise<SiteIntent> {
   type RawConfig = {
     name?: string;
+    project_name?: string;
+    slug?: string;
     template_type?: string;
     site_type?: string;
     language?: string;
@@ -242,6 +244,7 @@ export async function configLoader(): Promise<SiteIntent> {
   let configErxes = { endpoint: "", app_token: "", cms_id: "", client_portal_id: "" };
 
   const configCandidates = [
+    join(process.cwd(), "hotel.config.json"),
     join(process.cwd(), "site.config.json"),
     join(process.cwd(), "store.config.json"),
   ];
@@ -250,7 +253,7 @@ export async function configLoader(): Promise<SiteIntent> {
   if (configPath) {
     console.log(`→ [config-loader] Loading ${configPath.split("/").pop()}...`);
     const parsed = JSON.parse(readFileSync(configPath, "utf-8")) as RawConfig;
-    raw.name = parsed.name;
+    raw.name = parsed.name ?? parsed.project_name ?? parsed.slug;
     raw.site_type = (
       parsed.site_type ??
       parsed.template_type ??
@@ -274,7 +277,7 @@ export async function configLoader(): Promise<SiteIntent> {
     configErxes.client_portal_id = parsed.client_portal_id ?? parsed.clientPortalId ?? "";
   } else {
     console.log(
-      "→ [config-loader] site.config.json / store.config.json not found, collecting via CLI..."
+      "→ [config-loader] hotel.config.json / site.config.json / store.config.json not found, collecting via CLI..."
     );
   }
 

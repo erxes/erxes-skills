@@ -45,7 +45,7 @@ The config file lives in the same working folder as this file's pipeline. Read t
 - `color_hint`
 - `extra_notes`
 
-**Hotel pipeline inputs (hotel only):** when the active pipeline is `hotel` and `agents/hotel/generate-design.md` ran, also read:
+**Hotel pipeline inputs (hotel only):** when the active pipeline is `hotel`, also read (when present):
 
 - `output/<slug>/source-observation.md` and the `source_observation` block inside `hotel.config.json`
 - `output/<slug>/design-brief.md` and the `design_brief` block inside `hotel.config.json`

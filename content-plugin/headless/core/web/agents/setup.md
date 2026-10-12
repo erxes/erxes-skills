@@ -243,7 +243,7 @@ After `site.config.json` is saved and CMS is created, route to the correct templ
 | `business` | Proceed to **Section A — Step 2 (Business Analysis)** | `agents/business-analyst.md`, then `agents/ux-ui-researcher.md` |
 | `ecommerce` | **Switch to ecommerce pipeline** | `agents/ecommerce/AGENTS.md` — this replaces the rest of this pipeline |
 | `tour` | Proceed to **Section A — Step 2 (Business Analysis)** | `agents/business-analyst.md`, then `agents/ux-ui-researcher.md` |
-| `hotel` | **Switch to hotel pipeline** | `agents/hotel/AGENTS.md` — this replaces the rest of this pipeline, including Business Analysis and UX Research (hotel uses `agents/hotel/generate-design.md` instead) |
+| `hotel` | **Switch to hotel pipeline** | `agents/hotel/AGENTS.md` — this replaces the rest of this pipeline, including Business Analysis and UX Research (hotel Step 3.5 design uses `agents/pencil-design.md`) |
 
 ### Ecommerce Pipeline (`template_type === "ecommerce"`)
 
